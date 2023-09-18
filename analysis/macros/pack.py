@@ -20,12 +20,19 @@ parser.add_option('-m', '--metadata', help='metadata', dest='metadata')
 parser.add_option('-p', '--pack', help='pack', dest='pack')
 parser.add_option('-s', '--special', help='special', dest='special')
 (options, args) = parser.parse_args()
-fnaleos = "root://xrootd-cms.infn.it/"
+#fnaleos = "root://xrootd-cms.infn.it/"
+fnaleos = "root://dcache-cms-xrootd.desy.de:1094/"
 #fnaleos = "root://cmseos.fnal.gov/"
 #fnaleos = "root://cmsxrootd.fnal.gov/"
 
 beans={}
-beans['2016'] = ["/store/user/nshadski/customNano",
+beans['2016pre'] = ["/store/user/nshadski/customNano",
+                 "/store/user/empfeffe/customNano",
+                 "/store/user/momolch/customNano",
+                 "/store/user/swieland/customNano",
+                 "/store/user/mwassmer/customNano"]
+
+beans['2016post'] = ["/store/user/nshadski/customNano",
                  "/store/user/empfeffe/customNano",
                  "/store/user/momolch/customNano",
                  "/store/user/swieland/customNano",
@@ -55,9 +62,9 @@ def find(_list):
      files=[]
      print('Looking into',_list)
      for path in _list:
-          command='xrdfs '+fnaleos+' ls '+path
-          results=os.popen(command).read()
-          files.extend(results.split())
+         command='xrdfs '+fnaleos+' ls '+path
+         results=os.popen(command).read()
+         files.extend(results.split())
      if not any('.root' in _file for _file in files):
           files=find(files)
      return files
@@ -77,20 +84,27 @@ datadef = {}
 for folder in beans[options.year]:
     for dataset in xsections.keys():
         if options.dataset:
-             if not any(_dataset in dataset for _dataset in options.dataset.split(',')): continue
+            if not any(_dataset in dataset for _dataset in options.dataset.split(',')): continue
         xs = xsections[dataset]
         path=folder+'/'+dataset
         urllist = find([path])
-        for url in urllist:
+        for url in urllist[:]:
+            #print(url, type(url), options.year, type(options.year))
+            if options.year not in str(url):
+                urllist.remove(url)
+                continue
+            if  'Data' in url and 'KITv2' in url:
+                urllist.remove(url)
+                continue
             if 'failed' in url: 
-                 urllist.remove(url)
-                 continue
+                urllist.remove(url)
+                continue
             if '.root' not in url: 
-                 urllist.remove(url)
-                 continue
-            if 'nano' not in url: 
-                 urllist.remove(url)
-                 continue
+                urllist.remove(url)
+                continue
+            #if 'nano' not in url: 
+            #    urllist.remove(url)
+            #    continue
             urllist[urllist.index(url)]=url.replace('/store/',fnaleos+'/store/')
             
         print('list lenght:',len(urllist))
