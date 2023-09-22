@@ -193,6 +193,19 @@ get_mu_loose_iso_sf = {}
 for year in ['2016','2017','2018']:
     get_mu_tight_iso_sf[year] = lookup_tools.dense_lookup.dense_lookup(mu_iso_tight_hist[year].values, mu_iso_tight_hist[year].edges)
     get_mu_loose_iso_sf[year] = lookup_tools.dense_lookup.dense_lookup(mu_iso_loose_hist[year].values, mu_iso_loose_hist[year].edges)
+
+###
+# Muon scale and resolution (i.e. Rochester)
+###
+
+tag = 'roccor.Run2.v5'
+get_mu_rochester_sf = {}
+for year in ['2016','2017','2018']:
+    fname = f'data/{tag}/RoccoR{year}.txt'
+    sfs = lookup_tools.txt_converters.convert_rochester_file(fname,loaduncs=True)
+    get_mu_rochester_sf[year] = lookup_tools.rochester_lookup.rochester_lookup(sfs)
+
+
 ###
 # V+jets NLO k-factors
 ###
@@ -384,9 +397,9 @@ class BTagCorrector:
         self._wp = common['btagWPs'][tagger][year][workingpoint]
         files = {
             'deepflav': {
-                '2016': 'DeepJet_2016LegacySF_V1.csv',
-                '2017': 'DeepFlavour_94XSF_V4_B_F.csv',
-                '2018': 'DeepJet_102XSF_V1.csv'
+                '2016': 'DeepJet_2016LegacySF_V1_YearCorrelation-V1.csv',
+                '2017': 'DeepFlavour_94XSF_V3_B_F_comb_YearCorrelation-V1.csv',
+                '2018': 'DeepJet_102XSF_V1_YearCorrelation-V1.csv'
                 },
             'deepcsv': {
                 '2016': 'DeepCSV_2016LegacySF_V1.csv',
@@ -415,25 +428,77 @@ class BTagCorrector:
         def zerotag(eff):
             return (1 - eff).prod()
 
+        bc = flavor > 0
+        light = ~bc
+        
         eff = self.eff(flavor, pt, abseta)
+        
         sf_nom = self.sf.eval('central', flavor, abseta, pt)
-        sf_up = self.sf.eval('up', flavor, abseta, pt)
-        sf_down = self.sf.eval('down', flavor, abseta, pt)
+        
+        bc_sf_up_correlated = pt.ones_like()
+        bc_sf_up_correlated[~bc] = sf_nom[~bc]
+        bc_sf_up_correlated[bc] = self.sf.eval('up_correlated', flavor, eta, pt)[bc]
+        
+        bc_sf_down_correlated = pt.ones_like()
+        bc_sf_down_correlated[~bc] = sf_nom[~bc]
+        bc_sf_down_correlated[bc] = self.sf.eval('down_correlated', flavor, eta, pt)[bc]
+
+        bc_sf_up_uncorrelated = pt.ones_like()
+        bc_sf_up_uncorrelated[~bc] = sf_nom[~bc]
+        bc_sf_up_uncorrelated[bc] = self.sf.eval('up_uncorrelated', flavor, eta, pt)[bc]
+
+        bc_sf_down_uncorrelated = pt.ones_like()
+        bc_sf_down_uncorrelated[~bc] = sf_nom[~bc]
+        bc_sf_down_uncorrelated[bc] = self.sf.eval('down_uncorrelated', flavor, eta, pt)[bc]
+
+        light_sf_up_correlated = pt.ones_like()
+        light_sf_up_correlated[~light] = sf_nom[~light]
+        light_sf_up_correlated[light] = self.sf.eval('up_correlated', flavor, abseta, pt)[light]
+
+        light_sf_down_correlated = pt.ones_like()
+        light_sf_down_correlated[~light] = sf_nom[~light]
+        light_sf_down_correlated[light] = self.sf.eval('down_correlated', flavor, abseta, pt)[light]
+
+        light_sf_up_uncorrelated = pt.ones_like()
+        light_sf_up_uncorrelated[~light] = sf_nom[~light]
+        light_sf_up_uncorrelated[light] = self.sf.eval('up_uncorrelated', flavor, abseta, pt)[light]
+
+        light_sf_down_uncorrelated = pt.ones_like()
+        light_sf_down_uncorrelated[~light] = sf_nom[~light]
+        light_sf_down_uncorrelated[light] = self.sf.eval('down_uncorrelated', flavor, abseta, pt)[light]
 
         eff_data_nom  = np.minimum(1., sf_nom*eff)
-        eff_data_up   = np.minimum(1., sf_up*eff)
-        eff_data_down = np.minimum(1., sf_down*eff)
-
+        bc_eff_data_up_correlated   = np.minimum(1., bc_sf_up_correlated*eff)
+        bc_eff_data_down_correlated = np.minimum(1., bc_sf_down_correlated*eff)
+        bc_eff_data_up_uncorrelated   = np.minimum(1., bc_sf_up_uncorrelated*eff)
+        bc_eff_data_down_uncorrelated = np.minimum(1., bc_sf_down_uncorrelated*eff)
+        light_eff_data_up_correlated   = np.minimum(1., light_sf_up_correlated*eff)
+        light_eff_data_down_correlated = np.minimum(1., light_sf_down_correlated*eff)
+        light_eff_data_up_uncorrelated   = np.minimum(1., light_sf_up_uncorrelated*eff)
+        light_eff_data_down_uncorrelated = np.minimum(1., light_sf_down_uncorrelated*eff)
+       
         nom = zerotag(eff_data_nom)/zerotag(eff)
-        up = zerotag(eff_data_up)/zerotag(eff)
-        down = zerotag(eff_data_down)/zerotag(eff)
-
+        bc_up_correlated = zerotag(bc_eff_data_up_correlated)/zerotag(eff)
+        bc_down_correlated = zerotag(bc_eff_data_down_correlated)/zerotag(eff)
+        bc_up_uncorrelated = zerotag(bc_eff_data_up_uncorrelated)/zerotag(eff)
+        bc_down_uncorrelated = zerotag(bc_eff_data_down_uncorrelated)/zerotag(eff)
+        light_up_correlated = zerotag(light_eff_data_up_correlated)/zerotag(eff)
+        light_down_correlated = zerotag(light_eff_data_down_correlated)/zerotag(eff)
+        light_up_uncorrelated = zerotag(light_eff_data_up_uncorrelated)/zerotag(eff)
+        light_down_uncorrelated = zerotag(light_eff_data_down_uncorrelated)/zerotag(eff)
+        
         if '-1' in tag: 
             nom = (1 - zerotag(eff_data_nom)) / (1 - zerotag(eff))
-            up = (1 - zerotag(eff_data_up)) / (1 - zerotag(eff))
-            down = (1 - zerotag(eff_data_down)) / (1 - zerotag(eff))
+            bc_up_correlated = (1 - zerotag(bc_eff_data_up_correlated)) / (1 - zerotag(eff))
+            bc_down_correlated = (1 - zerotag(bc_eff_data_down_correlated)) / (1 - zerotag(eff))
+            bc_up_uncorrelated = (1 - zerotag(bc_eff_data_up_uncorrelated)) / (1 - zerotag(eff))
+            bc_down_uncorrelated = (1 - zerotag(bc_eff_data_down_uncorrelated)) / (1 - zerotag(eff))
+            light_up_correlated = (1 - zerotag(light_eff_data_up_correlated)) / (1 - zerotag(eff))
+            light_down_correlated = (1 - zerotag(light_eff_data_down_correlated)) / (1 - zerotag(eff))
+            light_up_uncorrelated = (1 - zerotag(light_eff_data_up_uncorrelated)) / (1 - zerotag(eff))
+            light_down_uncorrelated = (1 - zerotag(light_eff_data_down_uncorrelated)) / (1 - zerotag(eff))
 
-        return np.nan_to_num(nom), np.nan_to_num(up), np.nan_to_num(down)
+        return np.nan_to_num(nom, nan=1.), np.nan_to_num(bc_up_correlated, nan=1.), np.nan_to_num(bc_down_correlated, nan=1.), np.nan_to_num(bc_up_uncorrelated, nan=1.), np.nan_to_num(bc_down_uncorrelated, nan=1.), np.nan_to_num(light_up_correlated, nan=1.), np.nan_to_num(light_down_correlated, nan=1.), np.nan_to_num(light_up_uncorrelated, nan=1.), np.nan_to_num(light_down_uncorrelated, nan=1.)
 
 get_btag_weight = {
     'deepflav': {
@@ -478,19 +543,19 @@ class DoubleBTagCorrector:
         self._year = year
         sf = {
             '2018': {
-                'value': np.array([1.0037e+00,1.0037e+00,7.3346e-01,6.9716e-01,1.1972e+00]),
-                'unc': np.array([2*6.72e-02,6.72e-02,6.98e-02,7.06e-02,1.06e-01]),
-                'edges': np.array([160, 350, 450, 500, 2500])
+                'value': np.array([0.82, 0.82, 0.75, 0.81]),
+                'unc': np.array([2*np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.06**2 + 0.06**2), np.sqrt(0.05**2 + 0.01**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
             },
             '2017': {
-                'value': np.array([9.9331e-01,9.9331e-01,9.3711e-01,9.5658e-01,8.3033e-01]),
-                'unc': np.array([2*3.96e-02,3.96e-02,5.05e-02,4.63e-02,4.61e-02]),
-                'edges': np.array([160, 350, 450, 500, 2500])
+                'value': np.array([0.84, 0.84, 0.98, 0.86]),
+                'unc': np.array([2*np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.12**2), np.sqrt(0.05**2 + 0.05**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
             },
             '2016': {
-                'value': np.array([8.8300e-01,8.8300e-01,1.0384e+00,8.0800e-01,7.1766e-01]),
-                'unc': np.array([2*4.46e-02,4.46e-02,8.21e-02,9.48e-02,1.48e-01]),
-                'edges': np.array([160, 350, 450, 500, 2500])
+                'value': np.array([1.01, 1.01, 0.95, 0.99]),
+                'unc': np.array([2*np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.05**2 + 0.09**2), np.sqrt(0.06**2 + 0.00**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
             },
         }
         self.sf_nom={}
@@ -592,6 +657,7 @@ corrections = {
     'get_btag_weight':          get_btag_weight,
     'get_doublebtag_weight':    get_doublebtag_weight,
     'get_reweighting':          get_reweighting,
+    'get_mu_rochester_sf':      get_mu_rochester_sf,
     #'Jetevaluator':             Jetevaluator,
 }
 save(corrections, 'data/corrections.coffea')
