@@ -24,29 +24,93 @@ for year in ['2016','2017','2018']:
 
 
 ####
-# Electron
+# Electron ID scale factor
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaSFJSON
 # jsonPOG: https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/EGM
+# /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
 ####
 
-def get_ele_id_sf (year, eta, pt):
+def get_ele_loose_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
     flatpt = ak.flatten(pt)
-    weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Medium", flateta, flatpt)
+    weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
+
+def get_ele_tight_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
 
     return ak.unflatten(weight, counts=counts)
 
 
 ####
-# Photon
-# https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaSFJSON
-# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/EGM
+# Electron Trigger weight
+# https://twiki.cern.ch/twiki/bin/view/CMS/EgammaUL2016To2018
+# Copy from previous correctionsUL.py file
 ####
 
-## photon tight id sf ##
-def get_pho_id_sf(year, eta, pt):
+ele_trig_hists = {
+    '2016postVFP': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2016postVFP.root")['EGamma_SF2D'],
+    '2016preVFP' : uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2016preVFP.root")['EGamma_SF2D'],
+    '2017': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
+    '2018': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
+}
+get_ele_trig_weight = {}
+for year in ['2016postVFP', '2016preVFP', '2017','2018']:
+    ele_trig_hist = ele_trig_hists[year]
+    get_ele_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(ele_trig_hist.values, ele_trig_hist.edges)
+
+
+
+####
+# Electron Reco scale factor
+# root files: https://twiki.cern.ch/twiki/bin/view/CMS/EgammaUL2016To2018
+# Code Copy from previous correctionsUL.py file
+####
+
+ele_reco_files_below20 = {
+    '2016postVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root"),
+    '2016preVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root"),
+    '2017': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root"),
+    '2018': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root")
+}
+get_ele_reco_sf_below20 = {}
+get_ele_reco_err_below20 = {}
+for year in ['2016postVFP','2016preVFP','2017','2018']:
+    ele_reco_hist = ele_reco_files_below20[year]["EGamma_SF2D"]
+    get_ele_reco_sf_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values, ele_reco_hist.edges)
+    get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances ** 0.5, ele_reco_hist.edges)
+
+
+ele_reco_files_above20 = {
+    '2016postVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root"),
+    '2016preVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root"),
+    '2017': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root"),
+    '2018': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root")
+}
+get_ele_reco_sf_above20 = {}
+get_ele_reco_err_above20 = {}
+for year in ['2016postVFP','2016preVFP','2017','2018']:
+    ele_reco_hist = ele_reco_files_above20[year]["EGamma_SF2D"]
+    get_ele_reco_sf_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values, ele_reco_hist.edges)
+    get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances ** 0.05, ele_reco_hist.edges)
+    
+
+
+####
+# Photon ID scale factor
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaSFJSON
+# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/EGM
+# /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+####
+
+def get_pho_tight_id_sf(year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -55,30 +119,76 @@ def get_pho_id_sf(year, eta, pt):
 
     return ak.unflatten(weight, counts=counts)
 
-## photon CSEV sf ##
+
+def get_pho_loose_id_sf(year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Photon-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
+
+
+#### 
+# Photon CSEV sf 
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaSFJSON
+# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/EGM
 # 
 
+#def get_pho_csev_sf(year, eta, pt):
+#    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+#
+#    flateta, counts = ak.flatten(eta), ak.num(eta)
+#    flatpt = ak.flatten(pt)
+#    weight = evaluator["UL-Photon-CSEV-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
+#
+#    return ak.unflatten(weight, counts=counts)
 
 
-ex = '''
-btvjson = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')
-# case 2: fixedWP correction uncertainty (here tight WP and comb SF)
-# evaluate('systematic', 'working_point', 'flavor', 'abseta', 'pt')
-bc_jet_sf = btvjson["deepJet_comb"].evaluate("up_correlated", "T", 
-            jet_flav[bc_jets], jet_eta[bc_jets], jet_pt[bc_jets])
-light_jet_sf = btvjson["deepJet_incl"].evaluate("up_correlated", "T", 
-            jet_flav[light_jets], jet_eta[light_jets], jet_pt[light_jets])
-print("\njet SF up_correlated for comb at tight WP:")
-print(f"SF b/c: {bc_jet_sf}")
-print(f"SF light: {light_jet_sf}")
-'''
+####
+# Photon Trigger weight
+# Copy from previous decaf version
+####
 
-def btag_weight(year, flavor, abseta, pt):
-    btvjson = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')
-    bc_jet_sf = btvjson["deepJet_comb"].evaluate("up_correlated", "T",
-            jet_flav[bc_jets], jet_eta[bc_jets], jet_pt[bc_jets])
-    light_jet_sf = btvjson["deepJet_incl"].evaluate("up_correlated", "T",
-            jet_flav[light_jets], jet_eta[light_jets], jet_pt[light_jets])
+pho_trig_files = {
+    '2016postVFP': uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    '2016preVFP': uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    "2017": uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    "2018": uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
+}
+get_pho_trig_weight = {}
+for year in ['2016postVFP','2016preVFP','2017','2018']:
+    pho_trig_hist = pho_trig_files[year]["hden_photonpt_clone_passed"]
+    get_pho_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(pho_trig_hist.values, pho_trig_hist.edges)
+
+
+
+
+####
+# Muon ID scale factor
+# https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2018n?topic=MuonUL2018
+# jsonPOG: https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/MUO
+# /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+####
+
+def get_ele_loose_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
+
+def get_ele_tight_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
 
 
 ####
@@ -187,6 +297,156 @@ for year in ['2016','2017','2018']:
         get_nlo_ewk_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values, nlo_ewk_hists[p].edges)
 
 
+###
+# V+jets NNLO weights
+# The schema is process_NNLO_NLO_QCD1QCD2QCD3_EW1EW2EW3_MIX, where 'n' stands for 'nominal', 'u' for 'up', and 'd' for 'down'
+# From previous decaf version.
+###
+
+histname={
+    'dy': 'eej_NNLO_NLO_',
+    'w':  'evj_NNLO_NLO_',
+    'z': 'vvj_NNLO_NLO_',
+    'a': 'aj_NNLO_NLO_'
+}
+correlated_variations = {
+    'cen':    'nnn_nnn_n',
+    'qcd1up': 'unn_nnn_n',
+    'qcd1do': 'dnn_nnn_n',
+    'qcd2up': 'nun_nnn_n',
+    'qcd2do': 'ndn_nnn_n',
+    'qcd3up': 'nnu_nnn_n',
+    'qcd3do': 'nnd_nnn_n',
+    'ew1up' : 'nnn_unn_n',
+    'ew1do' : 'nnn_dnn_n',
+    'mixup' : 'nnn_nnn_u',
+    'mixdo' : 'nnn_nnn_d',
+    'muFup' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_2p0',
+    'muFdo' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_0p5',
+    'muRup' : 'nnn_nnn_n_Weight_scale_variation_muR_2p0_muF_1p0',
+    'muRdo' : 'nnn_nnn_n_Weight_scale_variation_muR_0p5_muF_1p0'
+}
+uncorrelated_variations = {
+    'dy': {
+        'ew2Gup': 'nnn_nnn_n',
+        'ew2Gdo': 'nnn_nnn_n',
+        'ew2Wup': 'nnn_nnn_n',
+        'ew2Wdo': 'nnn_nnn_n',
+        'ew2Zup': 'nnn_nun_n',
+        'ew2Zdo': 'nnn_ndn_n',
+        'ew3Gup': 'nnn_nnn_n',
+        'ew3Gdo': 'nnn_nnn_n',
+        'ew3Wup': 'nnn_nnn_n',
+        'ew3Wdo': 'nnn_nnn_n',
+        'ew3Zup': 'nnn_nnu_n',
+        'ew3Zdo': 'nnn_nnd_n'
+    },
+    'w': {
+        'ew2Gup': 'nnn_nnn_n',
+        'ew2Gdo': 'nnn_nnn_n',
+        'ew2Wup': 'nnn_nun_n',
+        'ew2Wdo': 'nnn_ndn_n',
+        'ew2Zup': 'nnn_nnn_n',
+        'ew2Zdo': 'nnn_nnn_n',
+        'ew3Gup': 'nnn_nnn_n',
+        'ew3Gdo': 'nnn_nnn_n',
+        'ew3Wup': 'nnn_nnu_n',
+        'ew3Wdo': 'nnn_nnd_n',
+        'ew3Zup': 'nnn_nnn_n',
+        'ew3Zdo': 'nnn_nnn_n'
+    },
+    'z': {
+        'ew2Gup': 'nnn_nnn_n',
+        'ew2Gdo': 'nnn_nnn_n',
+        'ew2Wup': 'nnn_nnn_n',
+        'ew2Wdo': 'nnn_nnn_n',
+        'ew2Zup': 'nnn_nun_n',
+        'ew2Zdo': 'nnn_ndn_n',
+        'ew3Gup': 'nnn_nnn_n',
+        'ew3Gdo': 'nnn_nnn_n',
+        'ew3Wup': 'nnn_nnn_n',
+        'ew3Wdo': 'nnn_nnn_n',
+        'ew3Zup': 'nnn_nnu_n',
+        'ew3Zdo': 'nnn_nnd_n'
+    },
+    'a': {
+        'ew2Gup': 'nnn_nun_n',
+        'ew2Gdo': 'nnn_ndn_n',
+        'ew2Wup': 'nnn_nnn_n',
+        'ew2Wdo': 'nnn_nnn_n',
+        'ew2Zup': 'nnn_nnn_n',
+        'ew2Zdo': 'nnn_nnn_n',
+        'ew3Gup': 'nnn_nnu_n',
+        'ew3Gdo': 'nnn_nnd_n',
+        'ew3Wup': 'nnn_nnn_n',
+        'ew3Wdo': 'nnn_nnn_n',
+        'ew3Zup': 'nnn_nnn_n',
+        'ew3Zdo': 'nnn_nnn_n'
+    }
+}
+
+get_nnlo_nlo_weight = {}
+for year in ['2016','2017','2018']:
+    get_nnlo_nlo_weight[year] = {}
+    nnlo_file = {
+        'dy': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root"),
+        'w': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root"),
+        'z': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root"),
+        'a': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root")
+    }
+    for p in ['dy','w','z','a']:
+        get_nnlo_nlo_weight[year][p] = {}
+        for cv in correlated_variations:
+            hist=nnlo_file[p][histname[p]+correlated_variations[cv]]
+            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
+        for uv in uncorrelated_variations[p]:
+            hist=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
+            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
+
+
+def get_ttbar_weight(pt):
+    return np.exp(0.0615 - 0.0005 * np.clip(pt, 0, 800))
+
+def get_msd_weight(pt, eta):
+    gpar = np.array([1.00626, -1.06161, 0.0799900, 1.20454])
+    cpar = np.array([1.09302, -0.000150068, 3.44866e-07, -2.68100e-10, 8.67440e-14, -1.00114e-17])
+    fpar = np.array([1.27212, -0.000571640, 8.37289e-07, -5.20433e-10, 1.45375e-13, -1.50389e-17])
+    genw = gpar[0] + gpar[1]*np.power(pt*gpar[2], -gpar[3])
+    ptpow = np.power.outer(pt, np.arange(cpar.size))
+    cenweight = np.dot(ptpow, cpar)
+    forweight = np.dot(ptpow, fpar)
+    weight = np.where(np.abs(eta)<1.3, cenweight, forweight)
+    return genw*weight
+
+
+
+def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
+    bad = {}
+    bad["2016"] = {}
+    bad["2017"] = {}
+    bad["2018"] = {}
+    bad["2016"]["MET"]            = "ecalBadCalib/Run2016_MET.root"
+    bad["2016"]["SinglePhoton"]   = "ecalBadCalib/Run2016_SinglePhoton.root"
+    bad["2016"]["SingleElectron"] = "ecalBadCalib/Run2016_SingleElectron.root"
+    bad["2017"]["MET"]            = "ecalBadCalib/Run2017_MET.root"
+    bad["2017"]["SinglePhoton"]   = "ecalBadCalib/Run2017_SinglePhoton.root"
+    bad["2017"]["SingleElectron"] = "ecalBadCalib/Run2017_SingleElectron.root"
+    bad["2018"]["MET"]            = "ecalBadCalib/Run2018_MET.root"
+    bad["2018"]["EGamma"]         = "ecalBadCalib/Run2018_EGamma.root"
+    
+    regular_dataset = ""
+    regular_dataset = [name for name in ["MET","SinglePhoton","SingleElectron","EGamma"] if (name in dataset)]
+    fbad = uproot.open(bad[year][regular_dataset[0]])
+    bad_tree = fbad["vetoEvents"]
+    runs_to_veto = bad_tree.array("Run")
+    lumis_to_veto = bad_tree.array("LS")
+    events_to_veto = bad_tree.array("Event")
+
+    # We want events that do NOT have (a vetoed run AND a vetoed LS and a vetoed event number)
+    return np.logical_not(np.isin(run_number, runs_to_veto) * np.isin(lumi_number, lumis_to_veto) * np.isin(event_number, events_to_veto))
+
+
+
 
 from coffea.lookup_tools.correctionlib_wrapper import correctionlib_wrapper
 from coffea.lookup_tools.dense_lookup import dense_lookup
@@ -232,7 +492,7 @@ class BTagCorrector:
         
         eff = self.eff(flavor, pt, abseta)
         
-        sf_nom = self.sf.eval('central', flavor, abseta, pt)
+        #sf_nom = self.sf.eval('central', flavor, abseta, pt)
         sf_nom = self.sf["deepJet_comb"].evaluate('central','M', flavor, abseta, pt)
         
         bc_sf_up_correlated = pt.ones_like()
@@ -301,14 +561,62 @@ class BTagCorrector:
         return np.nan_to_num(nom, nan=1.), np.nan_to_num(bc_up_correlated, nan=1.), np.nan_to_num(bc_down_correlated, nan=1.), np.nan_to_num(bc_up_uncorrelated, nan=1.), np.nan_to_num(bc_down_uncorrelated, nan=1.), np.nan_to_num(light_up_correlated, nan=1.), np.nan_to_num(light_down_correlated, nan=1.), np.nan_to_num(light_up_uncorrelated, nan=1.), np.nan_to_num(light_down_uncorrelated, nan=1.)
 
 
+get_btag_weight = {
+    'deepflav': {
+        '2016': {
+            'loose'  : BTagCorrector('deepflav','2016','loose').btag_weight,
+            'medium' : BTagCorrector('deepflav','2016','medium').btag_weight,
+            'tight'  : BTagCorrector('deepflav','2016','tight').btag_weight
+        },
+        '2017': {
+            'loose'  : BTagCorrector('deepflav','2017','loose').btag_weight,
+            'medium' : BTagCorrector('deepflav','2017','medium').btag_weight,
+            'tight'  : BTagCorrector('deepflav','2017','tight').btag_weight
+        },
+        '2018': {
+            'loose'  : BTagCorrector('deepflav','2018','loose').btag_weight,
+            'medium' : BTagCorrector('deepflav','2018','medium').btag_weight,
+            'tight'  : BTagCorrector('deepflav','2018','tight').btag_weight
+        }
+    },
+    'deepcsv' : {
+        '2016': {
+            'loose'  : BTagCorrector('deepcsv','2016','loose').btag_weight,
+            'medium' : BTagCorrector('deepcsv','2016','medium').btag_weight,
+            'tight'  : BTagCorrector('deepcsv','2016','tight').btag_weight
+        },
+        '2017': {
+            'loose'  : BTagCorrector('deepcsv','2017','loose').btag_weight,
+            'medium' : BTagCorrector('deepcsv','2017','medium').btag_weight,
+            'tight'  : BTagCorrector('deepcsv','2017','tight').btag_weight
+        },
+        '2018': {
+            'loose'  : BTagCorrector('deepcsv','2018','loose').btag_weight,
+            'medium' : BTagCorrector('deepcsv','2018','medium').btag_weight,
+            'tight'  : BTagCorrector('deepcsv','2018','tight').btag_weight
+        }
+    }
+}
 
 
 corrections = {}
 corrections = {
+    'get_met_trig_weight':      get_met_trig_weight,
+    'get_ele_loose_id_sf':      get_ele_loose_id_sf,
+    'get_ele_tight_id_sf':      get_ele_tight_id_sf,
+    'get_ele_trig_weight':      get_ele_trig_weight,
+    'get_ele_reco_sf_below20':  get_ele_reco_sf_below20,
+    'get_ele_reco_sf_above20':  get_ele_reco_sf_above20,
+    'get_pho_loose_id_sf':      get_pho_loose_id_sf,
+    'get_pho_tight_id_sf':      get_pho_tight_id_sf,
+    'get_pho_trig_weight':      get_pho_trig_weight,
     'XY_MET_Correction':        XY_MET_Correction,
-    'get_ele_id_sf':            get_ele_id_sf,
-    'get_pho_id_sf':            get_pho_id_sf,
     'pu_weight':                pu_weight,
+    'get_nlo_qcd_weight':       get_nlo_qcd_weight,
+    'get_nlo_ewk_weight':       get_nlo_ewk_weight,
+    'get_nnlo_nlo_weight':      get_nnlo_nlo_weight,
+    'get_ttbar_weight':         get_ttbar_weight,
+    'get_msd_weight':           get_msd_weight,
 }
 
 ptjagged  = ak.Array([[10.1, 20.2, 30.3], [40.4, 50.5], [60.6]])
