@@ -281,162 +281,24 @@ def XY_MET_Correction(year, events, pt, phi):
 # https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/JME
 ####
 
-# Load CorrectionSet
-#fname = "data/jsonpog/POG/JME/2017_EOY/2017_jmar.json.gz"
-#if fname.endswith(".json.gz"):
-#    import gzip
-#    with gzip.open(fname,'rt') as file:
-#        data = file.read().strip()
-#        evaluator = _core.CorrectionSet.from_string(data)
-#else:
-#    evaluator = _core.CorrectionSet.from_file(fname)
-#
 
 ###
 # V+jets NLO k-factors
+# Only use nlo ewk sf
 ###
 
-nlo_qcd_hists = {
-    '2016':{
-        'dy': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_qcd"],
-        'w': uproot.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_qcd"],
-        'z': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_qcd"],
-        'a': uproot.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_qcd"]
-    },
-    '2017':{
-        'z': uproot.open("data/vjets_SFs/SF_QCD_NLO_ZJetsToNuNu.root")["kfac_znn_filter"],
-        'w': uproot.open("data/vjets_SFs/SF_QCD_NLO_WJetsToLNu.root")["wjet_dress_monojet"],
-        'dy': uproot.open("data/vjets_SFs/SF_QCD_NLO_DYJetsToLL.root")["kfac_dy_filter"],
-        'a': uproot.open("data/vjets_SFs/SF_QCD_NLO_GJets.root")["gjets_stat1_monojet"]
-    },
-    '2018':{
-        'z': uproot.open("data/vjets_SFs/SF_QCD_NLO_ZJetsToNuNu.root")["kfac_znn_filter"],
-        'w': uproot.open("data/vjets_SFs/SF_QCD_NLO_WJetsToLNu.root")["wjet_dress_monojet"],
-        'dy': uproot.open("data/vjets_SFs/SF_QCD_NLO_DYJetsToLL.root")["kfac_dy_filter"],
-        'a': uproot.open("data/vjets_SFs/SF_QCD_NLO_GJets.root")["gjets_stat1_monojet"]
-    }
-}
 nlo_ewk_hists = {
     'dy': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
     'w': uproot.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_ewk"],
     'z': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
     'a': uproot.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
 }    
-get_nlo_qcd_weight = {}
 get_nlo_ewk_weight = {}
 for year in ['2016','2017','2018']:
-    get_nlo_qcd_weight[year] = {}
     get_nlo_ewk_weight[year] = {}
     for p in ['dy','w','z','a']:
-        get_nlo_qcd_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_qcd_hists[year][p].values, nlo_qcd_hists[year][p].edges)
         get_nlo_ewk_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values, nlo_ewk_hists[p].edges)
 
-
-###
-# V+jets NNLO weights
-# The schema is process_NNLO_NLO_QCD1QCD2QCD3_EW1EW2EW3_MIX, where 'n' stands for 'nominal', 'u' for 'up', and 'd' for 'down'
-# From previous decaf version.
-###
-
-histname={
-    'dy': 'eej_NNLO_NLO_',
-    'w':  'evj_NNLO_NLO_',
-    'z': 'vvj_NNLO_NLO_',
-    'a': 'aj_NNLO_NLO_'
-}
-correlated_variations = {
-    'cen':    'nnn_nnn_n',
-    'qcd1up': 'unn_nnn_n',
-    'qcd1do': 'dnn_nnn_n',
-    'qcd2up': 'nun_nnn_n',
-    'qcd2do': 'ndn_nnn_n',
-    'qcd3up': 'nnu_nnn_n',
-    'qcd3do': 'nnd_nnn_n',
-    'ew1up' : 'nnn_unn_n',
-    'ew1do' : 'nnn_dnn_n',
-    'mixup' : 'nnn_nnn_u',
-    'mixdo' : 'nnn_nnn_d',
-    'muFup' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_2p0',
-    'muFdo' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_0p5',
-    'muRup' : 'nnn_nnn_n_Weight_scale_variation_muR_2p0_muF_1p0',
-    'muRdo' : 'nnn_nnn_n_Weight_scale_variation_muR_0p5_muF_1p0'
-}
-uncorrelated_variations = {
-    'dy': {
-        'ew2Gup': 'nnn_nnn_n',
-        'ew2Gdo': 'nnn_nnn_n',
-        'ew2Wup': 'nnn_nnn_n',
-        'ew2Wdo': 'nnn_nnn_n',
-        'ew2Zup': 'nnn_nun_n',
-        'ew2Zdo': 'nnn_ndn_n',
-        'ew3Gup': 'nnn_nnn_n',
-        'ew3Gdo': 'nnn_nnn_n',
-        'ew3Wup': 'nnn_nnn_n',
-        'ew3Wdo': 'nnn_nnn_n',
-        'ew3Zup': 'nnn_nnu_n',
-        'ew3Zdo': 'nnn_nnd_n'
-    },
-    'w': {
-        'ew2Gup': 'nnn_nnn_n',
-        'ew2Gdo': 'nnn_nnn_n',
-        'ew2Wup': 'nnn_nun_n',
-        'ew2Wdo': 'nnn_ndn_n',
-        'ew2Zup': 'nnn_nnn_n',
-        'ew2Zdo': 'nnn_nnn_n',
-        'ew3Gup': 'nnn_nnn_n',
-        'ew3Gdo': 'nnn_nnn_n',
-        'ew3Wup': 'nnn_nnu_n',
-        'ew3Wdo': 'nnn_nnd_n',
-        'ew3Zup': 'nnn_nnn_n',
-        'ew3Zdo': 'nnn_nnn_n'
-    },
-    'z': {
-        'ew2Gup': 'nnn_nnn_n',
-        'ew2Gdo': 'nnn_nnn_n',
-        'ew2Wup': 'nnn_nnn_n',
-        'ew2Wdo': 'nnn_nnn_n',
-        'ew2Zup': 'nnn_nun_n',
-        'ew2Zdo': 'nnn_ndn_n',
-        'ew3Gup': 'nnn_nnn_n',
-        'ew3Gdo': 'nnn_nnn_n',
-        'ew3Wup': 'nnn_nnn_n',
-        'ew3Wdo': 'nnn_nnn_n',
-        'ew3Zup': 'nnn_nnu_n',
-        'ew3Zdo': 'nnn_nnd_n'
-    },
-    'a': {
-        'ew2Gup': 'nnn_nun_n',
-        'ew2Gdo': 'nnn_ndn_n',
-        'ew2Wup': 'nnn_nnn_n',
-        'ew2Wdo': 'nnn_nnn_n',
-        'ew2Zup': 'nnn_nnn_n',
-        'ew2Zdo': 'nnn_nnn_n',
-        'ew3Gup': 'nnn_nnu_n',
-        'ew3Gdo': 'nnn_nnd_n',
-        'ew3Wup': 'nnn_nnn_n',
-        'ew3Wdo': 'nnn_nnn_n',
-        'ew3Zup': 'nnn_nnn_n',
-        'ew3Zdo': 'nnn_nnn_n'
-    }
-}
-
-get_nnlo_nlo_weight = {}
-for year in ['2016','2017','2018']:
-    get_nnlo_nlo_weight[year] = {}
-    nnlo_file = {
-        'dy': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root"),
-        'w': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root"),
-        'z': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root"),
-        'a': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root")
-    }
-    for p in ['dy','w','z','a']:
-        get_nnlo_nlo_weight[year][p] = {}
-        for cv in correlated_variations:
-            hist=nnlo_file[p][histname[p]+correlated_variations[cv]]
-            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
-        for uv in uncorrelated_variations[p]:
-            hist=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
-            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
 
 
 def get_ttbar_weight(pt):
@@ -631,6 +493,33 @@ get_btag_weight = {
 }
 
 
+####
+# JEC
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/JECDataMC
+####
+
+Jetext = extractor()
+for directory in ['jec_UL', 'jersf_UL', 'jr_UL', 'junc_UL']:
+    directory='data/'+directory
+    print('Loading files in:',directory)
+    for filename in os.listdir(directory):
+        if '~' in filename: continue
+#        if 'DATA' in filename: continue
+        if "Regrouped" in filename: continue
+        if "UncertaintySources" in filename: continue
+        if 'AK4PFchs' in filename:
+            filename=directory+'/'+filename
+            print('Loading file:',filename)
+            Jetext.add_weight_sets(['* * '+filename])
+        if 'AK8' in filename:
+            filename=directory+'/'+filename
+            print('Loading file:',filename)
+            Jetext.add_weight_sets(['* * '+filename])
+    print('All files in',directory,'loaded')
+Jetext.finalize()
+Jetevaluator = Jetext.make_evaluator()
+
+
 corrections = {}
 corrections = {
     'get_met_trig_weight':      get_met_trig_weight,
@@ -652,6 +541,7 @@ corrections = {
     'get_ttbar_weight':         get_ttbar_weight,
     'get_msd_weight':           get_msd_weight,
     'get_btag_weight':          get_btag_weight,
+    'jetevaluator':             Jetevaluator,
 }
 
 
