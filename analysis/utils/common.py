@@ -1,6 +1,7 @@
 from coffea.util import save
 import awkward
-import uproot, uproot_methods
+import uproot3
+#import uproot, uproot_methods
 import numpy as np
 
 def match(a, b, val):
@@ -15,7 +16,12 @@ def sigmoid(x,a,b,c,d):
     return c + (d-c) / (1 + np.exp(-a * (x-b)))
 
 deepflavWPs = {
-    '2016': {
+    '2016preVFP': {
+        'loose' : 0.0614,
+        'medium': 0.3093,
+        'tight' : 0.7221
+    },
+    '2016postVFP': {
         'loose' : 0.0614,
         'medium': 0.3093,
         'tight' : 0.7221
@@ -32,7 +38,12 @@ deepflavWPs = {
     },
 }
 deepcsvWPs = {
-    '2016': {
+    '2016preVFP': {
+        'loose' : 0.2217,
+        'medium': 0.6321,
+        'tight' : 0.8953
+    },
+    '2016postVFP': {
         'loose' : 0.2217,
         'medium': 0.6321,
         'tight' : 0.8953

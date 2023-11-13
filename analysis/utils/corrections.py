@@ -1,21 +1,25 @@
 #! /usr/bin/env python
 import correctionlib
 import os
+#import uproot, uproot_methods
 import awkward as ak
 
-import uproot, uproot_methods
 import numpy as np
 from coffea import hist, lookup_tools
 from coffea.lookup_tools import extractor, dense_lookup
 
+import uproot3
+from coffea import util
+from coffea.util import save, load
+import json
 ###
 # MET trigger efficiency SFs, 2017/18 from monojet. Depends on recoil.
 ###
 
 met_trig_hists = {
-    '2016': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
-    '2017': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
-    '2018': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
+    '2016': uproot3.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
+    '2017': uproot3.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
+    '2018': uproot3.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
 }
 get_met_trig_weight = {}
 for year in ['2016','2017','2018']:
@@ -56,10 +60,10 @@ def get_ele_tight_id_sf (year, eta, pt):
 ####
 
 ele_trig_hists = {
-    '2016postVFP': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2016postVFP.root")['EGamma_SF2D'],
-    '2016preVFP' : uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2016preVFP.root")['EGamma_SF2D'],
-    '2017': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
-    '2018': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D_UL2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
+    '2016postVFP': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root")['EGamma_SF2D'],
+    '2016preVFP' : uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root")['EGamma_SF2D'],
+    '2017': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
+    '2018': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
 }
 get_ele_trig_weight = {}
 for year in ['2016postVFP', '2016preVFP', '2017','2018']:
@@ -288,10 +292,10 @@ def XY_MET_Correction(year, events, pt, phi):
 ###
 
 nlo_ewk_hists = {
-    'dy': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
-    'w': uproot.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_ewk"],
-    'z': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
-    'a': uproot.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
+    'dy': uproot3.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
+    'w': uproot3.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_ewk"],
+    'z': uproot3.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
+    'a': uproot3.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
 }    
 get_nlo_ewk_weight = {}
 for year in ['2016','2017','2018']:
@@ -333,7 +337,7 @@ def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
     
     regular_dataset = ""
     regular_dataset = [name for name in ["MET","SinglePhoton","SingleElectron","EGamma"] if (name in dataset)]
-    fbad = uproot.open(bad[year][regular_dataset[0]])
+    fbad = uproot3.open(bad[year][regular_dataset[0]])
     bad_tree = fbad["vetoEvents"]
     runs_to_veto = bad_tree.array("Run")
     lumis_to_veto = bad_tree.array("LS")
@@ -359,7 +363,8 @@ class BTagCorrector:
         self.sf = btvjson # ["deepJet_comb", "deepCSV_comb"]
 
         files = {
-            '2016': 'btageff2016.merged',
+            '2016preVFP': 'btageff2016.merged',
+            '2016postVFP': 'btageff2016.merged',
             '2017': 'btageff2017.merged',
             '2018': 'btageff2018.merged',
         }
@@ -457,10 +462,15 @@ class BTagCorrector:
 
 get_btag_weight = {
     'deepflav': {
-        '2016': {
-            'loose'  : BTagCorrector('deepflav','2016','loose').btag_weight,
-            'medium' : BTagCorrector('deepflav','2016','medium').btag_weight,
-            'tight'  : BTagCorrector('deepflav','2016','tight').btag_weight
+        '2016preVFP': {
+            'loose'  : BTagCorrector('deepflav','2016preVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepflav','2016preVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepflav','2016preVFP','tight').btag_weight
+        },
+        '2016postVFP': {
+            'loose'  : BTagCorrector('deepflav','2016postVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepflav','2016postVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepflav','2016postVFP','tight').btag_weight
         },
         '2017': {
             'loose'  : BTagCorrector('deepflav','2017','loose').btag_weight,
@@ -474,10 +484,15 @@ get_btag_weight = {
         }
     },
     'deepcsv' : {
-        '2016': {
-            'loose'  : BTagCorrector('deepcsv','2016','loose').btag_weight,
-            'medium' : BTagCorrector('deepcsv','2016','medium').btag_weight,
-            'tight'  : BTagCorrector('deepcsv','2016','tight').btag_weight
+        '2016preVFP': {
+            'loose'  : BTagCorrector('deepcsv','2016preVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepcsv','2016preVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepcsv','2016preVFP','tight').btag_weight
+        },
+        '2016postVFP': {
+            'loose'  : BTagCorrector('deepcsv','2016postVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepcsv','2016postVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepcsv','2016postVFP','tight').btag_weight
         },
         '2017': {
             'loose'  : BTagCorrector('deepcsv','2017','loose').btag_weight,
@@ -535,9 +550,7 @@ corrections = {
     'get_pho_trig_weight':      get_pho_trig_weight,
     'XY_MET_Correction':        XY_MET_Correction,
     'pu_weight':                pu_weight,
-    'get_nlo_qcd_weight':       get_nlo_qcd_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
-    'get_nnlo_nlo_weight':      get_nnlo_nlo_weight,
     'get_ttbar_weight':         get_ttbar_weight,
     'get_msd_weight':           get_msd_weight,
     'get_btag_weight':          get_btag_weight,
@@ -545,5 +558,5 @@ corrections = {
 }
 
 
-save(corrections, 'data/corrections.coffea')
+save(corrections, 'data/testcorrections.coffea')
 
