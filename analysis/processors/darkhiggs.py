@@ -421,7 +421,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         tau_nloose=tau_loose.counts
 
         pho = events.Photon
-        pho['isclean']=~match(pho,mu_loose,0.5)&~match(pho,e_loose,0.5)
+        pho['isclean']=~match(pho,mu_loose,0.5)&~match(pho,e_loose,0.5)&~match(pho,tau_loose,0.5)
         _id = 'cutBasedBitmap'
         if self._year=='2016': 
             _id = 'cutBased'
@@ -440,7 +440,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         fj = events.AK15Puppi
         fj['sd'] = fj.subjets.sum()
-        fj['isclean'] =~match(fj.sd,pho_loose,1.5)&~match(fj.sd,mu_loose,1.5)&~match(fj.sd,e_loose,1.5)
+        fj['isclean'] =~match(fj.sd,pho_loose,1.5)&~match(fj.sd,mu_loose,1.5)&~match(fj.sd,e_loose,1.5)&~match(fj.sd,tau_loose,1.5)
         fj['isgood'] = isGoodFatJet(fj.sd.pt, fj.sd.eta, fj.jetId)
         fj['T'] = TVector2Array.from_polar(fj.pt, fj.phi)
         fj['msd_raw'] = (fj.subjets * (1 - fj.subjets.rawFactor)).sum().mass
@@ -458,7 +458,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         j = events.Jet
         j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF)
         j['isHEM'] = isHEMJet(j.pt, j.eta, j.phi)
-        j['isclean'] = ~match(j,e_loose,0.4)&~match(j,mu_loose,0.4)&~match(j,pho_loose,0.4)
+        j['isclean'] = ~match(j,e_loose,0.4)&~match(j,mu_loose,0.4)&~match(j,pho_loose,0.4)&~match(j,tau_loose,0.4)
         j['isiso'] = ~match(j,fj_clean[fj_clean.pt.argmax()],1.5)
         j['isdcsvL'] = (j.btagDeepB>deepcsvWPs['loose'])
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose'])
@@ -621,21 +621,14 @@ class AnalysisProcessor(processor.ProcessorABC):
             # AK4 b-tagging weights
             ###
 
-            btagSF = {}
-            btagSFbc_correlatedUp = {}
-            btagSFbc_correlatedDown = {}
-            btagSFbc_uncorrelatedUp = {}
-            btagSFbc_uncorrelatedDown = {}
-            btagSFlight_correlatedUp = {}
-            btagSFlight_correlatedDown = {}
-            btagSFlight_uncorrelatedUp = {}
-            btagSFlight_uncorrelatedDown = {}
-            btagSF['sr'], btagSFbc_correlatedUp['sr'], btagSFbc_correlatedDown['sr'], btagSFbc_uncorrelatedUp['sr'], btagSFbc_uncorrelatedDown['sr'], btagSFlight_correlatedUp['sr'], btagSFlight_correlatedDown['sr'], btagSFlight_uncorrelatedUp['sr'], btagSFlight_uncorrelatedDown['sr']   = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
-            btagSF['wmcr'], btagSFbc_correlatedUp['wmcr'], btagSFbc_correlatedDown['wmcr'], btagSFbc_uncorrelatedUp['wmcr'], btagSFbc_uncorrelatedDown['wmcr'], btagSFlight_correlatedUp['wmcr'], btagSFlight_correlatedDown['wmcr'], btagSFlight_uncorrelatedUp['wmcr'], btagSFlight_uncorrelatedDown['wmcr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
-            btagSF['wecr'], btagSFbc_correlatedUp['wecr'], btagSFbc_correlatedDown['wecr'], btagSFbc_uncorrelatedUp['wecr'], btagSFbc_uncorrelatedDown['wecr'], btagSFlight_correlatedUp['wecr'], btagSFlight_correlatedDown['wecr'], btagSFlight_uncorrelatedUp['wecr'], btagSFlight_uncorrelatedDown['wecr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
-            btagSF['tmcr'], btagSFbc_correlatedUp['tmcr'], btagSFbc_correlatedDown['tmcr'], btagSFbc_uncorrelatedUp['tmcr'], btagSFbc_uncorrelatedDown['tmcr'], btagSFlight_correlatedUp['tmcr'], btagSFlight_correlatedDown['tmcr'], btagSFlight_uncorrelatedUp['tmcr'], btagSFlight_uncorrelatedDown['tmcr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'-1')
-            btagSF['tecr'], btagSFbc_correlatedUp['tecr'], btagSFbc_correlatedDown['tecr'], btagSFbc_uncorrelatedUp['tecr'], btagSFbc_uncorrelatedDown['tecr'], btagSFlight_correlatedUp['tecr'], btagSFlight_correlatedDown['tecr'], btagSFlight_uncorrelatedUp['tecr'], btagSFlight_uncorrelatedDown['tecr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'-1')
-            btagSF['qcdcr'], btagSFbc_correlatedUp['qcdcr'], btagSFbc_correlatedDown['qcdcr'], btagSFbc_uncorrelatedUp['qcdcr'], btagSFbc_uncorrelatedDown['qcdcr'], btagSFlight_correlatedUp['qcdcr'], btagSFlight_correlatedDown['qcdcr'], btagSFlight_uncorrelatedUp['qcdcr'], btagSFlight_uncorrelatedDown['qcdcr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
+            btagSF, btagSFbc_correlatedUp, btagSFbc_correlatedDown, btagSFbc_uncorrelatedUp, btagSFbc_uncorrelatedDown, btagSFlight_correlatedUp, btagSFlight_correlatedDown, btagSFlight_uncorrelatedUp, btagSFlight_uncorrelatedDown   = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
+            '''
+            print('btagSF',btagSF)
+            print('btagSFbc_correlatedUp',btagSFbc_correlatedUp)
+            print('btagSFbc_uncorrelatedUp',btagSFbc_uncorrelatedUp)
+            print('btagSFlight_correlatedUp',btagSFlight_correlatedUp)
+            print('btagSFlight_uncorrelatedUp',btagSFlight_uncorrelatedUp)
+            '''
 
         ###
         # Selections
@@ -802,22 +795,19 @@ class AnalysisProcessor(processor.ProcessorABC):
                 weights.add('ids', ids[region])
                 weights.add('reco', reco[region])
                 weights.add('isolation', isolation[region])
-                weights.add('btagSF',btagSF[region])
-                weights.add('btagSFbc_correlated',np.ones(events.size), btagSFbc_correlatedUp[region]/btagSF[region], btagSFbc_correlatedDown[region]/btagSF[region])
-                weights.add('btagSFbc_uncorrelated',np.ones(events.size), btagSFbc_uncorrelatedUp[region]/btagSF[region], btagSFbc_uncorrelatedDown[region]/btagSF[region])
-                weights.add('btagSFlight_correlated',np.ones(events.size), btagSFlight_correlatedUp[region]/btagSF[region], btagSFlight_correlatedDown[region]/btagSF[region])
-                weights.add('btagSFlight_uncorrelated',np.ones(events.size), btagSFlight_uncorrelatedUp[region]/btagSF[region], btagSFlight_uncorrelatedDown[region]/btagSF[region])
+                weights.add('btagSF',btagSF)
+                weights.add('btagSFbc_correlated',np.ones(events.size), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
+                weights.add('btagSFbc_uncorrelated',np.ones(events.size), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
+                weights.add('btagSFlight_correlated',np.ones(events.size), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
+                weights.add('btagSFlight_uncorrelated',np.ones(events.size), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
 
                 ###
                 # AK15 doubleb-tagging weights
                 ###
                 
                 if('mhs' in dataset):
-                    for k in get_doublebtag_weight(leading_fj.sd.pt.sum())[0]:
-                        doublebtag = get_doublebtag_weight(leading_fj.sd.pt.sum())[0][k]
-                        doublebtagUp = get_doublebtag_weight(leading_fj.sd.pt.sum())[1][k]
-                        doublebtagDown = get_doublebtag_weight(leading_fj.sd.pt.sum())[2][k]
-                        weights.add('doublebtag'+k,doublebtag, doublebtagUp, doublebtagDown)
+                    doublebtag, doublebtagUp,  doublebtagDown= get_doublebtag_weight(leading_fj.sd.pt.sum())
+                    weights.add('doublebtag',doublebtag, doublebtagUp, doublebtagDown)
 
                 if 'WJets' in dataset or 'ZJets' in dataset or 'DY' in dataset:
                     if not isFilled:
@@ -916,9 +906,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                                    'btagSFlight_uncorrelatedDown',
                                ]
                     if('mhs' in dataset):
-                        for k in get_doublebtag_weight(leading_fj.sd.pt.sum())[0]:
-                            systematics.append('doublebtag'+k+'Up')
-                            systematics.append('doublebtag'+k+'Down')
+                        systematics.append('doublebtagUp')
+                        systematics.append('doublebtagDown')
                     for systematic in systematics:
                         sname = 'nominal' if systematic is None else systematic
                         hout['template'].fill(dataset=dataset,

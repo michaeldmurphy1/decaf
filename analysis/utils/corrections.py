@@ -372,6 +372,7 @@ class BTagCorrector:
         btag = load(filename)
         bpass = btag[tagger].integrate('dataset').integrate('wp',workingpoint).integrate('btag', 'pass').values()[()]
         ball = btag[tagger].integrate('dataset').integrate('wp',workingpoint).integrate('btag').values()[()]
+        ball[ball<=0.]=1.
         nom = bpass / np.maximum(ball, 1.)
         self.eff = lookup_tools.dense_lookup.dense_lookup(nom, [ax.edges() for ax in btag[tagger].axes()[3:]])
 
@@ -384,6 +385,7 @@ class BTagCorrector:
             weight[istag] = eff[istag]
             weight[~istag] = (1 - eff[~istag])
             return weight.prod()
+<<<<<<< HEAD
 
         '''
         Correction deepJet_comb has 5 inputs
@@ -393,6 +395,8 @@ class BTagCorrector:
         Input abseta (real):
         Input pt (real):
         '''
+=======
+>>>>>>> 8e989f5b9b4d1f6e0f9f4077cabe28452c2ba6ca
 
         bc = flavor > 0
         light = ~bc
@@ -455,8 +459,22 @@ class BTagCorrector:
         light_down_correlated = P(light_eff_data_down_correlated)/P(eff)
         light_up_uncorrelated = P(light_eff_data_up_uncorrelated)/P(eff)
         light_down_uncorrelated = P(light_eff_data_down_uncorrelated)/P(eff)
+<<<<<<< HEAD
 
 
+=======
+        '''
+        print('nom',sf_nom)
+        print('bc_up_correlated',bc_sf_up_correlated)
+        print('bc_down_correlated',bc_sf_down_correlated)
+        print('bc_up_uncorrelated',bc_sf_up_uncorrelated)
+        print('bc_down_uncorrelated',bc_sf_down_uncorrelated)
+        print('light_up_correlated',light_sf_up_correlated)
+        print('light_down_correlated',light_sf_down_correlated)
+        print('light_up_uncorrelated',light_sf_up_uncorrelated)
+        print('light_down_uncorrelated',light_sf_down_uncorrelated)
+        '''
+>>>>>>> 8e989f5b9b4d1f6e0f9f4077cabe28452c2ba6ca
         return np.nan_to_num(nom, nan=1.), np.nan_to_num(bc_up_correlated, nan=1.), np.nan_to_num(bc_down_correlated, nan=1.), np.nan_to_num(bc_up_uncorrelated, nan=1.), np.nan_to_num(bc_down_uncorrelated, nan=1.), np.nan_to_num(light_up_correlated, nan=1.), np.nan_to_num(light_down_correlated, nan=1.), np.nan_to_num(light_up_uncorrelated, nan=1.), np.nan_to_num(light_down_uncorrelated, nan=1.)
 
 
@@ -508,11 +526,76 @@ get_btag_weight = {
 }
 
 
+<<<<<<< HEAD
 ####
 # JEC
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/JECDataMC
 ####
 
+=======
+    def __init__(self, year):
+        self._year = year
+        sf = {
+            '2018': {
+                'value': np.array([0.82, 0.82, 0.75, 0.81]),
+                'unc': np.array([np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.06**2 + 0.06**2), np.sqrt(0.05**2 + 0.01**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
+            },
+            '2017': {
+                'value': np.array([0.84, 0.84, 0.98, 0.86]),
+                'unc': np.array([np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.12**2), np.sqrt(0.05**2 + 0.05**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
+            },
+            '2016': {
+                'value': np.array([1.01, 1.01, 0.95, 0.99]),
+                'unc': np.array([np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.05**2 + 0.09**2), np.sqrt(0.06**2 + 0.00**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
+            },
+        }
+        self.sf_nom=lookup_tools.dense_lookup.dense_lookup(sf[year]['value'], sf[year]['edges'])
+        self.sf_up=lookup_tools.dense_lookup.dense_lookup(sf[year]['value']+sf[year]['unc'], sf[year]['edges'])
+        self.sf_down=lookup_tools.dense_lookup.dense_lookup(sf[year]['value']-sf[year]['unc'], sf[year]['edges'])
+        
+
+    def doublebtag_weight(self, pt):
+        return  self.sf_nom(pt), self.sf_up(pt), self.sf_down(pt)
+
+get_doublebtag_weight = {
+    '2016': DoubleBTagCorrector('2016').doublebtag_weight,
+    '2017': DoubleBTagCorrector('2017').doublebtag_weight,
+    '2018': DoubleBTagCorrector('2018').doublebtag_weight,
+}
+
+class Reweighting:
+
+    def __init__(self, year):
+        self._year = year
+        files = {
+            '2016': 'reweighting2016.scaled',
+            '2017': 'reweighting2017.scaled',
+            '2018': 'reweighting2018.scaled',
+        }
+        filename = 'hists/'+files[year]
+        reweighting = load(filename)
+        hists = load(filename)
+        if year == '2018':
+            hists['data']['reweighting'].scale(2.)
+        num=hists['data']['reweighting'].integrate('process').values()[()]
+        den=hists['bkg']['reweighting'].integrate('process').values()[()]
+        reweighting = num / np.maximum(den, 1.)
+        self.reweighting = lookup_tools.dense_lookup.dense_lookup(reweighting, [ax.edges() for ax in hists['data']['reweighting'].axes()[1:]])
+
+    def weight(self, tau21, pt, eta):
+        weight = self.reweighting(tau21, pt, eta)
+        return weight
+
+get_reweighting = {
+    '2016': Reweighting('2016').weight,
+    '2017': Reweighting('2017').weight,
+    '2018': Reweighting('2018').weight,
+}
+'''
+>>>>>>> 8e989f5b9b4d1f6e0f9f4077cabe28452c2ba6ca
 Jetext = extractor()
 for directory in ['jec_UL', 'jersf_UL', 'jr_UL', 'junc_UL']:
     directory='data/'+directory
