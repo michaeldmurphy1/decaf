@@ -385,7 +385,6 @@ class BTagCorrector:
             weight[istag] = eff[istag]
             weight[~istag] = (1 - eff[~istag])
             return weight.prod()
-<<<<<<< HEAD
 
         '''
         Correction deepJet_comb has 5 inputs
@@ -395,8 +394,6 @@ class BTagCorrector:
         Input abseta (real):
         Input pt (real):
         '''
-=======
->>>>>>> 8e989f5b9b4d1f6e0f9f4077cabe28452c2ba6ca
 
         bc = flavor > 0
         light = ~bc
@@ -459,10 +456,6 @@ class BTagCorrector:
         light_down_correlated = P(light_eff_data_down_correlated)/P(eff)
         light_up_uncorrelated = P(light_eff_data_up_uncorrelated)/P(eff)
         light_down_uncorrelated = P(light_eff_data_down_uncorrelated)/P(eff)
-<<<<<<< HEAD
-
-
-=======
         '''
         print('nom',sf_nom)
         print('bc_up_correlated',bc_sf_up_correlated)
@@ -474,7 +467,6 @@ class BTagCorrector:
         print('light_up_uncorrelated',light_sf_up_uncorrelated)
         print('light_down_uncorrelated',light_sf_down_uncorrelated)
         '''
->>>>>>> 8e989f5b9b4d1f6e0f9f4077cabe28452c2ba6ca
         return np.nan_to_num(nom, nan=1.), np.nan_to_num(bc_up_correlated, nan=1.), np.nan_to_num(bc_down_correlated, nan=1.), np.nan_to_num(bc_up_uncorrelated, nan=1.), np.nan_to_num(bc_down_uncorrelated, nan=1.), np.nan_to_num(light_up_correlated, nan=1.), np.nan_to_num(light_down_correlated, nan=1.), np.nan_to_num(light_up_uncorrelated, nan=1.), np.nan_to_num(light_down_uncorrelated, nan=1.)
 
 
@@ -526,13 +518,8 @@ get_btag_weight = {
 }
 
 
-<<<<<<< HEAD
-####
-# JEC
-# https://twiki.cern.ch/twiki/bin/viewauth/CMS/JECDataMC
-####
+class DoubleBTagCorrector:
 
-=======
     def __init__(self, year):
         self._year = year
         sf = {
@@ -594,8 +581,8 @@ get_reweighting = {
     '2017': Reweighting('2017').weight,
     '2018': Reweighting('2018').weight,
 }
-'''
->>>>>>> 8e989f5b9b4d1f6e0f9f4077cabe28452c2ba6ca
+
+
 Jetext = extractor()
 for directory in ['jec_UL', 'jersf_UL', 'jr_UL', 'junc_UL']:
     directory='data/'+directory
