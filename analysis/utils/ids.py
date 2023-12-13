@@ -11,10 +11,11 @@ def Mask(pt):
 
 ######
 ## Electron
-## Electron_cutBased  Int_t  cut-based ID Fall17 V2 (0:fail, 1:veto, 2:loose, 3:medium, 4:tight)
+## Electron_cutBased Int_t cut-based ID Fall17 V2
+## (0:fail, 1:veto, 2:loose, 3:medium, 4:tight)
 ## https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
-## loose_electron: loose id, tight_electron: tight id
 ######
+
 def isLooseElectron(pt, eta, dxy, dz, loose_id, year):
     mask = Mask(pt)
     if year=='2016':
@@ -49,8 +50,8 @@ def isLooseElectron(pt, eta, dxy, dz, loose_id, year):
         )
     return mask
 
-#2017/18 pT thresholds adjusted to match monojet, using dedicated ID SFs
 def isTightElectron(pt, eta, dxy, dz, tight_id, year):
+    # 2017/18 pT thresholds adjusted to match monojet, using dedicated ID SFs
     mask = Mask(pt)
     if year=='2016': # Trigger: HLT_Ele27_WPTight_Gsf_v
         mask = (
@@ -86,33 +87,37 @@ def isTightElectron(pt, eta, dxy, dz, tight_id, year):
 
 #######
 ## Muon
+## Muon ID WPs:
+## https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2#Muon_selectors_Since_9_4_X
+## Muon isolation WPs:
 ## https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonSelection#Muon_Isolation
 #######
+
 def isLooseMuon(pt, eta, iso, loose_id, year):
-    #dxy and dz cuts are missing from med_id; loose isolation is 0.25
+    # dxy and dz cuts are missing from med_id; loose isolation is 0.25
     mask = Mask(pt)
     if year=='2016':
         mask = (
             pt>20 &
             abs(eta)<2.4 &
-            loose_id>0 & iso<0.25
+            loose_id & iso<0.25
         )
     elif year=='2017':
         mask = (
             pt>20 &
             abs(eta)<2.4 &
-            loose_id>0 & iso<0.25
+            loose_id & iso<0.25
         )
     elif year=='2018':
         mask = (
             pt>15 &
             abs(eta)<2.4 &
-            loose_id>0 & iso<0.25
+            loose_id & iso<0.25
         )
     return mask
 
 def isTightMuon(pt, eta, iso, tight_id, year):
-    #dxy and dz cuts are baked on tight_id; tight isolation is 0.15
+    # dxy and dz cuts are baked on tight_id; tight isolation is 0.15
     mask = Mask(pt)
     if year=='2016':
         mask = (
@@ -135,7 +140,7 @@ def isTightMuon(pt, eta, iso, tight_id, year):
     return mask
 
 def isSoftMuon(pt, eta, iso, tight_id, year):
-    #dxy and dz cuts are baked on tight_id; tight isolation is 0.15
+    # dxy and dz cuts are baked on tight_id; tight isolation is 0.15
     mask = Mask(pt)
     if year=='2016':
         mask = (
@@ -159,9 +164,22 @@ def isSoftMuon(pt, eta, iso, tight_id, year):
 
 ######
 ## Tau
-## Tau is not used for hadronic monotop
+## https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2
+## The decayModeFindingNewDMs: recommended for use with DeepTauv2p1, where decay
+## modes 5 and 6 should be explicitly rejected.
+##
+## Tau_idDeepTau2017v2p1VSe ID working points (bitmask):
+## 1 = VVVLoose, 2 = VVLoose, 4 = VLoose, 8 = Loose,
+## 16 = Medium, 32 = Tight, 64 = VTight, 128 = VVTight
+##
+## Tau_idDeepTau2017v2p1VSjet ID working points (bitmask):
+## 1 = VVVLoose, 2 = VVLoose, 4 = VLoose, 8 = Loose,
+## 16 = Medium, 32 = Tight, 64 = VTight, 128 = VVTight
+##
+## Tau_idDeepTau2017v2p1VSmu ID working points (bitmask):
+## 1 = VLoose, 2 = Loose, 4 = Medium, 8 = Tight
 ######
-#bitmask 1 = VVLoose, 2 = VLoose, 4 = Loose, 8 = Medium, 16 = Tight, 32 = VTight, 64 = VVTight
+
 def isLooseTau(pt, eta, decayMode, decayModeDMs, ide, idj, idm, year):
     mask = Mask(pt)
     if year=='2016':
@@ -189,10 +207,12 @@ def isLooseTau(pt, eta, decayMode, decayModeDMs, ide, idj, idm, year):
 
 ######
 ## Photon
+## https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedPhotonIdentificationRun2
+## Photon_cutBased Int_t cut-based ID bitmap, Fall17V2,
+## (0:fail, 1:loose, 2:medium, 3:tight)
+## Note: Photon IDs are integers, not bit masks
 ######
-#Photon_cutBased Int_t "cut-based spring16-V2p2 ID (0:fail, 1:loose, 2:medium, 3:tight" for 2016 NanoAOD
-#Photon_cutBasedBitmap  Int_t   cut-based ID bitmap, 2^(0:loose, 1:medium, 2:tight)
-#Photon IDs:  https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedPhotonIdentificationRun2?rev=36
+
 def isLoosePhoton(pt, eta, loose_id, year):
     mask = Mask(pt)
     if year=='2016':
@@ -205,13 +225,13 @@ def isLoosePhoton(pt, eta, loose_id, year):
         mask = (
             pt>20 &
             ~(abs(eta)>1.4442) & abs(eta)<1.5660 & abs(eta)<2.5 &
-            (loose_id&1)==1
+            loose_id>=1
         )
     elif year=='2018':
         mask = (
             pt>20 &
             ~(abs(eta)>1.4442) & abs(eta)<1.5660 & abs(eta)<2.5 &
-            (loose_id&1)==1
+            loose_id>=1
         )
     return mask
 
@@ -242,10 +262,11 @@ def isTightPhoton(pt, tight_id, year):
 ## https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
 ## Tight working point including lepton veto (TightLepVeto)
 ######
+
 def isGoodFatJet(pt, eta, jet_id, nhf, chf):
     mask = (
         pt>160 &
-        abs(eta)<2.4) &
+        abs(eta)<2.4 &
         (jet_id&6)==6 & nhf<0.8 & chf>0.1
     )
     return mask
@@ -272,6 +293,7 @@ def isGoodFatJet(pt, eta, jet_id, nhf, chf):
 ## For 2017 UL and 2018 UL,
 ## Jet_puId = (passlooseID*4 + passmediumID*2 + passtightID*1).
 ######
+
 def isGoodJet(pt, eta, jet_id, pu_id, year):
     mask = (
         pt>30 &
