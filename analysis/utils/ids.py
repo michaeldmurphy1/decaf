@@ -238,13 +238,9 @@ def isTightPhoton(pt, tight_id, year):
     return mask
 
 ######
-## Jet
-## https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
-## https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetIDUL
-## tight working point including lepton veto (TightLepVeto)
-######
-######
 ## Fatjet
+## https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
+## Tight working point including lepton veto (TightLepVeto)
 ######
 def isGoodFatJet(pt, eta, jet_id, nhf, chf):
     mask = (
@@ -254,18 +250,40 @@ def isGoodFatJet(pt, eta, jet_id, nhf, chf):
     )
     return mask
 
-def isGoodJet(pt, eta, jet_id, pu_id):
-    # Jet ID flags bit1 is loose (always false in 2017 since it does not
-    # exist), bit2 is tight, bit3 is tightLepVeto
-    # POG use tight jetID as a standart JetID
+######
+## Jet
+## https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL
+## Tight working point including lepton veto (TightLepVeto)
+##
+## For Jet ID flags, bit1 is Loose (always false in 2017 since it does not
+## exist), bit2 is Tight, bit3 is TightLepVeto. The POG recommendation is to
+## use Tight Jet ID as the standard Jet ID.
+######
+## PileupJetID
+## https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetIDUL
+## Using Loose Pileup ID
+##
+## Note: There is a bug in 2016 UL in which bit values for Loose and Tight Jet
+## Pileup IDs are accidentally flipped relative to 2017 UL and 2018 UL.
+##
+## For 2016 UL,
+## Jet_puId = (passtightID*4 + passmediumID*2 + passlooseID*1).
+##
+## For 2017 UL and 2018 UL,
+## Jet_puId = (passlooseID*4 + passmediumID*2 + passtightID*1).
+######
+def isGoodJet(pt, eta, jet_id, pu_id, year):
     mask = (
         pt>30 &
         abs(eta)<2.4 &
-        (jet_id&6)==6 # & nhf<0.8 & chf>0.1 & nef<0.99 & cef<0.99
+        (jet_id&6)==6
     )
-    # https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetID, using loose wp
-    mask = ((pt>=50) & mask) |
-           ((pt<50) & mask & (pu_id&4)==4)
+    if year=='2016':
+        mask = ((pt>=50) & mask) | ((pt<50) & mask & (pu_id&1)==1)
+    elif year=='2017':
+        mask = ((pt>=50) & mask) | ((pt<50) & mask & (pu_id&4)==4)
+    elif year=='2018':
+        mask = ((pt>=50) & mask) | ((pt<50) & mask & (pu_id&4)==4)
     return mask
 
 ######
