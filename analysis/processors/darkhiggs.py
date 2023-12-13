@@ -327,6 +327,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_ecal_bad_calib      = self._corrections['get_ecal_bad_calib']
         get_deepflav_weight     = self._corrections['get_btag_weight']['deepflav'][self._year]
         get_doublebtag_weight   = self._corrections['get_doublebtag_weight'][self._year]
+        get_mu_rochester_sf     = self._corrections['get_mu_rochester_sf'][self._year]
         
         isLooseElectron = self._ids['isLooseElectron'] 
         isTightElectron = self._ids['isTightElectron'] 
@@ -348,7 +349,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
 
         met = events.MET
-        if self._year == '2017': events.METFixEE2017#Recommended for 2017
+        if self._year == '2017': met = events.METFixEE2017#Recommended for 2017
         met['T']  = TVector2Array.from_polar(met.pt, met.phi)
         calomet = events.CaloMET
         puppimet = events.PuppiMET
@@ -358,6 +359,33 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
 
         mu = events.Muon
+        rochester = get_mu_rochester_sf
+        _muon_offsets = mu.pt.offsets
+        _charge = mu.charge
+        _pt = mu.pt
+        _eta = mu.eta
+        _phi = mu.phi
+        if isData:
+            _k = rochester.kScaleDT(_charge, _pt, _eta, _phi)
+        else:
+            # for default if gen present
+            _gpt = mu.matched_gen.pt
+            # for backup w/o gen
+            _nl = mu.nTrackerLayers
+            _u = awkward.JaggedArray.fromoffsets(_muon_offsets, np.random.rand(*_pt.flatten().shape))
+            _hasgen = (_gpt.fillna(-1) > 0)
+            _kspread = rochester.kSpreadMC(_charge[_hasgen], _pt[_hasgen], _eta[_hasgen], _phi[_hasgen],
+                                           _gpt[_hasgen])
+            _ksmear = rochester.kSmearMC(_charge[~_hasgen], _pt[~_hasgen], _eta[~_hasgen], _phi[~_hasgen],
+                                         _nl[~_hasgen], _u[~_hasgen])
+            _k = _pt.ones_like()
+            _k[_hasgen] = _kspread
+            _k[~_hasgen] = _ksmear
+        mask = _pt < 200
+        rochester_pt = _pt.ones_like()
+        rochester_pt[~mask] = _pt[~mask]
+        rochester_pt[mask] = (_k * _pt)[mask]
+        mu['pt'] = rochester_pt
         mu['isloose'] = isLooseMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.looseId,self._year)
         mu['istight'] = isTightMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.tightId,self._year)
         mu['T'] = TVector2Array.from_polar(mu.pt, mu.phi)
@@ -386,14 +414,14 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         tau = events.Tau
         tau['isclean']=~match(tau,mu_loose,0.4)&~match(tau,e_loose,0.4)
-        tau['isloose']=isLooseTau(tau.pt,tau.eta,tau.idDecayMode,tau.idMVAoldDM2017v2,self._year)
+        tau['isloose']=isLooseTau(tau.pt,tau.eta,tau.idDecayMode,tau.idDecayModeNewDMs,tau.idDeepTau2017v2p1VSe,tau.idDeepTau2017v2p1VSjet,tau.idDeepTau2017v2p1VSmu,self._year)
         tau_clean=tau[tau.isclean.astype(np.bool)]
         tau_loose=tau_clean[tau_clean.isloose.astype(np.bool)]
         tau_ntot=tau.counts
         tau_nloose=tau_loose.counts
 
         pho = events.Photon
-        pho['isclean']=~match(pho,mu_loose,0.5)&~match(pho,e_loose,0.5)
+        pho['isclean']=~match(pho,mu_loose,0.5)&~match(pho,e_loose,0.5)&~match(pho,tau_loose,0.5)
         _id = 'cutBasedBitmap'
         if self._year=='2016': 
             _id = 'cutBased'
@@ -412,7 +440,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         fj = events.AK15Puppi
         fj['sd'] = fj.subjets.sum()
-        fj['isclean'] =~match(fj.sd,pho_loose,1.5)&~match(fj.sd,mu_loose,1.5)&~match(fj.sd,e_loose,1.5)
+        fj['isclean'] =~match(fj.sd,pho_loose,1.5)&~match(fj.sd,mu_loose,1.5)&~match(fj.sd,e_loose,1.5)&~match(fj.sd,tau_loose,1.5)
         fj['isgood'] = isGoodFatJet(fj.sd.pt, fj.sd.eta, fj.jetId)
         fj['T'] = TVector2Array.from_polar(fj.pt, fj.phi)
         fj['msd_raw'] = (fj.subjets * (1 - fj.subjets.rawFactor)).sum().mass
@@ -430,7 +458,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         j = events.Jet
         j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF)
         j['isHEM'] = isHEMJet(j.pt, j.eta, j.phi)
-        j['isclean'] = ~match(j,e_loose,0.4)&~match(j,mu_loose,0.4)&~match(j,pho_loose,0.4)
+        j['isclean'] = ~match(j,e_loose,0.4)&~match(j,mu_loose,0.4)&~match(j,pho_loose,0.4)&~match(j,tau_loose,0.4)
         j['isiso'] = ~match(j,fj_clean[fj_clean.pt.argmax()],1.5)
         j['isdcsvL'] = (j.btagDeepB>deepcsvWPs['loose'])
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose'])
@@ -593,15 +621,14 @@ class AnalysisProcessor(processor.ProcessorABC):
             # AK4 b-tagging weights
             ###
 
-            btag = {}
-            btagUp = {}
-            btagDown = {}
-            btag['sr'],   btagUp['sr'],   btagDown['sr']   = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
-            btag['wmcr'], btagUp['wmcr'], btagDown['wmcr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
-            btag['tmcr'], btagUp['tmcr'], btagDown['tmcr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'-1')
-            btag['wecr'], btagUp['wecr'], btagDown['wecr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
-            btag['tecr'], btagUp['tecr'], btagDown['tecr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'-1')
-            btag['qcdcr'],   btagUp['qcdcr'],   btagDown['qcdcr'] = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,'0')
+            btagSF, btagSFbc_correlatedUp, btagSFbc_correlatedDown, btagSFbc_uncorrelatedUp, btagSFbc_uncorrelatedDown, btagSFlight_correlatedUp, btagSFlight_correlatedDown, btagSFlight_uncorrelatedUp, btagSFlight_uncorrelatedDown   = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
+            '''
+            print('btagSF',btagSF)
+            print('btagSFbc_correlatedUp',btagSFbc_correlatedUp)
+            print('btagSFbc_uncorrelatedUp',btagSFbc_uncorrelatedUp)
+            print('btagSFlight_correlatedUp',btagSFlight_correlatedUp)
+            print('btagSFlight_uncorrelatedUp',btagSFlight_uncorrelatedUp)
+            '''
 
         ###
         # Selections
@@ -768,18 +795,19 @@ class AnalysisProcessor(processor.ProcessorABC):
                 weights.add('ids', ids[region])
                 weights.add('reco', reco[region])
                 weights.add('isolation', isolation[region])
-                weights.add('btag',btag[region], btagUp[region], btagDown[region])
+                weights.add('btagSF',btagSF)
+                weights.add('btagSFbc_correlated',np.ones(events.size), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
+                weights.add('btagSFbc_uncorrelated',np.ones(events.size), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
+                weights.add('btagSFlight_correlated',np.ones(events.size), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
+                weights.add('btagSFlight_uncorrelated',np.ones(events.size), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
 
                 ###
                 # AK15 doubleb-tagging weights
                 ###
                 
                 if('mhs' in dataset):
-                    for k in get_doublebtag_weight(leading_fj.sd.pt.sum())[0]:
-                        doublebtag = get_doublebtag_weight(leading_fj.sd.pt.sum())[0][k]
-                        doublebtagUp = get_doublebtag_weight(leading_fj.sd.pt.sum())[1][k]
-                        doublebtagDown = get_doublebtag_weight(leading_fj.sd.pt.sum())[2][k]
-                        weights.add('doublebtag'+k,doublebtag, doublebtagUp, doublebtagDown)
+                    doublebtag, doublebtagUp,  doublebtagDown= get_doublebtag_weight(leading_fj.sd.pt.sum())
+                    weights.add('doublebtag',doublebtag, doublebtagUp, doublebtagDown)
 
                 if 'WJets' in dataset or 'ZJets' in dataset or 'DY' in dataset:
                     if not isFilled:
@@ -790,8 +818,14 @@ class AnalysisProcessor(processor.ProcessorABC):
                     wlf = (~(whf.astype(np.bool))).astype(np.int)
                     cut = selection.all(*regions[region])
                     systematics = [None,
-                                   'btagUp',
-                                   'btagDown',
+                                   'btagSFbc_correlatedUp',
+                                   'btagSFbc_correlatedDown',
+                                   'btagSFbc_uncorrelatedUp',
+                                   'btagSFbc_uncorrelatedDown',
+                                   'btagSFlight_correlatedUp',
+                                   'btagSFlight_correlatedDown',
+                                   'btagSFlight_uncorrelatedUp',
+                                   'btagSFlight_uncorrelatedDown',
                                    'qcd1Up',
                                    'qcd1Down',
                                    'qcd2Up',
@@ -861,11 +895,19 @@ class AnalysisProcessor(processor.ProcessorABC):
                         hout['sumw'].fill(dataset=dataset, sumw=1, weight=events.genWeight.sum())
                         isFilled=True
                     cut = selection.all(*regions[region])
-                    systematics = [None, 'btagUp', 'btagDown']
+                    systematics = [None, 
+                                   'btagSFbc_correlatedUp', 
+                                   'btagSFbc_correlatedDown', 
+                                   'btagSFbc_uncorrelatedUp', 
+                                   'btagSFbc_uncorrelatedDown',
+                                   'btagSFlight_correlatedUp', 
+                                   'btagSFlight_correlatedDown', 
+                                   'btagSFlight_uncorrelatedUp', 
+                                   'btagSFlight_uncorrelatedDown',
+                               ]
                     if('mhs' in dataset):
-                        for k in get_doublebtag_weight(leading_fj.sd.pt.sum())[0]:
-                            systematics.append('doublebtag'+k+'Up')
-                            systematics.append('doublebtag'+k+'Down')
+                        systematics.append('doublebtagUp')
+                        systematics.append('doublebtagDown')
                     for systematic in systematics:
                         sname = 'nominal' if systematic is None else systematic
                         hout['template'].fill(dataset=dataset,

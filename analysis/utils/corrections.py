@@ -1,340 +1,309 @@
-#!/usr/bin/env python
-import uproot, uproot_methods
-import numpy as np
+#! /usr/bin/env python
+import correctionlib
 import os
+#import uproot, uproot_methods
+import awkward as ak
+
+import numpy as np
 from coffea import hist, lookup_tools
 from coffea.lookup_tools import extractor, dense_lookup
+
+import uproot3
+from coffea import util
 from coffea.util import save, load
-from coffea.btag_tools import BTagScaleFactor
-
-###
-# Pile-up weight
-###
-
-pu_files = {
-    '2018': uproot.open("data/pileup/PileupHistograms_2018_69mb_pm5.root"),
-    '2017': uproot.open("data/pileup/PileupHistograms_2017_69mb_pm5.root"),
-    '2016': uproot.open("data/pileup/PileupHistograms_2016_69mb_pm5.root")
-}
-get_pu_weight = {}
-for year in ['2016','2017','2018']:
-    pu_hist=pu_files[year]['pu_weights_central']
-    get_pu_weight[year] = lookup_tools.dense_lookup.dense_lookup(pu_hist.values, pu_hist.edges)
-
+import json
 ###
 # MET trigger efficiency SFs, 2017/18 from monojet. Depends on recoil.
 ###
 
 met_trig_hists = {
-    '2016': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
-    '2017': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
-    '2018': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
+    '2016': uproot3.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
+    '2017': uproot3.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
+    '2018': uproot3.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
 }
 get_met_trig_weight = {}
 for year in ['2016','2017','2018']:
     met_trig_hist=met_trig_hists[year]
     get_met_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(met_trig_hist.values, met_trig_hist.edges)
 
-###
-# MET z->mumu efficiency SF. 2017/18 using 1m as done in monojet, 2m used only for systematics. Depends on recoil.
-###
 
-zmm_trig_hists ={
-    '2016': uproot.open("data/trigger_eff/metTriggerEfficiency_zmm_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
-    '2017': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
-    '2018': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
-}
-get_met_zmm_trig_weight = {}
-for year in ['2016','2017','2018']:
-    zmm_trig_hist = zmm_trig_hists[year]
-    get_met_zmm_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(zmm_trig_hist.values, zmm_trig_hist.edges)
+####
+# Electron ID scale factor
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaSFJSON
+# jsonPOG: https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/EGM
+# /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+####
 
-###
-# Electron trigger efficiency SFs. depends on supercluster eta and pt:
-###
+def get_ele_loose_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
+
+def get_ele_tight_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
+
+
+####
+# Electron Trigger weight
+# https://twiki.cern.ch/twiki/bin/view/CMS/EgammaUL2016To2018
+# Copy from previous correctionsUL.py file
+####
 
 ele_trig_hists = {
-    '2016': uproot.open("data/trigger_eff/eleTrig.root")['hEffEtaPt'],
-    '2017': uproot.open("data/trigger_eff/electron_trigger_sf_2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
-    '2018': uproot.open("data/trigger_eff/electron_trigger_sf_2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
+    '2016postVFP': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root")['EGamma_SF2D'],
+    '2016preVFP' : uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root")['EGamma_SF2D'],
+    '2017': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
+    '2018': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
 }
 get_ele_trig_weight = {}
-for year in ['2016','2017','2018']:
+for year in ['2016postVFP', '2016preVFP', '2017','2018']:
     ele_trig_hist = ele_trig_hists[year]
     get_ele_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(ele_trig_hist.values, ele_trig_hist.edges)
 
-###
-# Photon trigger efficiency SFs. 2017/18 not actually used, sigmoid is used instead.
-###
+
+
+####
+# Electron Reco scale factor
+# root files: https://twiki.cern.ch/twiki/bin/view/CMS/EgammaUL2016To2018
+# Code Copy from previous correctionsUL.py file
+####
+
+ele_reco_files_below20 = {
+    '2016postVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root"),
+    '2016preVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root"),
+    '2017': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root"),
+    '2018': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root")
+}
+get_ele_reco_sf_below20 = {}
+get_ele_reco_err_below20 = {}
+for year in ['2016postVFP','2016preVFP','2017','2018']:
+    ele_reco_hist = ele_reco_files_below20[year]["EGamma_SF2D"]
+    get_ele_reco_sf_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values, ele_reco_hist.edges)
+    get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances ** 0.5, ele_reco_hist.edges)
+
+
+ele_reco_files_above20 = {
+    '2016postVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root"),
+    '2016preVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root"),
+    '2017': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root"),
+    '2018': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root")
+}
+get_ele_reco_sf_above20 = {}
+get_ele_reco_err_above20 = {}
+for year in ['2016postVFP','2016preVFP','2017','2018']:
+    ele_reco_hist = ele_reco_files_above20[year]["EGamma_SF2D"]
+    get_ele_reco_sf_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values, ele_reco_hist.edges)
+    get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances ** 0.05, ele_reco_hist.edges)
+    
+
+
+####
+# Photon ID scale factor
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaSFJSON
+# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/EGM
+# /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+####
+
+def get_pho_tight_id_sf(year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Photon-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
+
+
+def get_pho_loose_id_sf(year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["UL-Photon-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
+
+    return ak.unflatten(weight, counts=counts)
+
+
+#### 
+# Photon CSEV sf 
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaSFJSON
+# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/EGM
+# 
+
+#def get_pho_csev_sf(year, eta, pt):
+#    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+#
+#    flateta, counts = ak.flatten(eta), ak.num(eta)
+#    flatpt = ak.flatten(pt)
+#    weight = evaluator["UL-Photon-CSEV-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
+#
+#    return ak.unflatten(weight, counts=counts)
+
+
+####
+# Photon Trigger weight
+# Copy from previous decaf version
+####
 
 pho_trig_files = {
-    '2016': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    "2017": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    "2018": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
+    '2016postVFP': uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    '2016preVFP': uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    "2017": uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    "2018": uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
 }
 get_pho_trig_weight = {}
-for year in ['2016','2017','2018']:
+for year in ['2016postVFP','2016preVFP','2017','2018']:
     pho_trig_hist = pho_trig_files[year]["hden_photonpt_clone_passed"]
     get_pho_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(pho_trig_hist.values, pho_trig_hist.edges)
 
-###
-# Electron id SFs. 2017/18 used dedicated weights from monojet. depends on supercluster eta and pt.
-###
 
-ele_loose_files = {
-    '2016': uproot.open("data/ScaleFactor/2016_ElectronWPVeto_Fall17V2.root"),
-    '2017': uproot.open("data/ScaleFactor/2017_ElectronWPVeto_Fall17V2_BU.root"),
-    '2018': uproot.open("data/ScaleFactor/2018_ElectronWPVeto_Fall17V2_BU.root")
-}
-ele_tight_files = {
-    '2016': uproot.open("data/ScaleFactor/2016LegacyReReco_ElectronTight_Fall17V2.root"),
-    '2017': uproot.open("data/ScaleFactor/2017_ElectronTight_Fall17V2_BU.root"),
-    '2018': uproot.open("data/ScaleFactor/2018_ElectronTight_Fall17V2_BU.root")
-}
-get_ele_loose_id_sf = {}
-get_ele_tight_id_sf = {}
-for year in ['2016','2017','2018']:
-    ele_loose_sf_hist = ele_loose_files[year]["EGamma_SF2D"]
-    get_ele_loose_id_sf[year]  = lookup_tools.dense_lookup.dense_lookup(ele_loose_sf_hist.values, ele_loose_sf_hist.edges)
-    ele_tight_sf_hist =ele_tight_files[year]["EGamma_SF2D"]
-    get_ele_tight_id_sf[year]  = lookup_tools.dense_lookup.dense_lookup(ele_tight_sf_hist.values, ele_tight_sf_hist.edges)
 
-###
-# Electron reconstruction SFs. Depends on supercluster eta and pt.    
-###
+# https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master/Run2/UL
 
-ele_reco_files = {
-    '2016': uproot.open("data/ScaleFactor/EGM2D_BtoH_GT20GeV_RecoSF_Legacy2016.root"),
-    '2017': uproot.open("data/ScaleFactor/2017_egammaEffi_txt_EGM2D_runBCDEF_passingRECO.root"),
-    '2018': uproot.open("data/ScaleFactor/2018_egammaEffi_txt_EGM2D_updatedAll.root")
-}
-get_ele_reco_sf = {}
-for year in ['2016','2017','2018']:
-    ele_reco_hist = ele_reco_files[year]["EGamma_SF2D"]
-    get_ele_reco_sf[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values, ele_reco_hist.edges)
-#2017 has a separate set of weights for low pt electrons (pt<20).
-ele_reco_lowet_hist = uproot.open("data/ScaleFactor/2017_egammaEffi_txt_EGM2D_runBCDEF_passingRECO_lowEt.root")['EGamma_SF2D']
-get_ele_reco_lowet_sf=lookup_tools.dense_lookup.dense_lookup(ele_reco_lowet_hist.values, ele_reco_lowet_hist.edges)
+####
+# Muon ID scale factor
+# https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2018n?topic=MuonUL2018
+# jsonPOG: https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/MUO
+# /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+####
 
-###
-# Photon ID SFs. Tight photons use medium id. 2017/18 use dedicated measurement from monojet, depends only on abs(eta): https://indico.cern.ch/event/879924/
-###
+def get_muon_loose_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
 
-pho_tight_hists = {
-    '2016': uproot.open("data/ScaleFactor/Fall17V2_2016_Medium_photons.root")['EGamma_SF2D'],
-    '2017': uproot.open("data/ScaleFactor/photon_medium_id_sf_v0.root")['photon_medium_id_sf_2017'],
-    '2018': uproot.open("data/ScaleFactor/photon_medium_id_sf_v0.root")['photon_medium_id_sf_2018']
-}
-get_pho_tight_id_sf = {}
-for year in ['2016','2017','2018']:
-    pho_tight_hist=pho_tight_hists[year]
-    get_pho_tight_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(pho_tight_hist.values, pho_tight_hist.edges)
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    if year == '2018':
+        weight = evaluator["NUM_LooseID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
+    else:
+        weight = evaluator["NUM_LooseID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
 
-###
-# Photon CSEV weight: https://twiki.cern.ch/twiki/bin/view/CMS/EgammaIDRecipesRun2#Electron_Veto_CSEV_or_pixel_seed
-###
+    return ak.unflatten(weight, counts=counts)
 
-pho_csev_hists = {
-    '2016': uproot.open("data/ScaleFactor/ScalingFactors_80X_Summer16_rename.root")['Scaling_Factors_CSEV_R9_Inclusive'],
-    '2017': uproot.open("data/ScaleFactor/CSEV_ScaleFactors_2017.root")['Medium_ID'],
-    '2018': uproot.open("data/ScaleFactor/CSEV_2018.root")['eleVeto_SF'],
-}
-get_pho_csev_sf = {}
-for year in ['2016','2017','2018']:
-    pho_csev_hist=pho_csev_hists[year]
-    get_pho_csev_sf[year] = lookup_tools.dense_lookup.dense_lookup(pho_csev_hist.values, pho_csev_hist.edges)
+def get_muon_tight_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
 
-###
-# Muon ID SFs
-###
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    if year == '2018':
+        weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
+    else:
+        weight = evaluator["NUM_TightID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
 
-mu_files = {
-    '2016': uproot.open("data/ScaleFactor/2016LegacyReReco_Muon_SF_ID.root"),
-    '2017': uproot.open("data/ScaleFactor/2017_Muon_RunBCDEF_SF_ID.root"),
-    '2018': uproot.open("data/ScaleFactor/2018_Muon_RunABCD_SF_ID.root")
-}
-mu_tight_hist = {
-    '2016': mu_files['2016']["NUM_TightID_DEN_genTracks_eta_pt"],
-    '2017': mu_files['2017']["NUM_TightID_DEN_genTracks_pt_abseta"],
-    '2018': mu_files['2018']["NUM_TightID_DEN_TrackerMuons_pt_abseta"]
-}
-mu_loose_hist = {
-    '2016': mu_files['2016']["NUM_LooseID_DEN_genTracks_eta_pt"],
-    '2017': mu_files['2017']["NUM_LooseID_DEN_genTracks_pt_abseta"],
-    '2018': mu_files['2018']["NUM_LooseID_DEN_TrackerMuons_pt_abseta"]
-}
-get_mu_tight_id_sf = {}
-get_mu_loose_id_sf = {}
-for year in ['2016','2017','2018']:
-    get_mu_tight_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(mu_tight_hist[year].values, mu_tight_hist[year].edges)
-    get_mu_loose_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(mu_loose_hist[year].values, mu_loose_hist[year].edges)
+    return ak.unflatten(weight, counts=counts)
 
-###
-# Muon isolation SFs
-###
 
-mu_iso_files = {
-    '2016': uproot.open("data/ScaleFactor/Merged_SF_ISO.root"),
-    '2017': uproot.open("data/ScaleFactor/RunBCDEF_SF_ISO_syst.root"),
-    '2018': uproot.open("data/ScaleFactor/RunABCD_SF_ISO.root")
-}
-mu_iso_tight_hist = {
-    '2016': mu_iso_files['2016']["NUM_TightRelIso_DEN_TightIDandIPCut_eta_pt"],
-    '2017': mu_iso_files['2017']["NUM_TightRelIso_DEN_TightIDandIPCut_pt_abseta"],
-    '2018': mu_iso_files['2018']["NUM_TightRelIso_DEN_TightIDandIPCut_pt_abseta"]
-}
-mu_iso_loose_hist = {
-    '2016': mu_iso_files['2016']["NUM_LooseRelIso_DEN_LooseID_eta_pt"],
-    '2017': mu_iso_files['2017']["NUM_LooseRelIso_DEN_LooseID_pt_abseta"],
-    '2018': mu_iso_files['2018']["NUM_LooseRelIso_DEN_LooseID_pt_abseta"]
-}
-get_mu_tight_iso_sf = {}
-get_mu_loose_iso_sf = {}
-for year in ['2016','2017','2018']:
-    get_mu_tight_iso_sf[year] = lookup_tools.dense_lookup.dense_lookup(mu_iso_tight_hist[year].values, mu_iso_tight_hist[year].edges)
-    get_mu_loose_iso_sf[year] = lookup_tools.dense_lookup.dense_lookup(mu_iso_loose_hist[year].values, mu_iso_loose_hist[year].edges)
+
+
+####
+# Muon Iso scale factor
+# https://twiki.cern.ch/twiki/bin/view/CMS/MuonUL2018n?topic=MuonUL2018
+# jsonPOG: https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/MUO
+# /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
+####
+
+def get_muon_loose_iso_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["NUM_LooseRelIso_DEN_LooseID"].evaluate(year, flateta, flatpt, "sf")
+
+    return ak.unflatten(weight, counts=counts)
+
+def get_muon_tight_iso_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
+
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator["NUM_TightRelIso_DEN_TightIDandIPCut"].evaluate(year, flateta, flatpt, "sf")
+
+    return ak.unflatten(weight, counts=counts)
+
+
+####
+# PU weight
+# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/LUM
+####
+#trueint = events.Pileup.nTrueInt
+def pu_weight(year, trueint):
+    correction = {'2018': 'Collisions18_UltraLegacy_goldenJSON',
+                  '2017': 'Collisions17_UltraLegacy_goldenJSON',
+                  '2016preVFP': 'Collisions16_UltraLegacy_goldenJSON',
+                  '2016postVFP':'Collisions16_UltraLegacy_goldenJSON'}
+    evaluator = correctionlib.CorrectionSet.from_file('data/PUweight/'+year+'_UL/puWeights.json.gz')
+    weight = evaluator[correction[year]].evaluate(trueint, 'nominal')
+
+    return weight
+
+
+####
+# XY MET Correction
+# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/JME
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETRun2Corrections#xy_Shift_Correction_MET_phi_modu
+####
+
+# https://lathomas.web.cern.ch/lathomas/METStuff/XYCorrections/
+# correction_labels = ["metphicorr_pfmet_mc", "metphicorr_puppimet_mc", "metphicorr_pfmet_data", "metphicorr_puppimet_data"]
+
+def XY_MET_Correction(year, events, pt, phi):
+    if 'genWeight' in events.fields:
+        isMC = True
+    else:
+        isData = True
+
+    npv = events.PV.npvsGood
+    mask = np.asarray(npv>100)
+    npv = np.asarray(npv)
+    npv[mask==True] = 100
+    run = events.run
+
+    evaluator = correctionlib.CorrectionSet.from_file('data/JetMETCorr/'+year+'_UL/met.json.gz')
+
+    if isData:
+        corrected_pt = evaluator['pt_metphicorr_pfmet_data'].evaluate(pt,phi,npv,run)
+        corrected_phi = evaluator['phi_metphicorr_pfmet_data'].evaluate(pt,phi,npv,run)
+
+    if isMC:
+        corrected_pt = evaluator['pt_metphicorr_pfmet_mc'].evaluate(pt,phi,npv,run)
+        corrected_phi = evaluator['phi_metphicorr_pfmet_mc'].evaluate(pt,phi,npv,run)
+
+    return corrected_pt, corrected_phi
+
+
+####
+# Jet
+# https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/JME
+####
+
+
 ###
 # V+jets NLO k-factors
+# Only use nlo ewk sf
 ###
 
-nlo_qcd_hists = {
-    '2016':{
-        'dy': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_qcd"],
-        'w': uproot.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_qcd"],
-        'z': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_qcd"],
-        'a': uproot.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_qcd"]
-    },
-    '2017':{
-        'z': uproot.open("data/vjets_SFs/SF_QCD_NLO_ZJetsToNuNu.root")["kfac_znn_filter"],
-        'w': uproot.open("data/vjets_SFs/SF_QCD_NLO_WJetsToLNu.root")["wjet_dress_monojet"],
-        'dy': uproot.open("data/vjets_SFs/SF_QCD_NLO_DYJetsToLL.root")["kfac_dy_filter"],
-        'a': uproot.open("data/vjets_SFs/SF_QCD_NLO_GJets.root")["gjets_stat1_monojet"]
-    },
-    '2018':{
-        'z': uproot.open("data/vjets_SFs/SF_QCD_NLO_ZJetsToNuNu.root")["kfac_znn_filter"],
-        'w': uproot.open("data/vjets_SFs/SF_QCD_NLO_WJetsToLNu.root")["wjet_dress_monojet"],
-        'dy': uproot.open("data/vjets_SFs/SF_QCD_NLO_DYJetsToLL.root")["kfac_dy_filter"],
-        'a': uproot.open("data/vjets_SFs/SF_QCD_NLO_GJets.root")["gjets_stat1_monojet"]
-    }
-}
 nlo_ewk_hists = {
-    'dy': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
-    'w': uproot.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_ewk"],
-    'z': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
-    'a': uproot.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
+    'dy': uproot3.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
+    'w': uproot3.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_ewk"],
+    'z': uproot3.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
+    'a': uproot3.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
 }    
-get_nlo_qcd_weight = {}
 get_nlo_ewk_weight = {}
 for year in ['2016','2017','2018']:
-    get_nlo_qcd_weight[year] = {}
     get_nlo_ewk_weight[year] = {}
     for p in ['dy','w','z','a']:
-        get_nlo_qcd_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_qcd_hists[year][p].values, nlo_qcd_hists[year][p].edges)
         get_nlo_ewk_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values, nlo_ewk_hists[p].edges)
 
-###
-# V+jets NNLO weights
-# The schema is process_NNLO_NLO_QCD1QCD2QCD3_EW1EW2EW3_MIX, where 'n' stands for 'nominal', 'u' for 'up', and 'd' for 'down'
-###
 
-histname={
-    'dy': 'eej_NNLO_NLO_',
-    'w':  'evj_NNLO_NLO_',
-    'z': 'vvj_NNLO_NLO_',
-    'a': 'aj_NNLO_NLO_'
-}
-correlated_variations = {
-    'cen':    'nnn_nnn_n',
-    'qcd1up': 'unn_nnn_n',
-    'qcd1do': 'dnn_nnn_n',
-    'qcd2up': 'nun_nnn_n',
-    'qcd2do': 'ndn_nnn_n',
-    'qcd3up': 'nnu_nnn_n',
-    'qcd3do': 'nnd_nnn_n',
-    'ew1up' : 'nnn_unn_n',
-    'ew1do' : 'nnn_dnn_n',
-    'mixup' : 'nnn_nnn_u',
-    'mixdo' : 'nnn_nnn_d',
-    'muFup' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_2p0',
-    'muFdo' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_0p5',
-    'muRup' : 'nnn_nnn_n_Weight_scale_variation_muR_2p0_muF_1p0',
-    'muRdo' : 'nnn_nnn_n_Weight_scale_variation_muR_0p5_muF_1p0'
-}
-uncorrelated_variations = {
-    'dy': {
-        'ew2Gup': 'nnn_nnn_n',
-        'ew2Gdo': 'nnn_nnn_n',
-        'ew2Wup': 'nnn_nnn_n',
-        'ew2Wdo': 'nnn_nnn_n',
-        'ew2Zup': 'nnn_nun_n',
-        'ew2Zdo': 'nnn_ndn_n',
-        'ew3Gup': 'nnn_nnn_n',
-        'ew3Gdo': 'nnn_nnn_n',
-        'ew3Wup': 'nnn_nnn_n',
-        'ew3Wdo': 'nnn_nnn_n',
-        'ew3Zup': 'nnn_nnu_n',
-        'ew3Zdo': 'nnn_nnd_n'
-    },
-    'w': {
-        'ew2Gup': 'nnn_nnn_n',
-        'ew2Gdo': 'nnn_nnn_n',
-        'ew2Wup': 'nnn_nun_n',
-        'ew2Wdo': 'nnn_ndn_n',
-        'ew2Zup': 'nnn_nnn_n',
-        'ew2Zdo': 'nnn_nnn_n',
-        'ew3Gup': 'nnn_nnn_n',
-        'ew3Gdo': 'nnn_nnn_n',
-        'ew3Wup': 'nnn_nnu_n',
-        'ew3Wdo': 'nnn_nnd_n',
-        'ew3Zup': 'nnn_nnn_n',
-        'ew3Zdo': 'nnn_nnn_n'
-    },
-    'z': {
-        'ew2Gup': 'nnn_nnn_n',
-        'ew2Gdo': 'nnn_nnn_n',
-        'ew2Wup': 'nnn_nnn_n',
-        'ew2Wdo': 'nnn_nnn_n',
-        'ew2Zup': 'nnn_nun_n',
-        'ew2Zdo': 'nnn_ndn_n',
-        'ew3Gup': 'nnn_nnn_n',
-        'ew3Gdo': 'nnn_nnn_n',
-        'ew3Wup': 'nnn_nnn_n',
-        'ew3Wdo': 'nnn_nnn_n',
-        'ew3Zup': 'nnn_nnu_n',
-        'ew3Zdo': 'nnn_nnd_n'
-    },
-    'a': {
-        'ew2Gup': 'nnn_nun_n',
-        'ew2Gdo': 'nnn_ndn_n',
-        'ew2Wup': 'nnn_nnn_n',
-        'ew2Wdo': 'nnn_nnn_n',
-        'ew2Zup': 'nnn_nnn_n',
-        'ew2Zdo': 'nnn_nnn_n',
-        'ew3Gup': 'nnn_nnu_n',
-        'ew3Gdo': 'nnn_nnd_n',
-        'ew3Wup': 'nnn_nnn_n',
-        'ew3Wdo': 'nnn_nnn_n',
-        'ew3Zup': 'nnn_nnn_n',
-        'ew3Zdo': 'nnn_nnn_n'
-    }
-}
-get_nnlo_nlo_weight = {}
-for year in ['2016','2017','2018']:
-    get_nnlo_nlo_weight[year] = {}
-    nnlo_file = {
-        'dy': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root"),
-        'w': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root"),
-        'z': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root"),
-        'a': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root")
-    }
-    for p in ['dy','w','z','a']:
-        get_nnlo_nlo_weight[year][p] = {}
-        for cv in correlated_variations:
-            hist=nnlo_file[p][histname[p]+correlated_variations[cv]]
-            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
-        for uv in uncorrelated_variations[p]:
-            hist=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
-            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
 
 def get_ttbar_weight(pt):
     return np.exp(0.0615 - 0.0005 * np.clip(pt, 0, 800))
@@ -349,6 +318,7 @@ def get_msd_weight(pt, eta):
     forweight = np.dot(ptpow, fpar)
     weight = np.where(np.abs(eta)<1.3, cenweight, forweight)
     return genw*weight
+
 
 
 def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
@@ -367,7 +337,7 @@ def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
     
     regular_dataset = ""
     regular_dataset = [name for name in ["MET","SinglePhoton","SingleElectron","EGamma"] if (name in dataset)]
-    fbad = uproot.open(bad[year][regular_dataset[0]])
+    fbad = uproot3.open(bad[year][regular_dataset[0]])
     bad_tree = fbad["vetoEvents"]
     runs_to_veto = bad_tree.array("Run")
     lumis_to_veto = bad_tree.array("LS")
@@ -376,28 +346,25 @@ def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
     # We want events that do NOT have (a vetoed run AND a vetoed LS and a vetoed event number)
     return np.logical_not(np.isin(run_number, runs_to_veto) * np.isin(lumi_number, lumis_to_veto) * np.isin(event_number, events_to_veto))
 
+
+
+
+from coffea.lookup_tools.correctionlib_wrapper import correctionlib_wrapper
+from coffea.lookup_tools.dense_lookup import dense_lookup
+
 class BTagCorrector:
 
     def __init__(self, tagger, year, workingpoint):
         self._year = year
         common = load('data/common.coffea')
         self._wp = common['btagWPs'][tagger][year][workingpoint]
+        
+        btvjson = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')
+        self.sf = btvjson # ["deepJet_comb", "deepCSV_comb"]
+
         files = {
-            'deepflav': {
-                '2016': 'DeepJet_2016LegacySF_V1.csv',
-                '2017': 'DeepFlavour_94XSF_V4_B_F.csv',
-                '2018': 'DeepJet_102XSF_V1.csv'
-                },
-            'deepcsv': {
-                '2016': 'DeepCSV_2016LegacySF_V1.csv',
-                '2017': 'DeepCSV_94XSF_V5_B_F.csv',
-                '2018': 'DeepCSV_102XSF_V1.csv'      
-                }
-        }
-        filename = 'data/'+files[tagger][year]
-        self.sf = BTagScaleFactor(filename, workingpoint)
-        files = {
-            '2016': 'btageff2016.merged',
+            '2016preVFP': 'btageff2016.merged',
+            '2016postVFP': 'btageff2016.merged',
             '2017': 'btageff2017.merged',
             '2018': 'btageff2018.merged',
         }
@@ -405,42 +372,115 @@ class BTagCorrector:
         btag = load(filename)
         bpass = btag[tagger].integrate('dataset').integrate('wp',workingpoint).integrate('btag', 'pass').values()[()]
         ball = btag[tagger].integrate('dataset').integrate('wp',workingpoint).integrate('btag').values()[()]
+        ball[ball<=0.]=1.
         nom = bpass / np.maximum(ball, 1.)
         self.eff = lookup_tools.dense_lookup.dense_lookup(nom, [ax.edges() for ax in btag[tagger].axes()[3:]])
 
-    def btag_weight(self, pt, eta, flavor, tag):
+    def btag_weight(self, pt, eta, flavor, istag):
         abseta = abs(eta)
         
         #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagSFMethods#1b_Event_reweighting_using_scale
-        def zerotag(eff):
-            return (1 - eff).prod()
+        def P(eff):
+            weight = eff.ones_like()
+            weight[istag] = eff[istag]
+            weight[~istag] = (1 - eff[~istag])
+            return weight.prod()
 
+        '''
+        Correction deepJet_comb has 5 inputs
+        Input systematic (string): 
+        Input working_point (string): L/M/T
+        Input flavor (int): hadron flavor definition: 5=b, 4=c, 0=udsg
+        Input abseta (real):
+        Input pt (real):
+        '''
+
+        bc = flavor > 0
+        light = ~bc
+        
         eff = self.eff(flavor, pt, abseta)
-        sf_nom = self.sf.eval('central', flavor, abseta, pt)
-        sf_up = self.sf.eval('up', flavor, abseta, pt)
-        sf_down = self.sf.eval('down', flavor, abseta, pt)
+        
+        #sf_nom = self.sf.eval('central', flavor, abseta, pt)
+        sf_nom = self.sf["deepJet_comb"].evaluate('central','M', flavor, abseta, pt)
+        
+        bc_sf_up_correlated = pt.ones_like()
+        bc_sf_up_correlated[~bc] = sf_nom[~bc]
+        bc_sf_up_correlated[bc] = self.sf["deepJet_comb"].evaluate('up_correlated', 'M', flavor, eta, pt)[bc]
+        
+        bc_sf_down_correlated = pt.ones_like()
+        bc_sf_down_correlated[~bc] = sf_nom[~bc]
+        bc_sf_down_correlated[bc] = self.sf["deepJet_comb"].evaluate('down_correlated', 'M', flavor, eta, pt)[bc]
+
+        bc_sf_up_uncorrelated = pt.ones_like()
+        bc_sf_up_uncorrelated[~bc] = sf_nom[~bc]
+        bc_sf_up_uncorrelated[bc] = self.sf["deepJet_comb"].evaluate('up_uncorrelated', 'M', flavor, eta, pt)[bc]
+
+        bc_sf_down_uncorrelated = pt.ones_like()
+        bc_sf_down_uncorrelated[~bc] = sf_nom[~bc]
+        bc_sf_down_uncorrelated[bc] = self.sf["deepJet_comb"].evaluate('down_uncorrelated', 'M', flavor, eta, pt)[bc]
+
+        light_sf_up_correlated = pt.ones_like()
+        light_sf_up_correlated[~light] = sf_nom[~light]
+        light_sf_up_correlated[light] = self.sf["deepJet_comb"].evaluate('up_correlated', 'M', flavor, abseta, pt)[light]
+
+        light_sf_down_correlated = pt.ones_like()
+        light_sf_down_correlated[~light] = sf_nom[~light]
+        light_sf_down_correlated[light] = self.sf["deepJet_comb"].evaluate('down_correlated', 'M', flavor, abseta, pt)[light]
+
+        light_sf_up_uncorrelated = pt.ones_like()
+        light_sf_up_uncorrelated[~light] = sf_nom[~light]
+        light_sf_up_uncorrelated[light] = self.sf["deepJet_comb"].evaluate('up_uncorrelated', 'M', flavor, abseta, pt)[light]
+
+        light_sf_down_uncorrelated = pt.ones_like()
+        light_sf_down_uncorrelated[~light] = sf_nom[~light]
+        light_sf_down_uncorrelated[light] = self.sf["deepJet_comb"].evaluate('down_uncorrelated', 'M', flavor, abseta, pt)[light]
+
+
 
         eff_data_nom  = np.minimum(1., sf_nom*eff)
-        eff_data_up   = np.minimum(1., sf_up*eff)
-        eff_data_down = np.minimum(1., sf_down*eff)
+        bc_eff_data_up_correlated   = np.minimum(1., bc_sf_up_correlated*eff)
+        bc_eff_data_down_correlated = np.minimum(1., bc_sf_down_correlated*eff)
+        bc_eff_data_up_uncorrelated   = np.minimum(1., bc_sf_up_uncorrelated*eff)
+        bc_eff_data_down_uncorrelated = np.minimum(1., bc_sf_down_uncorrelated*eff)
+        light_eff_data_up_correlated   = np.minimum(1., light_sf_up_correlated*eff)
+        light_eff_data_down_correlated = np.minimum(1., light_sf_down_correlated*eff)
+        light_eff_data_up_uncorrelated   = np.minimum(1., light_sf_up_uncorrelated*eff)
+        light_eff_data_down_uncorrelated = np.minimum(1., light_sf_down_uncorrelated*eff)
+       
+        nom = P(eff_data_nom)/P(eff)
+        bc_up_correlated = P(bc_eff_data_up_correlated)/P(eff)
+        bc_down_correlated = P(bc_eff_data_down_correlated)/P(eff)
+        bc_up_uncorrelated = P(bc_eff_data_up_uncorrelated)/P(eff)
+        bc_down_uncorrelated = P(bc_eff_data_down_uncorrelated)/P(eff)
+        light_up_correlated = P(light_eff_data_up_correlated)/P(eff)
+        light_down_correlated = P(light_eff_data_down_correlated)/P(eff)
+        light_up_uncorrelated = P(light_eff_data_up_uncorrelated)/P(eff)
+        light_down_uncorrelated = P(light_eff_data_down_uncorrelated)/P(eff)
+        '''
+        print('nom',sf_nom)
+        print('bc_up_correlated',bc_sf_up_correlated)
+        print('bc_down_correlated',bc_sf_down_correlated)
+        print('bc_up_uncorrelated',bc_sf_up_uncorrelated)
+        print('bc_down_uncorrelated',bc_sf_down_uncorrelated)
+        print('light_up_correlated',light_sf_up_correlated)
+        print('light_down_correlated',light_sf_down_correlated)
+        print('light_up_uncorrelated',light_sf_up_uncorrelated)
+        print('light_down_uncorrelated',light_sf_down_uncorrelated)
+        '''
+        return np.nan_to_num(nom, nan=1.), np.nan_to_num(bc_up_correlated, nan=1.), np.nan_to_num(bc_down_correlated, nan=1.), np.nan_to_num(bc_up_uncorrelated, nan=1.), np.nan_to_num(bc_down_uncorrelated, nan=1.), np.nan_to_num(light_up_correlated, nan=1.), np.nan_to_num(light_down_correlated, nan=1.), np.nan_to_num(light_up_uncorrelated, nan=1.), np.nan_to_num(light_down_uncorrelated, nan=1.)
 
-        nom = zerotag(eff_data_nom)/zerotag(eff)
-        up = zerotag(eff_data_up)/zerotag(eff)
-        down = zerotag(eff_data_down)/zerotag(eff)
-
-        if '-1' in tag: 
-            nom = (1 - zerotag(eff_data_nom)) / (1 - zerotag(eff))
-            up = (1 - zerotag(eff_data_up)) / (1 - zerotag(eff))
-            down = (1 - zerotag(eff_data_down)) / (1 - zerotag(eff))
-
-        return np.nan_to_num(nom), np.nan_to_num(up), np.nan_to_num(down)
 
 get_btag_weight = {
     'deepflav': {
-        '2016': {
-            'loose'  : BTagCorrector('deepflav','2016','loose').btag_weight,
-            'medium' : BTagCorrector('deepflav','2016','medium').btag_weight,
-            'tight'  : BTagCorrector('deepflav','2016','tight').btag_weight
+        '2016preVFP': {
+            'loose'  : BTagCorrector('deepflav','2016preVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepflav','2016preVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepflav','2016preVFP','tight').btag_weight
+        },
+        '2016postVFP': {
+            'loose'  : BTagCorrector('deepflav','2016postVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepflav','2016postVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepflav','2016postVFP','tight').btag_weight
         },
         '2017': {
             'loose'  : BTagCorrector('deepflav','2017','loose').btag_weight,
@@ -454,10 +494,15 @@ get_btag_weight = {
         }
     },
     'deepcsv' : {
-        '2016': {
-            'loose'  : BTagCorrector('deepcsv','2016','loose').btag_weight,
-            'medium' : BTagCorrector('deepcsv','2016','medium').btag_weight,
-            'tight'  : BTagCorrector('deepcsv','2016','tight').btag_weight
+        '2016preVFP': {
+            'loose'  : BTagCorrector('deepcsv','2016preVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepcsv','2016preVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepcsv','2016preVFP','tight').btag_weight
+        },
+        '2016postVFP': {
+            'loose'  : BTagCorrector('deepcsv','2016postVFP','loose').btag_weight,
+            'medium' : BTagCorrector('deepcsv','2016postVFP','medium').btag_weight,
+            'tight'  : BTagCorrector('deepcsv','2016postVFP','tight').btag_weight
         },
         '2017': {
             'loose'  : BTagCorrector('deepcsv','2017','loose').btag_weight,
@@ -472,50 +517,35 @@ get_btag_weight = {
     }
 }
 
+
 class DoubleBTagCorrector:
 
     def __init__(self, year):
         self._year = year
         sf = {
             '2018': {
-                'value': np.array([1.0037e+00,1.0037e+00,7.3346e-01,6.9716e-01,1.1972e+00]),
-                'unc': np.array([2*6.72e-02,6.72e-02,6.98e-02,7.06e-02,1.06e-01]),
-                'edges': np.array([160, 350, 450, 500, 2500])
+                'value': np.array([0.82, 0.82, 0.75, 0.81]),
+                'unc': np.array([np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.06**2 + 0.06**2), np.sqrt(0.05**2 + 0.01**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
             },
             '2017': {
-                'value': np.array([9.9331e-01,9.9331e-01,9.3711e-01,9.5658e-01,8.3033e-01]),
-                'unc': np.array([2*3.96e-02,3.96e-02,5.05e-02,4.63e-02,4.61e-02]),
-                'edges': np.array([160, 350, 450, 500, 2500])
+                'value': np.array([0.84, 0.84, 0.98, 0.86]),
+                'unc': np.array([np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.12**2), np.sqrt(0.05**2 + 0.05**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
             },
             '2016': {
-                'value': np.array([8.8300e-01,8.8300e-01,1.0384e+00,8.0800e-01,7.1766e-01]),
-                'unc': np.array([2*4.46e-02,4.46e-02,8.21e-02,9.48e-02,1.48e-01]),
-                'edges': np.array([160, 350, 450, 500, 2500])
+                'value': np.array([1.01, 1.01, 0.95, 0.99]),
+                'unc': np.array([np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.05**2 + 0.09**2), np.sqrt(0.06**2 + 0.00**2)]),
+                'edges': np.array([160, 350, 400, 500, 2500])
             },
         }
-        self.sf_nom={}
-        self.sf_up={} 
-        self.sf_down={}
-        
-        for i in range(len(sf[year]['value'])):
-            
-            nom = np.ones_like(sf[year]['value'])
-            nom[i] = sf[year]['value'][i]
-            unc = np.zeros_like(sf[year]['value'])
-            unc[i] = sf[year]['unc'][i]
-            print(i,nom)
-            self.sf_nom['Pt'+str(i)] = lookup_tools.dense_lookup.dense_lookup(nom, sf[year]['edges'])
-            self.sf_up['Pt'+str(i)] = lookup_tools.dense_lookup.dense_lookup(nom+unc, sf[year]['edges'])
-            self.sf_down['Pt'+str(i)] = lookup_tools.dense_lookup.dense_lookup(nom-unc, sf[year]['edges'])
+        self.sf_nom=lookup_tools.dense_lookup.dense_lookup(sf[year]['value'], sf[year]['edges'])
+        self.sf_up=lookup_tools.dense_lookup.dense_lookup(sf[year]['value']+sf[year]['unc'], sf[year]['edges'])
+        self.sf_down=lookup_tools.dense_lookup.dense_lookup(sf[year]['value']-sf[year]['unc'], sf[year]['edges'])
         
 
     def doublebtag_weight(self, pt):
-        sf_nom={} 
-        sf_up={} 
-        sf_down={}
-        for k in self.sf_nom:
-            sf_nom[k], sf_up[k], sf_down[k] = self.sf_nom[k](pt), self.sf_up[k](pt), self.sf_down[k](pt)
-        return sf_nom, sf_up, sf_down
+        return  self.sf_nom(pt), self.sf_up(pt), self.sf_down(pt)
 
 get_doublebtag_weight = {
     '2016': DoubleBTagCorrector('2016').doublebtag_weight,
@@ -551,51 +581,52 @@ get_reweighting = {
     '2017': Reweighting('2017').weight,
     '2018': Reweighting('2018').weight,
 }
-'''
+
+
 Jetext = extractor()
-for directory in ['jec', 'jersf', 'jr', 'junc']:
+for directory in ['jec_UL', 'jersf_UL', 'jr_UL', 'junc_UL']:
     directory='data/'+directory
     print('Loading files in:',directory)
     for filename in os.listdir(directory):
         if '~' in filename: continue
-        if 'AK4PFPuppi' not in filename: continue
-        if 'DATA' in filename: continue
-        filename=directory+'/'+filename
-        print('Loading file:',filename)
-        Jetext.add_weight_sets(['* * '+filename])
+#        if 'DATA' in filename: continue
+        if "Regrouped" in filename: continue
+        if "UncertaintySources" in filename: continue
+        if 'AK4PFchs' in filename:
+            filename=directory+'/'+filename
+            print('Loading file:',filename)
+            Jetext.add_weight_sets(['* * '+filename])
+        if 'AK8' in filename:
+            filename=directory+'/'+filename
+            print('Loading file:',filename)
+            Jetext.add_weight_sets(['* * '+filename])
     print('All files in',directory,'loaded')
 Jetext.finalize()
 Jetevaluator = Jetext.make_evaluator()
-'''
+
+
+corrections = {}
 corrections = {
-    'get_msd_weight':           get_msd_weight,
-    'get_ttbar_weight':         get_ttbar_weight,
-    'get_nnlo_nlo_weight':      get_nnlo_nlo_weight,
-    'get_nlo_qcd_weight':       get_nlo_qcd_weight,
-    'get_nlo_ewk_weight':       get_nlo_ewk_weight,
-    'get_pu_weight':            get_pu_weight,
     'get_met_trig_weight':      get_met_trig_weight,
-    'get_met_zmm_trig_weight':  get_met_zmm_trig_weight,
-    'get_ele_trig_weight':      get_ele_trig_weight,
-    'get_pho_trig_weight':      get_pho_trig_weight,
     'get_ele_loose_id_sf':      get_ele_loose_id_sf,
     'get_ele_tight_id_sf':      get_ele_tight_id_sf,
+    'get_ele_trig_weight':      get_ele_trig_weight,
+    'get_ele_reco_sf_below20':  get_ele_reco_sf_below20,
+    'get_ele_reco_err_below20': get_ele_reco_err_below20,
+    'get_ele_reco_sf_above20':  get_ele_reco_sf_above20,
+    'get_ele_reco_err_above20': get_ele_reco_err_above20,
+    'get_pho_loose_id_sf':      get_pho_loose_id_sf,
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
-    'get_pho_csev_sf':          get_pho_csev_sf,
-    'get_mu_tight_id_sf':       get_mu_tight_id_sf,
-    'get_mu_loose_id_sf':       get_mu_loose_id_sf,
-    'get_ele_reco_sf':          get_ele_reco_sf,
-    'get_ele_reco_lowet_sf':    get_ele_reco_lowet_sf,
-    'get_mu_tight_iso_sf':      get_mu_tight_iso_sf,
-    'get_mu_loose_iso_sf':      get_mu_loose_iso_sf,
-    'get_ecal_bad_calib':       get_ecal_bad_calib,
+    'get_pho_trig_weight':      get_pho_trig_weight,
+    'XY_MET_Correction':        XY_MET_Correction,
+    'pu_weight':                pu_weight,
+    'get_nlo_ewk_weight':       get_nlo_ewk_weight,
+    'get_ttbar_weight':         get_ttbar_weight,
+    'get_msd_weight':           get_msd_weight,
     'get_btag_weight':          get_btag_weight,
-    'get_doublebtag_weight':    get_doublebtag_weight,
-    'get_reweighting':          get_reweighting,
-    #'Jetevaluator':             Jetevaluator,
+    'jetevaluator':             Jetevaluator,
 }
-save(corrections, 'data/corrections.coffea')
 
 
+save(corrections, 'data/testcorrections.coffea')
 
- 
