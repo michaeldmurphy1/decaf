@@ -265,11 +265,11 @@ def isTightPhoton(pt, tight_id, year):
     # Tight photon use medium ID, as in monojet
     mask = Mask(pt)
     if year == "2016":
-        mask = (pt > 200) & (tight_id >= 2)
+        mask = (pt > 200) & (tight_id == 3)
     elif year == "2017":
-        mask = (pt > 230) & ((tight_id & 2) == 2)
+        mask = (pt > 230) & (tight_id == 3)
     elif year == "2018":
-        mask = (pt > 230) & ((tight_id & 2) == 2)
+        mask = (pt > 230) & (tight_id == 3)
     return mask
 
 
