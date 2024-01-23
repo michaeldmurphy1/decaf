@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source env_lcg.sh
+source env.sh
 
 python3 -m pip install --user coffea==0.7.22
 python3 -m pip install --user https://github.com/nsmith-/rhalphalib/archive/master.zip
