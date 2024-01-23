@@ -8,7 +8,7 @@ import numpy as np
 from coffea import hist, lookup_tools
 from coffea.lookup_tools import extractor, dense_lookup
 
-import uproot3
+import uproot
 from coffea import util
 from coffea.util import save, load
 import json
@@ -17,14 +17,14 @@ import json
 ###
 
 met_trig_hists = {
-    '2016': uproot3.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
-    '2017': uproot3.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
-    '2018': uproot3.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
+    '2016': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
+    '2017': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
+    '2018': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
 }
 get_met_trig_weight = {}
 for year in ['2016','2017','2018']:
     met_trig_hist=met_trig_hists[year]
-    get_met_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(met_trig_hist.values, met_trig_hist.edges)
+    get_met_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(met_trig_hist.values(), met_trig_hist.axes)
 
 
 ####
@@ -60,15 +60,15 @@ def get_ele_tight_id_sf (year, eta, pt):
 ####
 
 ele_trig_hists = {
-    '2016postVFP': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root")['EGamma_SF2D'],
-    '2016preVFP' : uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root")['EGamma_SF2D'],
-    '2017': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
-    '2018': uproot3.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
+    '2016postVFP': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root")['EGamma_SF2D'],
+    '2016preVFP' : uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root")['EGamma_SF2D'],
+    '2017': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
+    '2018': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
 }
 get_ele_trig_weight = {}
 for year in ['2016postVFP', '2016preVFP', '2017','2018']:
     ele_trig_hist = ele_trig_hists[year]
-    get_ele_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(ele_trig_hist.values, ele_trig_hist.edges)
+    get_ele_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(ele_trig_hist.values(), ele_trig_hist.axes)
 
 
 
@@ -79,31 +79,31 @@ for year in ['2016postVFP', '2016preVFP', '2017','2018']:
 ####
 
 ele_reco_files_below20 = {
-    '2016postVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root"),
-    '2016preVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root"),
-    '2017': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root"),
-    '2018': uproot3.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root")
+    '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root"),
+    '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root"),
+    '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root"),
+    '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root")
 }
 get_ele_reco_sf_below20 = {}
 get_ele_reco_err_below20 = {}
 for year in ['2016postVFP','2016preVFP','2017','2018']:
     ele_reco_hist = ele_reco_files_below20[year]["EGamma_SF2D"]
-    get_ele_reco_sf_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values, ele_reco_hist.edges)
-    get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances ** 0.5, ele_reco_hist.edges)
+    get_ele_reco_sf_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values(), ele_reco_hist.axes)
+    get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
 
 
 ele_reco_files_above20 = {
-    '2016postVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root"),
-    '2016preVFP': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root"),
-    '2017': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root"),
-    '2018': uproot3.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root")
+    '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root"),
+    '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root"),
+    '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root"),
+    '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root")
 }
 get_ele_reco_sf_above20 = {}
 get_ele_reco_err_above20 = {}
 for year in ['2016postVFP','2016preVFP','2017','2018']:
     ele_reco_hist = ele_reco_files_above20[year]["EGamma_SF2D"]
-    get_ele_reco_sf_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values, ele_reco_hist.edges)
-    get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances ** 0.05, ele_reco_hist.edges)
+    get_ele_reco_sf_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values(), ele_reco_hist.axes)
+    get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.05, ele_reco_hist.axes)
     
 
 
@@ -156,15 +156,15 @@ def get_pho_loose_id_sf(year, eta, pt):
 ####
 
 pho_trig_files = {
-    '2016postVFP': uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    '2016preVFP': uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    "2017": uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    "2018": uproot3.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
+    '2016postVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    '2016preVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    "2017": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+    "2018": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
 }
 get_pho_trig_weight = {}
 for year in ['2016postVFP','2016preVFP','2017','2018']:
     pho_trig_hist = pho_trig_files[year]["hden_photonpt_clone_passed"]
-    get_pho_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(pho_trig_hist.values, pho_trig_hist.edges)
+    get_pho_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(pho_trig_hist.values(), pho_trig_hist.axes)
 
 
 
@@ -292,16 +292,16 @@ def XY_MET_Correction(year, events, pt, phi):
 ###
 
 nlo_ewk_hists = {
-    'dy': uproot3.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
-    'w': uproot3.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_ewk"],
-    'z': uproot3.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
-    'a': uproot3.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
+    'dy': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
+    'w': uproot.open("data/vjets_SFs/merged_kfactors_wjets.root")["kfactor_monojet_ewk"],
+    'z': uproot.open("data/vjets_SFs/merged_kfactors_zjets.root")["kfactor_monojet_ewk"],
+    'a': uproot.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
 }    
 get_nlo_ewk_weight = {}
 for year in ['2016','2017','2018']:
     get_nlo_ewk_weight[year] = {}
     for p in ['dy','w','z','a']:
-        get_nlo_ewk_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values, nlo_ewk_hists[p].edges)
+        get_nlo_ewk_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values(), nlo_ewk_hists[p].axes)
 
 
 
@@ -337,7 +337,7 @@ def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
     
     regular_dataset = ""
     regular_dataset = [name for name in ["MET","SinglePhoton","SingleElectron","EGamma"] if (name in dataset)]
-    fbad = uproot3.open(bad[year][regular_dataset[0]])
+    fbad = uproot.open(bad[year][regular_dataset[0]])
     bad_tree = fbad["vetoEvents"]
     runs_to_veto = bad_tree.array("Run")
     lumis_to_veto = bad_tree.array("LS")
