@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import correctionlib
+import importlib.resources
 import os
 #import uproot, uproot_methods
 import awkward as ak
@@ -308,17 +309,32 @@ for year in ['2016','2017','2018']:
 def get_ttbar_weight(pt):
     return np.exp(0.0615 - 0.0005 * np.clip(pt, 0, 800))
 
-def get_msd_weight(pt, eta):
-    gpar = np.array([1.00626, -1.06161, 0.0799900, 1.20454])
-    cpar = np.array([1.09302, -0.000150068, 3.44866e-07, -2.68100e-10, 8.67440e-14, -1.00114e-17])
-    fpar = np.array([1.27212, -0.000571640, 8.37289e-07, -5.20433e-10, 1.45375e-13, -1.50389e-17])
-    genw = gpar[0] + gpar[1]*np.power(pt*gpar[2], -gpar[3])
-    ptpow = np.power.outer(pt, np.arange(cpar.size))
-    cenweight = np.dot(ptpow, cpar)
-    forweight = np.dot(ptpow, fpar)
-    weight = np.where(np.abs(eta)<1.3, cenweight, forweight)
-    return genw*weight
 
+# Soft drop mass correction updated for UL. Copied from:
+# https://github.com/jennetd/hbb-coffea/blob/master/boostedhiggs/corrections.py
+# Renamed copy of corrected_msoftdrop() function
+
+with importlib.resources.path("data", "msdcorr.json") as filename:
+    msdcorr = correctionlib.CorrectionSet.from_file(str(filename))
+
+def get_msd_corr(fatjets):
+    msdraw = np.sqrt(
+        np.maximum(
+            0.0,
+            (fatjets.subjets * (1 - fatjets.subjets.rawFactor)).sum().mass2,
+        )
+    )
+    msdfjcorr = msdraw / (1 - fatjets.rawFactor)
+
+    corr = msdcorr["msdfjcorr"].evaluate(
+        np.array(ak.flatten(msdfjcorr / fatjets.pt)),
+        np.array(ak.flatten(np.log(fatjets.pt))),
+        np.array(ak.flatten(fatjets.eta)),
+    )
+    corr = ak.unflatten(corr, ak.num(fatjets))
+    corrected_mass = msdfjcorr * corr
+
+    return corrected_mass
 
 
 def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
@@ -622,7 +638,7 @@ corrections = {
     'pu_weight':                pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
     'get_ttbar_weight':         get_ttbar_weight,
-    'get_msd_weight':           get_msd_weight,
+    'get_msd_corr':             get_msd_corr,
     'get_btag_weight':          get_btag_weight,
     'jetevaluator':             Jetevaluator,
 }
