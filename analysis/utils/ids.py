@@ -344,4 +344,4 @@ ids["isTightPhoton"] = isTightPhoton
 ids["isGoodJet"] = isGoodJet
 ids["isGoodFatJet"] = isGoodFatJet
 ids["isHEMJet"] = isHEMJet
-save(ids, "data/test_ids.coffea")
+save(ids, "data/ids.coffea")

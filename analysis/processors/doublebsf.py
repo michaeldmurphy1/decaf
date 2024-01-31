@@ -153,7 +153,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         #Getting ids from .coffea files
         ###
 
-        get_msd_weight  = self._corrections['get_msd_weight']
+        get_msd_corr  = self._corrections['get_msd_corr']
         get_pu_weight   = self._corrections['get_pu_weight'][self._year]  
         get_reweighting = self._corrections['get_reweighting'][self._year]
         isSoftMuon      = self._ids['isSoftMuon']
@@ -180,7 +180,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         fj['isgood'] = isGoodFatJet(fj.sd.pt, fj.sd.eta, fj.jetId)
         fj['T'] = TVector2Array.from_polar(fj.pt, fj.phi)
         fj['msd_raw'] = (fj.subjets * (1 - fj.subjets.rawFactor)).sum().mass
-        fj['msd_corr'] = fj.msd_raw * awkward.JaggedArray.fromoffsets(fj.array.offsets, np.maximum(1e-5, get_msd_weight(fj.sd.pt.flatten(),fj.sd.eta.flatten())))
+        fj['msd_corr'] = get_msd_corr(fj)
         probQCD=fj.probQCDbb+fj.probQCDcc+fj.probQCDb+fj.probQCDc+fj.probQCDothers
         probZHbb=fj.probZbb+fj.probHbb
         fj['ZHbbvsQCD'] = probZHbb/(probZHbb+probQCD)

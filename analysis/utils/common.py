@@ -1,7 +1,4 @@
 from coffea.util import save
-import awkward
-import uproot3
-#import uproot, uproot_methods
 import numpy as np
 
 def match(a, b, val):
