@@ -28,7 +28,7 @@ for sample in slist:
     sample_data_structure = {}
 
     # Construct the query to get datasets
-    dataset_query = f"dasgoclient --query=\"dataset=/{sample}/*{campaigns['2016']}*JMENano*/*\""
+    dataset_query = "dasgoclient --query=\"dataset=/" + sample + "/*" + campaigns['2016'] + "*JMENano*/*\""
     print('Querying datasets:', dataset_query)
     
     # Execute the query and decode the output
