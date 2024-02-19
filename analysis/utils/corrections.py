@@ -230,6 +230,18 @@ def get_muon_tight_iso_sf (year, eta, pt):
 
     return ak.unflatten(weight, counts=counts)
 
+###
+# Muon scale and resolution (i.e. Rochester)
+# https://twiki.cern.ch/twiki/bin/view/CMS/RochcorMuon
+###
+
+tag = 'roccor.Run2.v5'
+get_mu_rochester_sf = {}
+for year in ['2016','2017','2018']:
+    fname = f'data/{tag}/RoccoR{year}UL.txt'
+    sfs = lookup_tools.txt_converters.convert_rochester_file(fname,loaduncs=True)
+    get_mu_rochester_sf[year] = lookup_tools.rochester_lookup.rochester_lookup(sfs)
+
 
 ####
 # PU weight
@@ -304,6 +316,110 @@ for year in ['2016','2017','2018']:
     for p in ['dy','w','z','a']:
         get_nlo_ewk_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values(), nlo_ewk_hists[p].axes)
 
+###
+# V+jets NNLO weights
+# The schema is process_NNLO_NLO_QCD1QCD2QCD3_EW1EW2EW3_MIX, where 'n' stands for 'nominal', 'u' for 'up', and 'd' for 'down'
+###
+
+histname={
+    'dy': 'eej_NNLO_NLO_',
+    'w':  'evj_NNLO_NLO_',
+    'z': 'vvj_NNLO_NLO_',
+    'a': 'aj_NNLO_NLO_'
+}
+correlated_variations = {
+    'cen':    'nnn_nnn_n',
+    'qcd1up': 'unn_nnn_n',
+    'qcd1do': 'dnn_nnn_n',
+    'qcd2up': 'nun_nnn_n',
+    'qcd2do': 'ndn_nnn_n',
+    'qcd3up': 'nnu_nnn_n',
+    'qcd3do': 'nnd_nnn_n',
+    'ew1up' : 'nnn_unn_n',
+    'ew1do' : 'nnn_dnn_n',
+    'mixup' : 'nnn_nnn_u',
+    'mixdo' : 'nnn_nnn_d',
+    'muFup' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_2p0',
+    'muFdo' : 'nnn_nnn_n_Weight_scale_variation_muR_1p0_muF_0p5',
+    'muRup' : 'nnn_nnn_n_Weight_scale_variation_muR_2p0_muF_1p0',
+    'muRdo' : 'nnn_nnn_n_Weight_scale_variation_muR_0p5_muF_1p0'
+}
+uncorrelated_variations = {
+    'dy': {
+        'ew2Gup': 'nnn_nnn_n',
+        'ew2Gdo': 'nnn_nnn_n',
+        'ew2Wup': 'nnn_nnn_n',
+        'ew2Wdo': 'nnn_nnn_n',
+        'ew2Zup': 'nnn_nun_n',
+        'ew2Zdo': 'nnn_ndn_n',
+        'ew3Gup': 'nnn_nnn_n',
+        'ew3Gdo': 'nnn_nnn_n',
+        'ew3Wup': 'nnn_nnn_n',
+        'ew3Wdo': 'nnn_nnn_n',
+        'ew3Zup': 'nnn_nnu_n',
+        'ew3Zdo': 'nnn_nnd_n'
+    },
+    'w': {
+        'ew2Gup': 'nnn_nnn_n',
+        'ew2Gdo': 'nnn_nnn_n',
+        'ew2Wup': 'nnn_nun_n',
+        'ew2Wdo': 'nnn_ndn_n',
+        'ew2Zup': 'nnn_nnn_n',
+        'ew2Zdo': 'nnn_nnn_n',
+        'ew3Gup': 'nnn_nnn_n',
+        'ew3Gdo': 'nnn_nnn_n',
+        'ew3Wup': 'nnn_nnu_n',
+        'ew3Wdo': 'nnn_nnd_n',
+        'ew3Zup': 'nnn_nnn_n',
+        'ew3Zdo': 'nnn_nnn_n'
+    },
+    'z': {
+        'ew2Gup': 'nnn_nnn_n',
+        'ew2Gdo': 'nnn_nnn_n',
+        'ew2Wup': 'nnn_nnn_n',
+        'ew2Wdo': 'nnn_nnn_n',
+        'ew2Zup': 'nnn_nun_n',
+        'ew2Zdo': 'nnn_ndn_n',
+        'ew3Gup': 'nnn_nnn_n',
+        'ew3Gdo': 'nnn_nnn_n',
+        'ew3Wup': 'nnn_nnn_n',
+        'ew3Wdo': 'nnn_nnn_n',
+        'ew3Zup': 'nnn_nnu_n',
+        'ew3Zdo': 'nnn_nnd_n'
+    },
+    'a': {
+        'ew2Gup': 'nnn_nun_n',
+        'ew2Gdo': 'nnn_ndn_n',
+        'ew2Wup': 'nnn_nnn_n',
+        'ew2Wdo': 'nnn_nnn_n',
+        'ew2Zup': 'nnn_nnn_n',
+        'ew2Zdo': 'nnn_nnn_n',
+        'ew3Gup': 'nnn_nnu_n',
+        'ew3Gdo': 'nnn_nnd_n',
+        'ew3Wup': 'nnn_nnn_n',
+        'ew3Wdo': 'nnn_nnn_n',
+        'ew3Zup': 'nnn_nnn_n',
+        'ew3Zdo': 'nnn_nnn_n'
+    }
+}
+get_nnlo_nlo_weight = {}
+for year in ['2016','2017','2018']:
+    get_nnlo_nlo_weight[year] = {}
+    nnlo_file = {
+        'dy': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root"),
+        'w': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root"),
+        'z': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root"),
+        'a': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root")
+    }
+    for p in ['dy','w','z','a']:
+        get_nnlo_nlo_weight[year][p] = {}
+        for cv in correlated_variations:
+            hist=nnlo_file[p][histname[p]+correlated_variations[cv]]
+            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
+        for uv in uncorrelated_variations[p]:
+            hist=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
+            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
+
 
 
 def get_ttbar_weight(pt):
@@ -336,35 +452,6 @@ def get_msd_corr(fatjets):
 
     return corrected_mass
 
-
-def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
-    bad = {}
-    bad["2016"] = {}
-    bad["2017"] = {}
-    bad["2018"] = {}
-    bad["2016"]["MET"]            = "ecalBadCalib/Run2016_MET.root"
-    bad["2016"]["SinglePhoton"]   = "ecalBadCalib/Run2016_SinglePhoton.root"
-    bad["2016"]["SingleElectron"] = "ecalBadCalib/Run2016_SingleElectron.root"
-    bad["2017"]["MET"]            = "ecalBadCalib/Run2017_MET.root"
-    bad["2017"]["SinglePhoton"]   = "ecalBadCalib/Run2017_SinglePhoton.root"
-    bad["2017"]["SingleElectron"] = "ecalBadCalib/Run2017_SingleElectron.root"
-    bad["2018"]["MET"]            = "ecalBadCalib/Run2018_MET.root"
-    bad["2018"]["EGamma"]         = "ecalBadCalib/Run2018_EGamma.root"
-    
-    regular_dataset = ""
-    regular_dataset = [name for name in ["MET","SinglePhoton","SingleElectron","EGamma"] if (name in dataset)]
-    fbad = uproot.open(bad[year][regular_dataset[0]])
-    bad_tree = fbad["vetoEvents"]
-    runs_to_veto = bad_tree.array("Run")
-    lumis_to_veto = bad_tree.array("LS")
-    events_to_veto = bad_tree.array("Event")
-
-    # We want events that do NOT have (a vetoed run AND a vetoed LS and a vetoed event number)
-    return np.logical_not(np.isin(run_number, runs_to_veto) * np.isin(lumi_number, lumis_to_veto) * np.isin(event_number, events_to_veto))
-
-
-
-
 from coffea.lookup_tools.correctionlib_wrapper import correctionlib_wrapper
 from coffea.lookup_tools.dense_lookup import dense_lookup
 
@@ -372,11 +459,17 @@ class BTagCorrector:
 
     def __init__(self, tagger, year, workingpoint):
         self._year = year
-        common = load('data/common.coffea')
-        self._wp = common['btagWPs'][tagger][year][workingpoint]
-        
-        btvjson = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')
-        self.sf = btvjson # ["deepJet_comb", "deepCSV_comb"]
+
+        wp = {}
+        wp['loose'] = 'L'
+        wp['medium'] = 'M'
+        wp['tight'] = 'T'
+        self._wp = wp[workingpoint]
+
+        btvjson = {}
+        btvjson['deepflav'] = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"]
+        btvjson['deepcsv'] = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"]
+        self.sf = btvjson[tagger]
 
         files = {
             '2016preVFP': 'btageff2016.merged',
@@ -416,40 +509,39 @@ class BTagCorrector:
         
         eff = self.eff(flavor, pt, abseta)
         
-        #sf_nom = self.sf.eval('central', flavor, abseta, pt)
-        sf_nom = self.sf["deepJet_comb"].evaluate('central','M', flavor, abseta, pt)
+        sf_nom = self.sf.evaluate('central',self._wp, flavor, abseta, pt)
         
         bc_sf_up_correlated = pt.ones_like()
         bc_sf_up_correlated[~bc] = sf_nom[~bc]
-        bc_sf_up_correlated[bc] = self.sf["deepJet_comb"].evaluate('up_correlated', 'M', flavor, eta, pt)[bc]
+        bc_sf_up_correlated[bc] = self.sf.evaluate('up_correlated', self._wp, flavor, eta, pt)[bc]
         
         bc_sf_down_correlated = pt.ones_like()
         bc_sf_down_correlated[~bc] = sf_nom[~bc]
-        bc_sf_down_correlated[bc] = self.sf["deepJet_comb"].evaluate('down_correlated', 'M', flavor, eta, pt)[bc]
+        bc_sf_down_correlated[bc] = self.sf.evaluate('down_correlated', self._wp, flavor, eta, pt)[bc]
 
         bc_sf_up_uncorrelated = pt.ones_like()
         bc_sf_up_uncorrelated[~bc] = sf_nom[~bc]
-        bc_sf_up_uncorrelated[bc] = self.sf["deepJet_comb"].evaluate('up_uncorrelated', 'M', flavor, eta, pt)[bc]
+        bc_sf_up_uncorrelated[bc] = self.sf.evaluate('up_uncorrelated', self._wp, flavor, eta, pt)[bc]
 
         bc_sf_down_uncorrelated = pt.ones_like()
         bc_sf_down_uncorrelated[~bc] = sf_nom[~bc]
-        bc_sf_down_uncorrelated[bc] = self.sf["deepJet_comb"].evaluate('down_uncorrelated', 'M', flavor, eta, pt)[bc]
+        bc_sf_down_uncorrelated[bc] = self.sf.evaluate('down_uncorrelated', self._wp, flavor, eta, pt)[bc]
 
         light_sf_up_correlated = pt.ones_like()
         light_sf_up_correlated[~light] = sf_nom[~light]
-        light_sf_up_correlated[light] = self.sf["deepJet_comb"].evaluate('up_correlated', 'M', flavor, abseta, pt)[light]
+        light_sf_up_correlated[light] = self.sf.evaluate('up_correlated', self._wp, flavor, abseta, pt)[light]
 
         light_sf_down_correlated = pt.ones_like()
         light_sf_down_correlated[~light] = sf_nom[~light]
-        light_sf_down_correlated[light] = self.sf["deepJet_comb"].evaluate('down_correlated', 'M', flavor, abseta, pt)[light]
+        light_sf_down_correlated[light] = self.sf.evaluate('down_correlated', self._wp, flavor, abseta, pt)[light]
 
         light_sf_up_uncorrelated = pt.ones_like()
         light_sf_up_uncorrelated[~light] = sf_nom[~light]
-        light_sf_up_uncorrelated[light] = self.sf["deepJet_comb"].evaluate('up_uncorrelated', 'M', flavor, abseta, pt)[light]
+        light_sf_up_uncorrelated[light] = self.sf.evaluate('up_uncorrelated', self._wp, flavor, abseta, pt)[light]
 
         light_sf_down_uncorrelated = pt.ones_like()
         light_sf_down_uncorrelated[~light] = sf_nom[~light]
-        light_sf_down_uncorrelated[light] = self.sf["deepJet_comb"].evaluate('down_uncorrelated', 'M', flavor, abseta, pt)[light]
+        light_sf_down_uncorrelated[light] = self.sf.evaluate('down_uncorrelated', self._wp, flavor, abseta, pt)[light]
 
 
 
@@ -472,18 +564,16 @@ class BTagCorrector:
         light_down_correlated = P(light_eff_data_down_correlated)/P(eff)
         light_up_uncorrelated = P(light_eff_data_up_uncorrelated)/P(eff)
         light_down_uncorrelated = P(light_eff_data_down_uncorrelated)/P(eff)
-        '''
-        print('nom',sf_nom)
-        print('bc_up_correlated',bc_sf_up_correlated)
-        print('bc_down_correlated',bc_sf_down_correlated)
-        print('bc_up_uncorrelated',bc_sf_up_uncorrelated)
-        print('bc_down_uncorrelated',bc_sf_down_uncorrelated)
-        print('light_up_correlated',light_sf_up_correlated)
-        print('light_down_correlated',light_sf_down_correlated)
-        print('light_up_uncorrelated',light_sf_up_uncorrelated)
-        print('light_down_uncorrelated',light_sf_down_uncorrelated)
-        '''
-        return np.nan_to_num(nom, nan=1.), np.nan_to_num(bc_up_correlated, nan=1.), np.nan_to_num(bc_down_correlated, nan=1.), np.nan_to_num(bc_up_uncorrelated, nan=1.), np.nan_to_num(bc_down_uncorrelated, nan=1.), np.nan_to_num(light_up_correlated, nan=1.), np.nan_to_num(light_down_correlated, nan=1.), np.nan_to_num(light_up_uncorrelated, nan=1.), np.nan_to_num(light_down_uncorrelated, nan=1.)
+        
+        return np.nan_to_num(nom, nan=1.), \
+        np.nan_to_num(bc_up_correlated, nan=1.), \
+        np.nan_to_num(bc_down_correlated, nan=1.), \
+        np.nan_to_num(bc_up_uncorrelated, nan=1.), \
+        np.nan_to_num(bc_down_uncorrelated, nan=1.), \
+        np.nan_to_num(light_up_correlated, nan=1.), \
+        np.nan_to_num(light_down_correlated, nan=1.), \
+        np.nan_to_num(light_up_uncorrelated, nan=1.), \
+        np.nan_to_num(light_down_uncorrelated, nan=1.)
 
 
 get_btag_weight = {
@@ -533,72 +623,6 @@ get_btag_weight = {
     }
 }
 
-
-class DoubleBTagCorrector:
-
-    def __init__(self, year):
-        self._year = year
-        sf = {
-            '2018': {
-                'value': np.array([0.82, 0.82, 0.75, 0.81]),
-                'unc': np.array([np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.07**2 + 0.11**2), np.sqrt(0.06**2 + 0.06**2), np.sqrt(0.05**2 + 0.01**2)]),
-                'edges': np.array([160, 350, 400, 500, 2500])
-            },
-            '2017': {
-                'value': np.array([0.84, 0.84, 0.98, 0.86]),
-                'unc': np.array([np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.13**2), np.sqrt(0.05**2 + 0.12**2), np.sqrt(0.05**2 + 0.05**2)]),
-                'edges': np.array([160, 350, 400, 500, 2500])
-            },
-            '2016': {
-                'value': np.array([1.01, 1.01, 0.95, 0.99]),
-                'unc': np.array([np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.06**2 + 0.02**2), np.sqrt(0.05**2 + 0.09**2), np.sqrt(0.06**2 + 0.00**2)]),
-                'edges': np.array([160, 350, 400, 500, 2500])
-            },
-        }
-        self.sf_nom=lookup_tools.dense_lookup.dense_lookup(sf[year]['value'], sf[year]['edges'])
-        self.sf_up=lookup_tools.dense_lookup.dense_lookup(sf[year]['value']+sf[year]['unc'], sf[year]['edges'])
-        self.sf_down=lookup_tools.dense_lookup.dense_lookup(sf[year]['value']-sf[year]['unc'], sf[year]['edges'])
-        
-
-    def doublebtag_weight(self, pt):
-        return  self.sf_nom(pt), self.sf_up(pt), self.sf_down(pt)
-
-get_doublebtag_weight = {
-    '2016': DoubleBTagCorrector('2016').doublebtag_weight,
-    '2017': DoubleBTagCorrector('2017').doublebtag_weight,
-    '2018': DoubleBTagCorrector('2018').doublebtag_weight,
-}
-
-class Reweighting:
-
-    def __init__(self, year):
-        self._year = year
-        files = {
-            '2016': 'reweighting2016.scaled',
-            '2017': 'reweighting2017.scaled',
-            '2018': 'reweighting2018.scaled',
-        }
-        filename = 'hists/'+files[year]
-        reweighting = load(filename)
-        hists = load(filename)
-        if year == '2018':
-            hists['data']['reweighting'].scale(2.)
-        num=hists['data']['reweighting'].integrate('process').values()[()]
-        den=hists['bkg']['reweighting'].integrate('process').values()[()]
-        reweighting = num / np.maximum(den, 1.)
-        self.reweighting = lookup_tools.dense_lookup.dense_lookup(reweighting, [ax.edges() for ax in hists['data']['reweighting'].axes()[1:]])
-
-    def weight(self, tau21, pt, eta):
-        weight = self.reweighting(tau21, pt, eta)
-        return weight
-
-get_reweighting = {
-    '2016': Reweighting('2016').weight,
-    '2017': Reweighting('2017').weight,
-    '2018': Reweighting('2018').weight,
-}
-
-
 Jetext = extractor()
 for directory in ['jec_UL', 'jersf_UL', 'jr_UL', 'junc_UL']:
     directory='data/'+directory
@@ -637,9 +661,11 @@ corrections = {
     'XY_MET_Correction':        XY_MET_Correction,
     'pu_weight':                pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
+    'get_nnlo_nlo_weight':      get_nnlo_nlo_weight,
     'get_ttbar_weight':         get_ttbar_weight,
     'get_msd_corr':             get_msd_corr,
     'get_btag_weight':          get_btag_weight,
+    'get_mu_rochester_sf':      get_mu_rochester_sf,
     'jetevaluator':             Jetevaluator,
 }
 
