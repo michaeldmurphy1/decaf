@@ -43,11 +43,11 @@ for dataset, info in samplefiles.items():
 
     tstart = time.time()
     output = processor.run_uproot_job(filelist,
-                                      treename='Events',
+                                      'Events',
                                       processor_instance=processor_instance,
                                       executor=processor.futures_executor,
-                                      executor_args={'nano': True, 'workers': options.workers},
-                                      )
+                                      executor_args={'schema': NanoAODSchema, 'workers': options.workers},
+                                      ) 
     
     #nbins = sum(sum(arr.size for arr in h._sumw.values()) for h in output.values() if isinstance(h, hist.Hist))
     #nfilled = sum(sum(np.sum(arr > 0) for arr in h._sumw.values()) for h in output.values() if isinstance(h, hist.Hist))
