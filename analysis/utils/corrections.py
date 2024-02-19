@@ -237,7 +237,9 @@ def get_muon_tight_iso_sf (year, eta, pt):
 
 tag = 'roccor.Run2.v5'
 get_mu_rochester_sf = {}
-for year in ['2016','2017','2018']:
+for year in ['2016postVFP', '2016preVFP', '2017','2018']:
+    if '2016postVFP' in year: year = '2016b'
+    if '2016preVFP' in year:  year = '2016a'
     fname = f'data/{tag}/RoccoR{year}UL.txt'
     sfs = lookup_tools.txt_converters.convert_rochester_file(fname,loaduncs=True)
     get_mu_rochester_sf[year] = lookup_tools.rochester_lookup.rochester_lookup(sfs)
