@@ -6,7 +6,7 @@ import os
 import awkward as ak
 
 import numpy as np
-from coffea import hist, lookup_tools
+from coffea import lookup_tools
 from coffea.lookup_tools import extractor, dense_lookup
 
 import uproot
