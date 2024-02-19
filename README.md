@@ -41,9 +41,9 @@ Fork this repo on github and clone it into your `CMSSW_11_3_4/src` directory:
 
 ```
 cd $CMSSW_BASE/src
-git clone git@github.com:<USERNAME>/decaf.git
+git clone ttps://github.com/<USERNAME>/decaf.git
 cd decaf
-git switch -c UL
+git switch UL
 ```
 
 Then, setup the proper dependences:
