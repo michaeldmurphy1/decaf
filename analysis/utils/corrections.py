@@ -432,8 +432,8 @@ def get_ttbar_weight(pt):
 # https://github.com/jennetd/hbb-coffea/blob/master/boostedhiggs/corrections.py
 # Renamed copy of corrected_msoftdrop() function
 
-with importlib.resources.path("data", "msdcorr.json") as filename:
-    msdcorr = correctionlib.CorrectionSet.from_file(str(filename))
+#with importlib.resources.path("analysis.data", "msdcorr.json") as filename:
+msdcorr = correctionlib.CorrectionSet.from_file('data/msdcorr.json')
 
 def get_msd_corr(fatjets):
     msdraw = np.sqrt(
