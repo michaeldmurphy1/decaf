@@ -417,10 +417,10 @@ for year in ['2016','2017','2018']:
         get_nnlo_nlo_weight[year][p] = {}
         for cv in correlated_variations:
             hist=nnlo_file[p][histname[p]+correlated_variations[cv]]
-            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
+            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values(), hist.axes)
         for uv in uncorrelated_variations[p]:
             hist=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
-            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values, hist.edges)
+            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values(), hist.axes)
 
 
 
