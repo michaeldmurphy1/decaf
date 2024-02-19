@@ -1,7 +1,8 @@
 import os
 import numpy
 import json
-from coffea import processor, hist, util
+from coffea import processor, util
+from hist import hist
 from coffea.util import save, load
 from optparse import OptionParser
 import numpy as np
@@ -13,32 +14,24 @@ class BTagEfficiency(processor.ProcessorABC):
         self._year = year
         self._btagWPs = wp
         self._ids = ids
-        self._accumulator = processor.dict_accumulator({
+        self.make_output = lambda: {
             'deepflav' :
             hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('wp', 'Working point'),
-                hist.Cat('btag', 'BTag WP pass/fail'),
-                hist.Bin('flavor', 'Jet hadronFlavour', [0, 4, 5, 6]),
-                hist.Bin('pt', 'Jet pT', [20, 30, 50, 70, 100, 140, 200, 300, 600, 1000]),
-                hist.Bin('abseta', 'Jet abseta', [0, 1.4, 2.0, 2.5]),
+                axis.StrCategory([], growth=True, name="wp", label="Working point"),
+                axis.StrCategory([], growth=True, name="btag", label="BTag WP pass/fail"),
+                axis.IntCategory([0, 4, 5, 6], name="flavor", label="Jet hadronFlavour"),
+                axis.Variable([20, 30, 50, 70, 100, 140, 200, 300, 600, 1000], name="pt", label=r'Jet $p_{T}$ [GeV]'),
+                axis.Variable([0, 1.4, 2.0, 2.5], name="abseta", label=r'Jet |$\eta$|'),
             ),
             'deepcsv' :
             hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('wp', 'Working point'),
-                hist.Cat('btag', 'BTag WP pass/fail'),
-                hist.Bin('flavor', 'Jet hadronFlavour', [0, 4, 5, 6]),
-                hist.Bin('pt', 'Jet pT', [20, 30, 50, 70, 100, 140, 200, 300, 600, 1000]),
-                hist.Bin('abseta', 'Jet abseta', [0, 1.4, 2.0, 2.5]),
+                axis.StrCategory([], growth=True, name="wp", label="Working point"),
+                axis.StrCategory([], growth=True, name="btag", label="BTag WP pass/fail"),
+                axis.IntCategory([0, 4, 5, 6], name="flavor", label="Jet hadronFlavour"),
+                axis.Variable([20, 30, 50, 70, 100, 140, 200, 300, 600, 1000], name="pt", label=r'Jet $p_{T}$ [GeV]'),
+                axis.Variable([0, 1.4, 2.0, 2.5], name="abseta", label=r'Jet |$\eta$|'),
             )
         })
-
-    @property
-    def accumulator(self):
-        return self._accumulator
 
     def process(self, events):
         
@@ -53,13 +46,11 @@ class BTagEfficiency(processor.ProcessorABC):
         name['deepflav']= 'btagDeepFlavB'
         name['deepcsv']= 'btagDeepB'
 
-        out = self.accumulator.identity()
-
+        output = self.make_output()
         for wp in ['loose','medium','tight']:
             for tagger in ['deepflav','deepcsv']:
                 passbtag = j_good[name[tagger]] > self._btagWPs[tagger][self._year][wp]
                 out[tagger].fill(
-                    dataset=dataset,
                     wp=wp,
                     btag='pass',
                     flavor=j_good[passbtag].hadronFlavour.flatten(),
@@ -67,7 +58,6 @@ class BTagEfficiency(processor.ProcessorABC):
                     abseta=abs(j_good[passbtag].eta.flatten()),
                 )
                 out[tagger].fill(
-                    dataset=dataset,
                     wp=wp,
                     btag='fail',
                     flavor=j_good[~passbtag].hadronFlavour.flatten(),
