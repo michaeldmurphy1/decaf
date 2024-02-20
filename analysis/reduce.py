@@ -5,8 +5,8 @@ import gzip
 import os
 import numpy as np
 from collections import defaultdict, OrderedDict
-from coffea import hist, processor 
 from coffea.util import load, save
+import hist
 from helpers.futures_patch import patch_mp_connection_bpo_17560
 
 def add(chunk_tmp_arr):
@@ -52,7 +52,7 @@ def reduce(folder,_dataset=None,_exclude=None,variable=None):
           if '.futures' not in filename: continue
           if filename.split("____")[0] not in lists: lists[filename.split("____")[0]] = []
           lists[filename.split("____")[0]].append(folder+'/'+filename)
-          
+
      for pdi in lists.keys():
           if _dataset is not None:
                if not any(_d in pdi for _d in _dataset.split(',')): continue
@@ -74,12 +74,6 @@ def reduce(folder,_dataset=None,_exclude=None,variable=None):
                tmp_arr=futuresum(np.array(tmp[k]))
                hists = {}
                hists[k]=tmp_arr[0]
-               dataset = hist.Cat("dataset", "dataset", sorting='placement')
-               dataset_cats = ("dataset",)
-               dataset_map = OrderedDict()
-               for d in hists[k].identifiers('dataset'):
-                    if d.name.split("____")[0] not in dataset_map: dataset_map[d.name.split("____")[0]] = (d.name.split("____")[0]+"*",)
-               hists[k] = hists[k].group(dataset_cats, dataset, dataset_map)
                print(hists)
                save(hists, folder+'/'+k+'--'+pdi+'.reduced')
 
