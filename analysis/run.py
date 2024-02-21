@@ -10,8 +10,9 @@ from optparse import OptionParser
 
 import uproot
 import numpy as np
+from coffea import processor
 from coffea.util import load, save
-from coffea.nanoevents.methods.nanoaod import NanoAODSchema
+from coffea.nanoevents.schemas.nanoaod import NanoAODSchema
 
 NanoAODSchema.mixins["AK15PFPuppi_Jet"] = "FatJet"
 NanoAODSchema.mixins["AK15PFPuppi_SubJet"] = "Jet"
