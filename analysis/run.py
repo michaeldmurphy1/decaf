@@ -11,12 +11,12 @@ from optparse import OptionParser
 import uproot
 import numpy as np
 from coffea.util import load, save
-from coffea.nanoevents.methods.nanoaod import behavior, FatJetRecord
-print(behavior['FatJet'])
-behavior['AK15PFPuppi_Jet'] = FatJetRecord
-print(behavior['AK15PFPuppi_Jet'])
-behavior['AK15PFPuppi_SubJet'] = Jet
-FatJet.subjetmap['AK15Puppi'] = 'AK15PuppiSubJet' 
+from coffea.nanoevents.methods.nanoaod import NanoAODSchema
+
+NanoAODSchema.mixins["AK15PFPuppi_Jet"] = "FatJet"
+NanoAODSchema.mixins["AK15PFPuppi_SubJet"] = "Jet"
+NanoAODSchema.all_cross_references["AK15PFPuppi_Jet_subJetIdx1"] = "AK15PFPuppi_SubJet"
+NanoAODSchema.all_cross_references["AK15PFPuppi_Jet_subJetIdx2"] = "AK15PFPuppi_SubJet"
 
 parser = OptionParser()
 parser.add_option('-p', '--processor', help='processor', dest='processor')
