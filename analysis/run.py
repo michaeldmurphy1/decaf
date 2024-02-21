@@ -10,12 +10,12 @@ from optparse import OptionParser
 
 import uproot
 import numpy as np
-from coffea import hist, processor
 from coffea.util import load, save
-from coffea.nanoaod.methods import collection_methods, LorentzVector, FatJet 
-
-collection_methods['AK15Puppi'] = FatJet
-collection_methods['AK15PuppiSubJet'] = LorentzVector
+from coffea.nanoevents.methods.nanoaod import behavior, FatJetRecord
+print(behavior['FatJet'])
+behavior['AK15PFPuppi_Jet'] = FatJetRecord
+print(behavior['AK15PFPuppi_Jet'])
+behavior['AK15PFPuppi_SubJet'] = Jet
 FatJet.subjetmap['AK15Puppi'] = 'AK15PuppiSubJet' 
 
 parser = OptionParser()
