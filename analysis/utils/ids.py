@@ -280,9 +280,9 @@ def isTightPhoton(pt, tight_id, year):
 ######
 
 
-def isGoodFatJet(pt, eta, jet_id, nhf, chf):
+def isGoodFatJet(pt, eta, jet_id):
     mask = (
-        (pt > 160) & (abs(eta) < 2.4) & ((jet_id & 6) == 6) & (nhf < 0.8) & (chf > 0.1)
+        (pt > 160) & (abs(eta) < 2.4) & ((jet_id & 6) == 6)
     )
     return mask
 
@@ -311,14 +311,14 @@ def isGoodFatJet(pt, eta, jet_id, nhf, chf):
 ######
 
 
-def isGoodJet(pt, eta, jet_id, pu_id, year):
+def isGoodJet(pt, eta, jet_id, pu_id, nhf, chf, year):
     mask = (pt > 30) & (abs(eta) < 2.4) & ((jet_id & 6) == 6)
     if year == "2016":
-        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 1) == 1))
+        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 1) == 1)) & (nhf < 0.8) & (chf > 0.1)
     elif year == "2017":
-        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 4) == 4))
+        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 4) == 4)) & (nhf < 0.8) & (chf > 0.1)
     elif year == "2018":
-        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 4) == 4))
+        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 4) == 4)) & (nhf < 0.8) & (chf > 0.1)
     return mask
 
 
