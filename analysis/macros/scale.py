@@ -116,33 +116,7 @@ xsec = {
     "Mz3000_mhs150_Mdm1500": 0.000004007,
 }
 
-def scale_file(file):
-
-    print('Loading file:',file)    
-    hists=load(file)
-
-    pd = []
-    for d in hists['sumw'].identifiers('dataset'):
-        dataset = d.name
-        if dataset.split("____")[0] not in pd: pd.append(dataset.split("____")[0])
-    print('List of primary datasets:',pd)
-
-    ##
-    # Aggregate all the histograms that belong to a single dataset
-    ##
-
-    dataset = hist.Cat("dataset", "dataset", sorting='placement')
-    dataset_cats = ("dataset",)
-    dataset_map = OrderedDict()
-    for pdi in pd:
-        dataset_map[pdi] = (pdi+"*",)
-    for key in hists.keys():
-        hists[key] = hists[key].group(dataset_cats, dataset, dataset_map)
-    print('Datasets aggregated')
-
-    return scale(hists)
-
-def scale_directory(directory):
+def scale(directory):
 
     hists = {}
     for filename in os.listdir(directory):
@@ -151,24 +125,20 @@ def scale_directory(directory):
         hin = load(directory+'/'+filename)
         hists.update(hin)
 
-    return scale(hists)
-
-def scale(hists):
-
     ###
     # Rescaling MC histograms using the xsec weight
     ###
 
     scale={}
-    for d in hists['sumw'].identifiers('dataset'):
-        scale[d]=hists['sumw'].integrate('dataset', d).values(overflow='all')[()][1]
+    for dataset in hists['sumw'].keys():
+        scale[dataset]=hists['sumw'][dataset].values(overflow='all')[()][1]
     print('Sumw extracted')
 
     for key in hists.keys():
         if key=='sumw': continue
-        for d in hists[key].identifiers('dataset'):
-            if 'MET' in d.name or 'SingleElectron' in d.name or 'SinglePhoton' in d.name or 'EGamma' in d.name or 'BTagMu' in d.name: continue
-            hists[key].scale({d:1/scale[d]},axis='dataset')
+        for dataset in hists[key].keys:
+            if 'MET' in dataset or 'SingleElectron' in dataset or 'SinglePhoton' in dataset or 'EGamma' in dataset or 'BTagMu' in dataset: continue
+            hists[key][dataset] *= 1/scale[d]
     print('Histograms scaled')
 
 
@@ -176,49 +146,47 @@ def scale(hists):
     # Defining 'process', to aggregate different samples into a single process
     ##
 
-    process = hist.Cat("process", "Process", sorting='placement')
-    cats = ("dataset",)
-    sig_map = OrderedDict()
-    bkg_map = OrderedDict()
-    data_map = OrderedDict()
-    bkg_map['QCD-$\mu$ (bb)'] = ('bb--QCD*')
-    bkg_map['QCD-$\mu$ (b)'] = ('b--QCD*')
-    bkg_map['QCD-$\mu$ (cc)'] = ('cc--QCD*')
-    bkg_map['QCD-$\mu$ (c)'] = ('c--QCD*')
-    bkg_map['QCD-$\mu$ (l)'] = ('l--QCD*')
-    bkg_map["Hbb"] = ("*HTo*")
-    bkg_map["DY+HF"] = ("HF--DYJets*",)
-    bkg_map["DY+LF"] = ("LF--DYJets*",)
-    bkg_map["DY+jetsLO"] = ("lo--DYJets*",)
-    bkg_map["DY+jetsNNLO"] = ("nnlo--DYJets*",)
+    sig_map = {}
+    bkg_map = {}
+    data_map = {}
+    bkg_map['QCD-$\mu$ (bb)'] = ['bb--QCD']
+    bkg_map['QCD-$\mu$ (b)'] = ['b--QCD']
+    bkg_map['QCD-$\mu$ (cc)'] = ['cc--QCD']
+    bkg_map['QCD-$\mu$ (c)'] = ['c--QCD']
+    bkg_map['QCD-$\mu$ (l)'] = ['l--QCD']
+    bkg_map["Hbb"] = ["HTo"]
+    bkg_map["DY+HF"] = ["HF--DYJets"]
+    bkg_map["DY+LF"] = ["LF--DYJets"]
+    bkg_map["DY+jetsLO"] = ["lo--DYJets"]
+    bkg_map["DY+jetsNNLO"] = ["nnlo--DYJets"]
     #bkg_map["VV"] = (["WW*","WZ*","ZZ*"],)
-    bkg_map["WW"] = ("WW*", )
-    bkg_map["WZ"] = ("WZ*", )
-    bkg_map["ZZ"] = ("ZZ*", )
-    bkg_map["ST"] = ("ST*",)
-    bkg_map["TT"] = ("TT*",)
-    bkg_map["W+HF"] = ("HF--WJets*",)
-    bkg_map["W+LF"] = ("LF--WJets*",)
-    bkg_map["W+jetsLO"] = ("lo--WJets*",)
-    bkg_map["W+jetsNNLO"] = ("nnlo--WJets*",)
-    bkg_map["Z+HF"] = ("HF--ZJetsToNuNu*",)
-    bkg_map["Z+LF"] = ("LF--ZJetsToNuNu*",)
-    bkg_map["Z+jetsLO"] = ("lo--ZJets*",)
-    bkg_map["Z+jetsNNLO"] = ("nnlo--ZJets*",)
-    bkg_map["G+HF"] = ("HF--GJets*",)
-    bkg_map["G+LF"] = ("LF--GJets*",)
-    bkg_map["G+jetsLO"] = ("lo--GJets*",)
-    bkg_map["G+jetsNNLO"] = ("nnlo--GJets*",)
-    bkg_map["QCD"] = ("QCD*",)
-    data_map["MET"] = ("MET*", )
-    data_map["SingleElectron"] = ("SingleElectron*", )
-    data_map["SinglePhoton"] = ("SinglePhoton*", )
-    data_map["EGamma"] = ("EGamma*", )
-    data_map["BTagMu"] = ("BTagMu*", )
-    for signal in hists['sumw'].identifiers('dataset'):
-        if 'mhs' not in str(signal): continue
+    bkg_map["WW"] = ["WW"]
+    bkg_map["WZ"] = ["WZ"]
+    bkg_map["ZZ"] = ["ZZ"]
+    bkg_map["ST"] = ["ST"]
+    bkg_map["TT"] = ["TT"]
+    bkg_map["W+HF"] = ["HF--WJets"]
+    bkg_map["W+LF"] = ["LF--WJets"]
+    bkg_map["W+jetsLO"] = ["lo--WJets"]
+    bkg_map["W+jetsNNLO"] = ["nnlo--WJets"]
+    bkg_map["Z+HF"] = ["HF--ZJetsToNuNu"]
+    bkg_map["Z+LF"] = ["LF--ZJetsToNuNu"]
+    bkg_map["Z+jetsLO"] = ["lo--ZJets"]
+    bkg_map["Z+jetsNNLO"] = ["nnlo--ZJets"]
+    bkg_map["G+HF"] = ["HF--GJets"]
+    bkg_map["G+LF"] = ["LF--GJets"]
+    bkg_map["G+jetsLO"] = ["lo--GJets"]
+    bkg_map["G+jetsNNLO"] = ["nnlo--GJets"]
+    bkg_map["QCD"] = ["QCD"]
+    data_map["MET"] = ["MET"]
+    data_map["SingleElectron"] = ["SingleElectron"]
+    data_map["SinglePhoton"] = ["SinglePhoton"]
+    data_map["EGamma"] = ["EGamma"]
+    data_map["BTagMu"] = ["BTagMu"]
+    for signal in hists['sumw'].keys():
+        if 'mhs' not in signal: continue
         print(signal)
-        sig_map[str(signal)] = (str(signal),)  ## signals
+        sig_map[signal] = signal  ## signals
     print('Processes defined')
     
     ###
@@ -228,12 +196,27 @@ def scale(hists):
     sig_hists={}
     data_hists={}
     for key in hists.keys():
-        bkg_hists[key] = hists[key].group(cats, process, bkg_map)
-        data_hists[key] = hists[key].group(cats, process, data_map)
-        sig_hists[key] = hists[key].group(cats, process, sig_map)
-        for signal in sig_hists[key].identifiers('process'):
-            print('Scaling '+str(signal)+' by xsec '+str(xsec[str(signal)]))
-            sig_hists[key].scale({signal:xsec[str(signal)]},axis='process')
+        bkg_hists[key]={}
+        sig_hists[key]={}
+        data_hists[key]={}
+        for process in bkg_map.keys():
+            for dataset in hists[key].keys():
+                if not any(d in dataset for d in bkg_map[process]): continue
+                print('Adding',dataset,'to',process)
+                bkg_hists[key][process]+=hists[key][dataset]
+        for process in data_map.keys():
+            for dataset in hists[key].keys():
+                if not any(d in dataset for d in data_map[process]): continue
+                print('Adding',dataset,'to',process)
+                data_hists[key][process]+=hists[key][dataset]
+        for process in sig_map.keys():
+            for dataset in hists[key].keys():
+                if not any(d in dataset for d in sig_map[process]): continue
+                print('Adding',dataset,'to',process)
+                sig_hists[key][process]+=hists[key][dataset]
+        for signal in sig_hists[key].keys():
+            print('Scaling '+ signal +' by xsec '+str(xsec[signal]))
+            sig_hists[key] *= xsec[str(signal)]
         
     print('Histograms grouped')
 
