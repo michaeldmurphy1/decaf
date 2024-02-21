@@ -31,7 +31,7 @@ class BTagEfficiency(processor.ProcessorABC):
                 axis.Variable([20, 30, 50, 70, 100, 140, 200, 300, 600, 1000], name="pt", label=r'Jet $p_{T}$ [GeV]'),
                 axis.Variable([0, 1.4, 2.0, 2.5], name="abseta", label=r'Jet |$\eta$|'),
             )
-        })
+        }
 
     def process(self, events):
         
