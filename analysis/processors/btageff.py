@@ -39,7 +39,7 @@ class BTagEfficiency(processor.ProcessorABC):
         isGoodJet = self._ids['isGoodJet']
 
         j = events.Jet
-        j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF)
+        j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF, self._year)
         j_good = j[j.isgood.astype(np.bool)]
 
         name = {}

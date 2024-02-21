@@ -9,15 +9,20 @@ import os
 from optparse import OptionParser
 
 import uproot
+uproot.open.defaults["xrootd_handler"] = uproot.MultithreadedXRootDSource
+
 import numpy as np
 from coffea import processor
 from coffea.util import load, save
-from coffea.nanoevents.schemas.nanoaod import NanoAODSchema
+from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 
 NanoAODSchema.mixins["AK15PFPuppi_Jet"] = "FatJet"
-NanoAODSchema.mixins["AK15PFPuppi_SubJet"] = "Jet"
+NanoAODSchema.mixins["AK15PFPuppi_SubJet"] = "PtEtaPhiMCollection"
 NanoAODSchema.all_cross_references["AK15PFPuppi_Jet_subJetIdx1"] = "AK15PFPuppi_SubJet"
 NanoAODSchema.all_cross_references["AK15PFPuppi_Jet_subJetIdx2"] = "AK15PFPuppi_SubJet"
+NanoAODSchema.nested_items["FatJet_subJetIdxG"] =  ["AK15PFPuppi_Jet_subJetIdx1G", "AK15PFPuppi_Jet_subJetIdx2G"]
+NanoAODSchema._build_collections()
+#NanoAODSchema._form["contents"] = NanoAODSchema._build_collections(NanoAODSchema._form["contents"])
 
 parser = OptionParser()
 parser.add_option('-p', '--processor', help='processor', dest='processor')
