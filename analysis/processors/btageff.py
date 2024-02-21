@@ -40,7 +40,7 @@ class BTagEfficiency(processor.ProcessorABC):
 
         j = events.Jet
         j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF, self._year)
-        j_good = j[j.isgood.astype(np.bool)]
+        j_good = j[j.isgood]
 
         name = {}
         name['deepflav']= 'btagDeepFlavB'

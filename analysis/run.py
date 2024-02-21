@@ -32,12 +32,14 @@ class CustomNanoAODSchema(NanoAODSchema):
         "AK15PFPuppiJet_subJetIdxG": ["AK15PFPuppiJet_subJetIdx1G", "AK15PFPuppiJet_subJetIdx2G"]
     }
     def __init__(self, base_form):
-        for key in base_form.keys():
+        for key in base_form["contents"].copy():
             if '_Jet' in key:
-                base_form[key.replace('_Jet','Jet')] = base_form.pop(key)
+                popped = base_form["contents"].pop(key)
+                base_form[key.replace('_Jet','Jet')] = popped
             if '_SubJet' in key:
-                base_form[key.replace('_SubJet','SubJet')] = base_form.pop(key)
-        print("Base Form is",base_form)
+                popped = base_form["contents"].pop(key)
+                base_form[key.replace('_SubJet','SubJet')] = popped
+        #print("Base Form is",base_form)
         super().__init__(base_form)
 
 parser = OptionParser()
