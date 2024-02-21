@@ -14,15 +14,26 @@ uproot.open.defaults["xrootd_handler"] = uproot.MultithreadedXRootDSource
 import numpy as np
 from coffea import processor
 from coffea.util import load, save
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
+from coffea.nanoevents import NanoAODSchema
 
-NanoAODSchema.mixins["AK15PFPuppi_Jet"] = "FatJet"
-NanoAODSchema.mixins["AK15PFPuppi_SubJet"] = "PtEtaPhiMCollection"
-NanoAODSchema.all_cross_references["AK15PFPuppi_Jet_subJetIdx1"] = "AK15PFPuppi_SubJet"
-NanoAODSchema.all_cross_references["AK15PFPuppi_Jet_subJetIdx2"] = "AK15PFPuppi_SubJet"
-NanoAODSchema.nested_items["FatJet_subJetIdxG"] =  ["AK15PFPuppi_Jet_subJetIdx1G", "AK15PFPuppi_Jet_subJetIdx2G"]
-NanoAODSchema._build_collections()
-#NanoAODSchema._form["contents"] = NanoAODSchema._build_collections(NanoAODSchema._form["contents"])
+class CustomNanoAODSchema(NanoAODSchema):
+    mixins = {
+        **NanoAODSchema.mixins,
+        "AK15PFPuppi_Jet": "FatJet",
+        "AK15PFPuppi_SubJet": "PtEtaPhiMCollection",
+    }
+    all_cross_references = {
+        **NanoAODSchema.all_cross_references,
+        "AK15PFPuppi_Jet_subJetIdx1": "AK15PFPuppi_SubJet",  
+        "AK15PFPuppi_Jet_subJetIdx2": "AK15PFPuppi_SubJet",  
+    }
+    nested_items = {
+        **NanoAODSchema.nested_items,
+        "AK15PFPuppi_Jet_subJetIdxG": ["AK15PFPuppi_Jet_subJetIdx1G", "AK15PFPuppi_Jet_subJetIdx2G"]
+    }
+    def __init__(self, base_form):
+        print("Base Form is",base_form)
+        super().__init__(base_form)
 
 parser = OptionParser()
 parser.add_option('-p', '--processor', help='processor', dest='processor')
@@ -52,7 +63,7 @@ for dataset, info in samplefiles.items():
                                       'Events',
                                       processor_instance=processor_instance,
                                       executor=processor.futures_executor,
-                                      executor_args={'schema': NanoAODSchema, 'workers': options.workers},
+                                      executor_args={'schema': CustomNanoAODSchema, 'workers': options.workers},
                                       ) 
     
     #nbins = sum(sum(arr.size for arr in h._sumw.values()) for h in output.values() if isinstance(h, hist.Hist))
