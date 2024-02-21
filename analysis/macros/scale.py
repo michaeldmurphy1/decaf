@@ -3,7 +3,8 @@ import pickle
 import gzip
 import os
 from collections import defaultdict, OrderedDict
-from coffea import hist, processor 
+from coffea import processor 
+import hist
 from coffea.util import load, save
 
 xsec = {
