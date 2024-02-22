@@ -14,10 +14,11 @@ def add(chunk_tmp_arr):
      return np.sum(chunk_tmp_arr)
 
 def futuresum(tmp_arr):
+     print('tmp_arr',tmp_arr)
      while np.size(tmp_arr)>1:
           chunk_sum=[]
           chunk_tmp_arr = np.array_split(tmp_arr, int(np.size(tmp_arr)/2))
-          print('chunk_tmp_arr',chunk_tmp_arr)
+          #print('chunk_tmp_arr',chunk_tmp_arr)
           if len(chunk_tmp_arr)>1:
                with concurrent.futures.ProcessPoolExecutor(max_workers=32) as executor:
                     futures = set()
