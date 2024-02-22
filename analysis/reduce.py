@@ -9,6 +9,9 @@ from coffea.util import load, save
 import hist
 from helpers.futures_patch import patch_mp_connection_bpo_17560
 
+def split_list(lst, chunk_size):
+    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
 def add(chunk_tmp_arr):
      #print('Job started')
      return np.sum(chunk_tmp_arr)
@@ -16,10 +19,10 @@ def add(chunk_tmp_arr):
 def futuresum(tmp_arr):
      print('tmp_arr',tmp_arr)
      print('Size',len(tmp_arr))
-     while np.size(tmp_arr)>1:
+     while len(tmp_arr)>1:
           chunk_sum=[]
-          chunk_tmp_arr = np.array_split(tmp_arr, int(np.size(tmp_arr)/2))
-          #print('chunk_tmp_arr',chunk_tmp_arr)
+          chunk_tmp_arr = split_list(tmp_arr, 2)
+          print('chunk_tmp_arr',chunk_tmp_arr)
           if len(chunk_tmp_arr)>1:
                with concurrent.futures.ProcessPoolExecutor(max_workers=32) as executor:
                     futures = set()
