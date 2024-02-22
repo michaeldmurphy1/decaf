@@ -15,7 +15,7 @@ def add(chunk_tmp_arr):
 
 def futuresum(tmp_arr):
      print('tmp_arr',tmp_arr)
-     print('Size',np.size(tmp_arr))
+     print('Size',len(tmp_arr))
      while np.size(tmp_arr)>1:
           chunk_sum=[]
           chunk_tmp_arr = np.array_split(tmp_arr, int(np.size(tmp_arr)/2))
