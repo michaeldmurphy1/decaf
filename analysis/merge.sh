@@ -19,33 +19,30 @@ if [ "${3}" == "kisti" ]; then
 	ls -l /tmp/x509up_u$(id -u)
 	/usr/bin/voms-proxy-info -all
     fi
-    xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/decaf.tgz .
+    xrdcp -s root://cms-xrdr.private.lo:3094//xrd/store/user/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
-    xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/pylocal.tgz .
-    echo "Python correctly copied" 
+    xrdcp -s root://cms-xrdr.private.lo:3094//xrd/store/user/$USER/pylocal_3_8.tgz .
+    echo "Python correctly copied"
 else
-    xrdcp -s root://cmseos.fnal.gov//store/user/$USER/decaf.tgz .
+    xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
-    xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal.tgz .
+    xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
 fi
-tar -zxvf decaf.tgz
-tar -zxvf pylocal.tgz
-rm decaf.tgz
-rm pylocal.tgz
-cd decaf
-if uname -r | grep -q el6; then
-  source /cvmfs/sft.cern.ch/lcg/views/LCG_96python3/x86_64-slc6-gcc8-opt/setup.sh
-else
-  source /cvmfs/sft.cern.ch/lcg/views/LCG_96python3/x86_64-centos7-gcc8-opt/setup.sh
-fi
+tar -zxvf cmssw_11_3_4.tgz
+tar -zxvf pylocal_3_8.tgz
+rm cmssw_11_3_4.tgz
+rm pylocal_3_8.tgz
+export SCRAM_ARCH=slc7_amd64_gcc900
+cd CMSSW_11_3_4/src
+scramv1 b ProjectRename
+eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers
 export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/site-packages:$PYTHONPATH
 export PYTHONPATH=$(find ${_CONDOR_SCRATCH_DIR}/site-packages/ -name *.egg |tr '\n' ':')$PYTHONPATH
 export PYTHONWARNINGS="ignore"
 echo "Updated python path: " $PYTHONPATH
-cd analysis
-ls
-echo "python merge.py --folder ${1} --variable ${2}"
-python merge.py --folder ${1} --variable ${2}
+cd decaf/analysis
+echo "python3 merge.py --folder ${1} --variable ${2}"
+python3 merge.py --folder ${1} --variable ${2}
 ls ${1}/${2}.merged
 cp ${1}/${2}.merged ${_CONDOR_SCRATCH_DIR}/${2}.merged
