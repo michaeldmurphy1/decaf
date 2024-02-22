@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import lz4.frame as lz4f
 import pickle
 import json
 import time
