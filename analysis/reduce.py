@@ -50,7 +50,7 @@ def futuresum(tmp_arr):
                          raise
           else:
                chunk_sum.append(add(chunk_tmp_arr[0]))
-          print(chunk_sum)
+          print('chunk_sum', chunk_sum)
      return chunk_sum
 
 
