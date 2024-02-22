@@ -16,16 +16,19 @@ from coffea import processor
 from coffea.util import load, save
 from coffea.nanoevents import NanoAODSchema
 
+import warnings
+warnings.filterwarnings("ignore")
+
 class CustomNanoAODSchema(NanoAODSchema):
     mixins = {
         **NanoAODSchema.mixins,
         "AK15PFPuppiJet": "FatJet",
-        "AK15PFPuppiSubJet": "PtEtaPhiMCollection",
+        "AK15PFPuppiSubjet": "PtEtaPhiMCollection",
     }
     all_cross_references = {
         **NanoAODSchema.all_cross_references,
-        "AK15PFPuppiJet_subJetIdx1": "AK15PFPuppiSubJet",  
-        "AK15PFPuppiJet_subJetIdx2": "AK15PFPuppiSubJet",  
+        "AK15PFPuppiJet_subJetIdx1": "AK15PFPuppiSubjet",  
+        "AK15PFPuppiJet_subJetIdx2": "AK15PFPuppiSubjet",  
     }
     nested_items = {
         **NanoAODSchema.nested_items,
@@ -35,11 +38,11 @@ class CustomNanoAODSchema(NanoAODSchema):
         for key in base_form["contents"].copy():
             if '_Jet' in key:
                 popped = base_form["contents"].pop(key)
-                base_form[key.replace('_Jet','Jet')] = popped
-            if '_SubJet' in key:
+                base_form["contents"][key.replace('_Jet','Jet')] = popped
+            if '_Subjet' in key:
                 popped = base_form["contents"].pop(key)
-                base_form[key.replace('_SubJet','SubJet')] = popped
-        #print("Base Form is",base_form)
+                base_form["contents"][key.replace('_Subjet','Subjet')] = popped
+        #print("Base form keys are:",base_form["contents"].keys())
         super().__init__(base_form)
 
 parser = OptionParser()
