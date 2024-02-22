@@ -10,7 +10,7 @@ import hist
 from helpers.futures_patch import patch_mp_connection_bpo_17560
 
 def add(chunk_tmp_arr):
-     print('Job started')
+     #print('Job started')
      return np.sum(chunk_tmp_arr)
 
 def futuresum(tmp_arr):
@@ -41,7 +41,7 @@ def futuresum(tmp_arr):
           else:
                chunk_sum.append(add(chunk_tmp_arr[0]))
           tmp_arr=np.array(chunk_sum)
-          print(tmp_arr)
+          #print(tmp_arr)
      return tmp_arr
 
 
@@ -67,6 +67,7 @@ def reduce(folder,_dataset=None,_exclude=None,variable=None):
                     if variable is not None:
                          if not any(v==k for v in variable.split(',')): continue
                     print('Considering variable',k)
+                    print(hin[k])
                     if k not in tmp: tmp[k]=[hin[k]]
                     else: tmp[k].append(hin[k])
                del hin
@@ -74,7 +75,7 @@ def reduce(folder,_dataset=None,_exclude=None,variable=None):
                tmp_arr=futuresum(np.array(tmp[k]))
                hists = {}
                hists[k]=tmp_arr[0]
-               print(hists)
+               #print(hists)
                save(hists, folder+'/'+k+'--'+pdi+'.reduced')
 
 if __name__ == '__main__':
