@@ -14,7 +14,7 @@ def split_list(lst, chunk_size):
 
 def add(chunk_tmp_arr):
      #print('Job started')
-     return np.sum(chunk_tmp_arr)
+     return sum(chunk_tmp_arr)
 
 def futuresum(tmp_arr):
      print('tmp_arr',tmp_arr)
@@ -46,9 +46,8 @@ def futuresum(tmp_arr):
                          raise
           else:
                chunk_sum.append(add(chunk_tmp_arr[0]))
-          tmp_arr=np.array(chunk_sum)
-          #print(tmp_arr)
-     return tmp_arr
+          print(chunk_sum)
+     return chunk_sum
 
 
 def reduce(folder,_dataset=None,_exclude=None,variable=None):
