@@ -44,7 +44,7 @@ export PYTHONWARNINGS="ignore"
 echo "Updated python path: " $PYTHONPATH
 cd analysis
 echo "python run.py --metadata ${1} --dataset ${2} --processor ${3}"
-python run.py --metadata ${1} --dataset ${2} --processor ${3}
+python3 run.py --metadata ${1} --dataset ${2} --processor ${3}
 ls hists/${3}/${2}.futures
 cp hists/${3}/${2}.futures ${_CONDOR_SCRATCH_DIR}/${3}_${2}.futures
 

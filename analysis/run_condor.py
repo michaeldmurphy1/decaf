@@ -10,9 +10,6 @@ import time
 import numexpr
 import os
 from optparse import OptionParser
-import uproot, uproot_methods
-import numpy as np
-from coffea import hist
 
 parser = OptionParser()
 parser.add_option('-d', '--dataset', help='dataset', dest='dataset', default='')
