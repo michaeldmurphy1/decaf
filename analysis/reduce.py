@@ -17,6 +17,7 @@ def futuresum(tmp_arr):
      while np.size(tmp_arr)>1:
           chunk_sum=[]
           chunk_tmp_arr = np.array_split(tmp_arr, int(np.size(tmp_arr)/2))
+          print('chunk_tmp_arr',chunk_tmp_arr)
           if len(chunk_tmp_arr)>1:
                with concurrent.futures.ProcessPoolExecutor(max_workers=32) as executor:
                     futures = set()
@@ -73,7 +74,6 @@ def reduce(folder,_dataset=None,_exclude=None,variable=None):
                del hin
           
           for k in tmp:
-               print(k,np.array(tmp[k]))
                tmp_arr=futuresum(np.array(tmp[k]))
                hists = {}
                hists[k]=tmp_arr[0]
