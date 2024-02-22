@@ -16,10 +16,8 @@ def add(chunk_tmp_arr):
      print('Job started')
      print('chunk_tmp_arr[0]',chunk_tmp_arr[0])
      print('chunk_tmp_arr[1]',chunk_tmp_arr[1])
-     sum=chunk_tmp_arr[0]
-     for i in (1,len(chunk_tmp_arr)):
-         print("i is:",i)
-         sum += chunk_tmp_arr[1]
+     sum=chunk_tmp_arr[0]+chunk_tmp_arr[1]
+     print('sum',sum)
      return sum
 
 def futuresum(tmp_arr):
