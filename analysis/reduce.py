@@ -50,8 +50,9 @@ def futuresum(tmp_arr):
                          raise
           else:
                chunk_sum.append(add(chunk_tmp_arr[0]))
-          print('chunk_sum', chunk_sum)
-     return chunk_sum
+          tmp_arr=chunk_sum
+          print(tmp_arr)
+     return tmp_arr
 
 
 def reduce(folder,_dataset=None,_exclude=None,variable=None):
