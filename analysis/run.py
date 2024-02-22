@@ -2,7 +2,6 @@
 import pickle
 import json
 import time
-import cloudpickle
 import gzip
 import os
 from optparse import OptionParser

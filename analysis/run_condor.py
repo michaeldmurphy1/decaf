@@ -33,7 +33,7 @@ if options.tar:
               '--exclude=\'src/decaf/analysis/hists/*/*.futures\' '
               '--exclude=\'src/decaf/analysis/hists/*/*.merged\' '
               '--exclude=\'src/decaf/analysis/hists/*/*.reduced\' '
-              '../../../../CMSSW_10_2_13')
+              '../../../../CMSSW_11_3_4')
     os.system('tar --exclude-caches-all --exclude-vcs -czvf ../../../../pylocal_3_8.tgz -C ~/.local/lib/python3.8/ site-packages')
 
 if options.cluster == 'kisti':

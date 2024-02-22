@@ -5,6 +5,7 @@ echo "Starting job on " `date` #Date/time of start of job
 echo "Running on: `uname -a`" #Condor job is running on this node
 echo "System software: `cat /etc/redhat-release`" #Operating System on that node
 echo $(hostname)
+source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 if [ "${4}" == "kisti" ]; then
     env
@@ -32,13 +33,14 @@ tar -zxvf cmssw_11_3_4.tgz
 tar -zxvf pylocal_3_8.tgz
 rm cmssw_11_3_4.tgz
 rm pylocal_3_8.tgz
+export SCRAM_ARCH=slc7_amd64_gcc900
+cd CMSSW_11_3_4/src
+scramv1 b ProjectRename
+eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers
 export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/site-packages:$PYTHONPATH
 export PYTHONPATH=$(find ${_CONDOR_SCRATCH_DIR}/site-packages/ -name *.egg |tr '\n' ':')$PYTHONPATH
 export PYTHONWARNINGS="ignore"
 echo "Updated python path: " $PYTHONPATH
-cd CMSSW_11_3_4/src
-scramv1 b ProjectRename
-eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers
 cd decaf/analysis
 echo "python3 run.py --metadata ${1} --dataset ${2} --processor ${3}"
 python3 run.py --metadata ${1} --dataset ${2} --processor ${3}
