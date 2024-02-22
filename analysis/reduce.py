@@ -71,6 +71,7 @@ def reduce(folder,_dataset=None,_exclude=None,variable=None):
                     if k not in tmp: tmp[k]=[hin[k]]
                     else: tmp[k].append(hin[k])
                del hin
+          print(tmp)
           for k in tmp:
                tmp_arr=futuresum(np.array(tmp[k]))
                hists = {}
