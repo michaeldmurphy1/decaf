@@ -7,12 +7,9 @@ import gzip
 import pickle
 import json
 import time
-import numexpr
 import os
 from optparse import OptionParser
-import uproot, uproot_methods
 import numpy as np
-from coffea import hist
 from coffea.util import load
 
 parser = OptionParser()

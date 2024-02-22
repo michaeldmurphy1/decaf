@@ -60,7 +60,9 @@ def run(processor_instance, samplefiles):
                                           'Events',
                                           processor_instance=processor_instance,
                                           executor=processor.futures_executor,
-                                          executor_args={'schema': CustomNanoAODSchema, 'workers': options.workers},
+                                          executor_args={'schema': CustomNanoAODSchema, 
+                                                         'workers': options.workers,
+                                                         'skipbadfiles': True},
                                           ) 
         
         os.system("mkdir -p hists/"+options.processor)
