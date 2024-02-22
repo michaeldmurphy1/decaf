@@ -75,6 +75,7 @@ def reduce(folder,_dataset=None,_exclude=None,variable=None):
                del hin
           
           for k in tmp:
+               print('np.array(tmp[k])',np.array(tmp[k]))
                tmp_arr=futuresum(np.array(tmp[k]))
                hists = {}
                hists[k]=tmp_arr[0]
