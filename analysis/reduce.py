@@ -14,7 +14,10 @@ def split_list(lst, chunk_size):
 
 def add(chunk_tmp_arr):
      #print('Job started')
-     return sum(chunk_tmp_arr)
+     sum=chunk_tmp_arr[0]
+     for i in (1,len(chunk_tmp_arr))
+         sum += chunk_tmp_arr[1]
+     return sum
 
 def futuresum(tmp_arr):
      print('tmp_arr',tmp_arr)
