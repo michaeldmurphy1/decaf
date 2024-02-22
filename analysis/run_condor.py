@@ -34,7 +34,7 @@ if options.tar:
               '--exclude=\'analysis/hists/*/*.merged\' '
               '--exclude=\'analysis/hists/*/*.reduced\' '
               '../../decaf')
-    os.system('tar --exclude-caches-all --exclude-vcs -czvf ../../pylocal.tgz -C ~/.local/lib/python3.6/ site-packages')
+    os.system('tar --exclude-caches-all --exclude-vcs -czvf ../../pylocal.tgz -C ~/.local/lib/python3.8/ site-packages')
 
 if options.cluster == 'kisti':
     if options.copy:
