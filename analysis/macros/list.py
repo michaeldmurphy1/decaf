@@ -61,9 +61,9 @@ for sample in slist:
         sample_data_structure[dataset] = {
             "files": files
         }
-
+    metadata_dir = os.path.abspath('metadata')
     # Write the sample's data structure to a JSON file
-    sample_json_filename = 'metadata/{0}.json'.format(sample)
+    sample_json_filename = os.path.join(metadata_dir, '{0}.json'.format(sample))
     with open(sample_json_filename, 'w') as outfile:
         json.dump(sample_data_structure, outfile, indent=4)
 
