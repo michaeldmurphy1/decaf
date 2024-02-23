@@ -15,8 +15,13 @@ campaigns['2016'] = 'UL2016'
 campaigns['2017'] = 'UL2017'
 campaigns['2018'] = 'UL2018'
 
+campaigns_TTTo = {}
+campaigns_TTTo['2016'] = 'UL16' #different naming convention for TTTo
+campaigns_TTTo['2017'] = 'UL17'
+campaigns_TTTo['2018'] = 'UL18'
 
-slist = ['SingleMuon']
+
+slist = ['SingleMuon', 'TTTo']
 
 if options.year == '2016' or options.year == '2017':
     slist += ['SingleElectron']
@@ -27,8 +32,13 @@ for sample in slist:
     # Initialize an empty dictionary to hold dataset information for the current sample
     sample_data_structure = {}
 
+    if sample == 'TTTo':
+        dataset_query = "dasgoclient --query=\"dataset=/*{0}*/*{1}*JMENano*/*\" ".format(sample, campaigns_TTTo[options.year])
+
     # Construct the query to get datasets
-    dataset_query = "dasgoclient --query=\"dataset=/" + sample + "/*" + campaigns['2016'] + "*JMENano*/*\""
+    else:
+        dataset_query = "dasgoclient --query=\"dataset=/{0}/*{1}*JMENano*/*\" ".format(sample, campaigns[options.year])
+    
     print('Querying datasets:', dataset_query)
     
     # Execute the query and decode the output
@@ -40,7 +50,7 @@ for sample in slist:
         if not dataset: continue
         
         # Construct the query to get files for the dataset
-        file_query = f"dasgoclient --query=\"file dataset={dataset}\""
+        file_query = "dasgoclient --query=\"file dataset={0}\"".format(dataset)
         print('Querying files in dataset:', file_query)
         
         # Execute the query and decode the output
@@ -53,9 +63,9 @@ for sample in slist:
         }
 
     # Write the sample's data structure to a JSON file
-    sample_json_filename = f'metadata/{sample}.json'
+    sample_json_filename = 'metadata/{0}.json'.format(sample)
     with open(sample_json_filename, 'w') as outfile:
         json.dump(sample_data_structure, outfile, indent=4)
 
-    print(f"Metadata for {sample} written to {sample_json_filename}")
+    print("Metadata for {0} written to {1}".format(sample, sample_json_filename))
 
