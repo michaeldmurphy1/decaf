@@ -485,12 +485,11 @@ class BTagCorrector:
                 btag += btag_file[tagger][k]
             except:
                 btag = btag_file[tagger][k]
-        print(btag.view())
-        #bpass = btag[{"wp": wp, "btag": "pass"}].view()
-        ball = btag.integrate('wp',workingpoint).integrate('btag').values()[()]
+        bpass = btag[{"wp": workingpoint, "btag": "pass"}].view()
+        ball = btag[{"wp": workingpoint, "btag": sum}].view()
         ball[ball<=0.]=1.
         nom = bpass / np.maximum(ball, 1.)
-        self.eff = lookup_tools.dense_lookup.dense_lookup(nom, [ax.edges() for ax in btag[tagger].axes()[3:]])
+        self.eff = lookup_tools.dense_lookup.dense_lookup(nom, [ax.edges for ax in btag.axes[2:]])
 
     def btag_weight(self, pt, eta, flavor, istag):
         abseta = abs(eta)
