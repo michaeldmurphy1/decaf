@@ -18,12 +18,13 @@ import json
 ###
 
 met_trig_hists = {
-    '2016': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
+    '2016postVFP': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
+    '2016preVFP': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
     '2017': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
     '2018': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
 }
 get_met_trig_weight = {}
-for year in ['2016','2017','2018']:
+for year in ['2016postVFP', '2016preVFP', '2017','2018']:
     met_trig_hist=met_trig_hists[year]
     get_met_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(met_trig_hist.values(), met_trig_hist.axes)
 
@@ -238,9 +239,12 @@ def get_muon_tight_iso_sf (year, eta, pt):
 tag = 'roccor.Run2.v5'
 get_mu_rochester_sf = {}
 for year in ['2016postVFP', '2016preVFP', '2017','2018']:
-    if '2016postVFP' in year: year = '2016b'
-    if '2016preVFP' in year:  year = '2016a'
-    fname = f'data/{tag}/RoccoR{year}UL.txt'
+    if '2016postVFP' in year: 
+        fname = f'data/{tag}/RoccoR2016bUL.txt'
+    elif '2016preVFP' in year:  
+        fname = f'data/{tag}/RoccoR2016aUL.txt'
+    else:
+        fname = f'data/{tag}/RoccoR{year}UL.txt'
     sfs = lookup_tools.txt_converters.convert_rochester_file(fname,loaduncs=True)
     get_mu_rochester_sf[year] = lookup_tools.rochester_lookup.rochester_lookup(sfs)
 
@@ -313,10 +317,8 @@ nlo_ewk_hists = {
     'a': uproot.open("data/vjets_SFs/merged_kfactors_gjets.root")["kfactor_monojet_ewk"]
 }    
 get_nlo_ewk_weight = {}
-for year in ['2016','2017','2018']:
-    get_nlo_ewk_weight[year] = {}
-    for p in ['dy','w','z','a']:
-        get_nlo_ewk_weight[year][p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values(), nlo_ewk_hists[p].axes)
+for p in ['dy','w','z','a']:
+    get_nlo_ewk_weight[p] = lookup_tools.dense_lookup.dense_lookup(nlo_ewk_hists[p].values(), nlo_ewk_hists[p].axes)
 
 ###
 # V+jets NNLO weights
@@ -405,14 +407,22 @@ uncorrelated_variations = {
     }
 }
 get_nnlo_nlo_weight = {}
-for year in ['2016','2017','2018']:
+for year in ['2016postVFP', '2016preVFP', '2017','2018']:
     get_nnlo_nlo_weight[year] = {}
-    nnlo_file = {
-        'dy': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root"),
-        'w': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root"),
-        'z': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root"),
-        'a': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root")
-    }
+    if '2016' in year:
+        nnlo_file = {
+            'dy': uproot.open("data/Vboson_Pt_Reweighting/2016/TheoryXS_eej_madgraph_2016.root"),
+            'w': uproot.open("data/Vboson_Pt_Reweighting/2016/TheoryXS_evj_madgraph_2016.root"),
+            'z': uproot.open("data/Vboson_Pt_Reweighting/2016/TheoryXS_vvj_madgraph_2016.root"),
+            'a': uproot.open("data/Vboson_Pt_Reweighting/2016/TheoryXS_aj_madgraph_2016.root")
+        }
+    else:
+        nlo_file = {
+            'dy': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root"),
+            'w': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root"),
+            'z': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root"),
+            'a': uproot.open("data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root")
+        }
     for p in ['dy','w','z','a']:
         get_nnlo_nlo_weight[year][p] = {}
         for cv in correlated_variations:
