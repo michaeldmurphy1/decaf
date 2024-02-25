@@ -473,15 +473,21 @@ class BTagCorrector:
         self.sf = btvjson[tagger]
 
         files = {
-            '2016preVFP': 'btageff2016.merged',
-            '2016postVFP': 'btageff2016.merged',
-            '2017': 'btageff2017.merged',
+            '2016preVFP': 'btageff2018.merged',
+            '2016postVFP': 'btageff2018.merged',
+            '2017': 'btageff2018.merged',
             '2018': 'btageff2018.merged',
         }
         filename = 'hists/'+files[year]
-        btag = load(filename)
-        bpass = btag[tagger].integrate('dataset').integrate('wp',workingpoint).integrate('btag', 'pass').values()[()]
-        ball = btag[tagger].integrate('dataset').integrate('wp',workingpoint).integrate('btag').values()[()]
+        btag_file = load(filename)
+        for k in btag_file[tagger]:
+            try:
+                btag += btag_file[tagger][k]
+            except:
+                btag = btag_file[tagger][k]
+        print(btag.view())
+        #bpass = btag[{"wp": wp, "btag": "pass"}].view()
+        ball = btag.integrate('wp',workingpoint).integrate('btag').values()[()]
         ball[ball<=0.]=1.
         nom = bpass / np.maximum(ball, 1.)
         self.eff = lookup_tools.dense_lookup.dense_lookup(nom, [ax.edges() for ax in btag[tagger].axes()[3:]])
@@ -827,5 +833,5 @@ corrections = {
 }
 
 
-save(corrections, 'data/corrections.coffea')
+#save(corrections, 'data/corrections.coffea')
 
