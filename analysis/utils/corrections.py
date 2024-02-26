@@ -483,9 +483,9 @@ class BTagCorrector:
         self.sf = btvjson[tagger]
 
         files = {
-            '2016preVFP': 'btageff2018.merged',
-            '2016postVFP': 'btageff2018.merged',
-            '2017': 'btageff2018.merged',
+            '2016preVFP': 'btageff2016preVFP.merged',
+            '2016postVFP': 'btageff2016postVFP.merged',
+            '2017': 'btageff2017.merged',
             '2018': 'btageff2018.merged',
         }
         filename = 'hists/'+files[year]
