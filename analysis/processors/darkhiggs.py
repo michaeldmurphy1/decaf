@@ -1,28 +1,29 @@
 #!/usr/bin/env python
-import lz4.frame as lz4f
-import cloudpickle
-import json
-import pprint
+import logging
 import numpy as np
-import math 
-import awkward
-np.seterr(divide='ignore', invalid='ignore', over='ignore')
-from coffea.arrays import Initialize
-from coffea import hist, processor
+import awkward as ak
+import json
+import copy
+from collections import defaultdict
+from coffea import processor
+import hist
+from coffea.analysis_tools import Weights, PackedSelection
+from coffea.lumi_tools import LumiMask
 from coffea.util import load, save
 from optparse import OptionParser
 from uproot_methods import TVector2Array, TLorentzVectorArray
 
 class AnalysisProcessor(processor.ProcessorABC):
 
-    lumis = { #Values from https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmVAnalysisSummaryTable                                                      
+    lumis = { 
+        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2                                                      
         '2016': 36.31,
-        '2017': 41.53,
-        '2018': 59.74
+        '2017': 41.48,
+        '2018': 59.83
     }
 
     met_filter_flags = {
-     
+        # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         '2016': ['goodVertices',
                  'globalSuperTightHalo2016Filter',
                  'HBHENoiseFilter',
@@ -48,6 +49,12 @@ class AnalysisProcessor(processor.ProcessorABC):
                  'BadPFMuonFilter',
                  'ecalBadCalibFilterV2'
              ]
+    }
+
+    golden_jsons = {
+            '2016': 'data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
+            '2017': 'data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt',
+            '2018': 'data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt',
     }
 
             
