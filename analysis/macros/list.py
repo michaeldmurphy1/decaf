@@ -97,33 +97,39 @@ for dataset in xsections.keys():
           query="dasgoclient --query=\"file dataset="+dataset+"\""
           urllist = os.popen(query).read().split("\n")
      for url in urllist[:]:
-          if options.year not in str(url):
-               urllist.remove(url)
-               continue
+          if options.year not in url:
+              urllist.remove(url)
+              continue
+          if 'Data' in url and 'KITv2' in url:
+              urllist.remove(url)
+              continue
+          if 'failed' in url: 
+              urllist.remove(url)
+              continue
           if '.root' not in url: 
-               urllist.remove(url)
-               continue
+              urllist.remove(url)
+              continue
           urllist[urllist.index(url)]=redirect+url
      print('list lenght:',len(urllist))
      if options.special:
           for special in options.special.split(','):
-               sdataset, spack = special.split(':')
-               if sdataset in dataset:
-                    print('Packing',spack,'files for dataset',dataset)
-                    urllists = split(urllist, int(spack))
-               else:
-                    print('Packing',int(options.pack),'files for dataset',dataset)
-                    urllists = split(urllist, int(options.pack))
+              sdataset, spack = special.split(':')
+              if sdataset in dataset:
+                  print('Packing',spack,'files for dataset',dataset)
+                  urllists = split(urllist, int(spack))
+              else:
+                  print('Packing',int(options.pack),'files for dataset',dataset)
+                  urllists = split(urllist, int(options.pack))
      else:
           print('Packing',int(options.pack),'files for dataset',dataset)
           urllists = split(urllist, int(options.pack))
      print(len(urllists))
      if urllist:
           for i in range(0,len(urllists)) :
-               datadef[dataset+"____"+str(i)+"_"] = {
-                    'files': urllists[i],
-                    'xs': xs,
-               }
+              datadef[dataset+"____"+str(i)+"_"] = {
+                  'files': urllists[i],
+                  'xs': xs,
+              }
         
 folder = "metadata/"+options.metadata+".json"
 with open(folder, "w") as fout:
