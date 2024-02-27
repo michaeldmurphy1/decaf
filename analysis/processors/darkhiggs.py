@@ -149,184 +149,172 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._ids = ids
         self._common = common
 
-        self._accumulator = processor.dict_accumulator({
-            'sumw': hist.Hist(
-                'sumw', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Bin('sumw', 'Weight value', [0.])
-            ),
-            'cutflow': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                #hist.Bin('cut', 'Cut index', 11, 0, 11),
-                hist.Bin('cut', 'Cut index', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
-            ),
+        ptbins=[30.0, 
+                60.0, 
+                90.0, 
+                120.0, 
+                150.0, 
+                180.0, 
+                210.0, 
+                250.0, 
+                280.0, 
+                310.0, 
+                340.0, 
+                370.0, 
+                400.0, 
+                430.0, 
+                470.0, 
+                510.0, 
+                550.0, 
+                590.0, 
+                640.0, 
+                690.0, 
+                740.0, 
+                790.0, 
+                840.0, 
+                900.0, 
+                960.0, 
+                1020.0, 
+                1090.0, 
+                1160.0, 
+                1250.0]
+
+        self.make_output = lambda: {
+            'sumw': 0.,
             'template': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Cat('systematic', 'Systematic'),
-                hist.Bin('recoil','Hadronic Recoil',[250,310,370,470,590,840,1020,1250,3000]),
-                hist.Bin('fjmass','AK15 Jet Mass', [40,50,60,70,80,90,100,110,120,130,150,160,180,200,220,240,300]),#[0, 30, 60, 80, 120, 300]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.StrCategory([], name='systematic', growth=True),
+                hist.axis.Variable([250,310,370,470,590,840,1020,1250,3000], name='recoil', label=r'$U$ [GeV]'),
+                hist.axis.Variable([40,50,60,70,80,90,100,110,120,130,150,160,180,200,220,240,300], name='fjmass', label=r'AK15 Jet $m_{sd}$'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'ZHbbvsQCD': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD',15,0,1)
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(15,0,1, name='ZHbbvsQCD', label='ZHbbvsQCD'),
+                hist.storage.Weight(),
             ),
             'mindphirecoil': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('mindphirecoil','Min dPhi(Recoil,AK4s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='mindphirecoil', label='Min dPhi(Recoil,AK4s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'minDphirecoil': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('minDphirecoil','Min dPhi(Recoil,AK15s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='minDphirecoil', label='Min dPhi(Recoil,AK15s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'CaloMinusPfOverRecoil': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('CaloMinusPfOverRecoil','Calo - Pf / Recoil',35,0,1),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,0,1, name='CaloMinusPfOverRecoil', label='Calo - Pf / Recoil'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'met': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('met','MET',30,0,600),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,600, name='met', label='MET'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'metphi': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('metphi','MET phi',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='metphi', label='MET phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'mindphimet': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('mindphimet','Min dPhi(MET,AK4s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='mindphimet', label='Min dPhi(MET,AK4s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'minDphimet': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('minDphimet','Min dPhi(MET,AK15s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='minDphimet', label='Min dPhi(MET,AK15s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'j1pt': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('j1pt','AK4 Leading Jet Pt',[30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='j1pt', label='AK4 Leading Jet Pt'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'j1eta': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('j1eta','AK4 Leading Jet Eta',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='j1eta', label='AK4 Leading Jet Eta'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'j1phi': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('j1phi','AK4 Leading Jet Phi',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='j1phi', label='AK4 Leading Jet Phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'fj1pt': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('fj1pt','AK15 Leading SoftDrop Jet Pt',[160.0, 200.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'fj1eta': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('fj1eta','AK15 Leading SoftDrop Jet Eta',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='fj1eta', label='AK15 Leading SoftDrop Jet Eta'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'fj1phi': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('fj1phi','AK15 Leading SoftDrop Jet Phi',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='fj1phi', label='AK15 Leading SoftDrop Jet Phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'njets': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('njets','AK4 Number of Jets',6,-0.5,5.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='AK4 Number of Jets'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'ndflvL': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('ndflvL','AK4 Number of deepFlavor Loose Jets',6,-0.5,5.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='ndflvL', label='AK4 Number of deepFlavor Loose Jets'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'nfjclean': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('nfjclean','AK15 Number of Cleaned Jets',4,-0.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.IntCategory([0, 1, 2, 3, 4], name='nfjclean', label='AK15 Number of Cleaned Jets'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'mT': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('mT','Transverse Mass',20,0,600),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,600, name='mT', label='Transverse Mass'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'l1pt': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('l1pt','Leading Lepton/Photon Pt',[0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='l1pt', label='Leading Lepton Pt'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'l1eta': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('l1eta','Leading Lepton/Photon Eta',48,-2.4,2.4),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(48,-2.4,2.4, name='l1eta', label='Leading Lepton Eta'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'l1phi': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('l1phi','Leading Lepton/Photon Phi',64,-3.2,3.2),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(64,-3.2,3.2, name='l1phi', label='Leading Lepton Phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
-        })
-
-    @property
-    def accumulator(self):
-        return self._accumulator
-
-    @property
-    def columns(self):
-        return self._columns
+    }
 
     def process(self, events):
 
@@ -338,9 +326,9 @@ class AnalysisProcessor(processor.ProcessorABC):
                 if sample not in dataset: continue
                 selected_regions.append(region)
 
-        isData = 'genWeight' not in events.columns
-        selection = processor.PackedSelection()
-        hout = self.accumulator.identity()
+        isData = not hasattr(events, "genWeight")
+        selection = PackedSelection()
+        output = self.make_output()
 
         ###
         #Getting corrections, ids from .coffea files
