@@ -254,7 +254,7 @@ for year in ['2016postVFP', '2016preVFP', '2017','2018']:
 # https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/LUM
 ####
 #trueint = events.Pileup.nTrueInt
-def pu_weight(year, trueint):
+def get_pu_weight(year, trueint):
     correction = {'2018': 'Collisions18_UltraLegacy_goldenJSON',
                   '2017': 'Collisions17_UltraLegacy_goldenJSON',
                   '2016preVFP': 'Collisions16_UltraLegacy_goldenJSON',
@@ -827,7 +827,7 @@ corrections = {
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
     'get_pho_trig_weight':      get_pho_trig_weight,
     'get_met_xy_correction':    XY_MET_Correction,
-    'pu_weight':                pu_weight,
+    'get_pu_weight':            get_pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
     'get_nnlo_nlo_weight':      get_nnlo_nlo_weight,
     'get_ttbar_weight':         get_ttbar_weight,
