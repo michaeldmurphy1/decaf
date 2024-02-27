@@ -10,15 +10,36 @@ parser.add_option('-d', '--dataset', help='dataset', dest='dataset')
 parser.add_option('-m', '--metadata', help='metadata', dest='metadata')
 parser.add_option('-p', '--pack', help='pack', dest='pack')
 parser.add_option('-s', '--special', help='special', dest='special')
+parser.add_option('-c', '--custom', help='custom', dest='custom')
 (options, args) = parser.parse_args()
 
 globalredirect = "root://xrootd-cms.infn.it/"
-
 campaigns ={}
 campaigns['2016pre'] = '*UL*16*JMENano'
 campaigns['2016post'] = '*UL*16*JMENano'
 campaigns['2017'] = '*UL*17*JMENano'
 campaigns['2018'] = '*UL*18*JMENano'
+
+eos = "root://dcache-cms-xrootd.desy.de:1094/"
+custom={}
+custom['2016pre'] = ["/store/user/nshadski/customNano",
+                 "/store/user/empfeffe/customNano",
+                 "/store/user/momolch/customNano",
+                 "/store/user/swieland/customNano",
+                 "/store/user/mwassmer/customNano"]
+
+custom['2016post'] = ["/store/user/nshadski/customNano",
+                 "/store/user/empfeffe/customNano",
+                 "/store/user/momolch/customNano",
+                 "/store/user/swieland/customNano",
+                 "/store/user/mwassmer/customNano"]
+
+custom['2017'] = ["/store/user/swieland/customNano",
+                 "/store/user/momolch/customNano",
+                 "/store/user/mwassmer/customNano"]
+
+custom['2018'] = ["/store/user/mwassmer/customNano",
+                 "/store/user/swieland/customNano"]
 
 def split(arr, size):
      arrs = []
@@ -28,6 +49,19 @@ def split(arr, size):
          arr   = arr[size:]
      arrs.append(arr)
      return arrs
+
+def find(_list):
+     if not _list:
+          return []
+     files=[]
+     print('Looking into',_list)
+     for path in _list:
+         command='xrdfs '+eos+' ls '+path
+         results=os.popen(command).read()
+         files.extend(results.split())
+     if not any('.root' in _file for _file in files):
+          files=find(files)
+     return files
 
 xsections={}
 for k,v in processes.items():
@@ -46,13 +80,22 @@ for dataset in xsections.keys():
      if options.dataset:
           if not any(_dataset in dataset for _dataset in options.dataset.split(',')): continue
      xs = xsections[dataset]
-     query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
-     print(query)
-     dataset=os.popen(query).read().split("\n")[0]
-     print('Dataset is:', dataset)
-     query="dasgoclient --query=\"file dataset="+dataset+"\""
-     print(query)
-     urllist = os.popen(query).read().split("\n")
+     if options.custom:
+          redirect = eos
+          for folder in custom[options.year]:
+               path=folder+'/'+dataset
+               try:
+                    urllist += find([path]))
+               except:
+                    urllist = find([path]))
+               print(urllist)
+     else:
+          redirect = globalredirect
+          query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
+          dataset=os.popen(query).read().split("\n")[0]
+          print('Dataset is:', dataset)
+          query="dasgoclient --query=\"file dataset="+dataset+"\""
+          urllist = os.popen(query).read().split("\n")
      for url in urllist[:]:
           if options.year not in str(url):
                urllist.remove(url)
@@ -60,7 +103,7 @@ for dataset in xsections.keys():
           if '.root' not in url: 
                urllist.remove(url)
                continue
-          urllist[urllist.index(url)]=globalredirect+url
+          urllist[urllist.index(url)]=redirect+url
      print('list lenght:',len(urllist))
      if options.special:
           for special in options.special.split(','):
