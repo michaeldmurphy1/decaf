@@ -100,7 +100,7 @@ Boolean to decide to use public central NanoAODs (if `False`) or private custom 
 As an example, to generate the JSON file for all 2017 data:
 
 ```
-python macros/list.py -y 2017 -m 2017 -p 32
+python3 macros/list.py -y 2017 -m 2017 -p 32
 ```
 
 As a reminder, this script assumes that you are in the `decaf/analysis` directory when running. The output above will be saved in `metadata/2017.json`.
@@ -108,12 +108,120 @@ As a reminder, this script assumes that you are in the `decaf/analysis` director
 If using the `--custom` option, the script can take several hours to run, so it’s best to use a process manager such as `nohup` or `tmux` to avoid the program crashing in case of a lost connection. For example
 
 ```
-nohup python macros/list.py -y 2017 -m 2017 -p 32 -c &
+nohup python3 macros/list.py -y 2017 -m 2017 -p 32 -c &
 ```
 
 The `&` option at the end of the command lets it run in the background, and the std output and error is saved in `nohup.out`. 
 
 The `nohup` command is useful and recommended for running most scripts, but you may also use tools like `tmux` or `screen`.
+
+---
+
+## Computing MC b-Tagging Efficiencies
+
+MC b-tagging efficiencies are needed by most of the analyses to compute the b-tag event weight, once such efficiencies are corrected with the POG-provided b-tag SFs. To compute them, we first need to run the `common` module in `util`:
+
+```
+python utils/common.py
+```
+
+This will generate a series of auxiliary functions and information, like the AK4 b-tagging working points, and it will save such information in a `.coffea` file in the `data` folder. AK4 b-tagging working points are essential to measure the MC efficiencies and they are used by the `btag` processor in the `processors` folder. To generate the processor file: 
+
+```
+python3 processors/btageff.py -y 2018 -m 2018 -n 2017
+```
+
+The options for this script are:
+
+- `-y` (`--year`)
+
+Data year. Options are `2016pre`, `2016post`, `2017`, and `2018`.
+
+- `-m` (`--metadata`)
+
+Metadata file to be used in input.
+
+- `-n` (`--name)
+
+Name of the output processor file. In this case, it will generate a file called `btageff2018.processor` stored in the `data` folder.
+
+
+To run the processor:
+
+```
+python3 run.py -p btageff2018 -m 2018 -d QCD
+```
+
+With this command you will run the `btag2018` processor over QCD MC datasets as defined by the `2018` metadata file. You will see a printout like:
+
+Processing: QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8____4_
+  Preprocessing 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 32/32 [ 0:01:28 < 0:00:00 | ?   file/s ]
+Merging (local) 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 31/31 [ 0:00:23 < 0:00:00 | ? merges/s ]
+
+This means an output file with histograms as defined in the btag processor file has been generated. In this case a folder called `btageff2018` inside the `hists` folder has been created. Inside this folder you can see a file called `QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8____4_.futures`, that stores the histograms. To take advantage of the parallelism offered by the HTCondor job scheduler, the `run_condor.py` script can be used:
+
+```
+python3 run_condor.py -p btag2018 -m 2018 -d QCD -c kisti -t -x
+```
+
+The options for this script are the same as for `run.py`, with the addition of:
+
+- `-c` (`--cluster)
+
+Specifies which cluster you are using.  At the moments supports `lpc` or `kisti`.
+
+- `-t` (`--tar)
+  
+Tars the local python environment and the local CMSSW folder. 
+
+- `-x` (`--copy)
+
+Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
+
+You can check the status of your HTCondor jobs by doing:
+
+```
+condor_q <YOUR_USERNAME>
+```
+
+After obtaining all the histograms, a first step of data reduction is needed. This step is achieved by running the `reduce.py` script:
+
+```
+python reduce.py -f hists/btag2018
+```
+
+The options of this script are:
+
+TO BE LISTED
+
+All the different datasets produced at the previous step will be reduced. A different file for each variable for each reduced dataset will be produced. For example, the command above will produce the following reduced files:
+
+hists/btag2018/deepcsv--QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepcsv--QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepcsv--QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepcsv--QCD_HT200to300_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepcsv--QCD_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepcsv--QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepcsv--QCD_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepflav--QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepflav--QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepflav--QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepflav--QCD_HT200to300_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepflav--QCD_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepflav--QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+hists/btag2018/deepflav--QCD_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+
+This step can be run in HTCondor by using the `reduce_condor.py` script. A second step of data reduction is needed to merge all the `.reduced` files corresponding to a single variable. This is achieved by using the `merge.py` script:
+
+python merge.py -f hists/btag2018
+
+This command will produce the following files:
+
+hists/btag2018/deepcsv.merged  hists/btag2018/deepflav.merged
+
+The same script can be used to merge the the files corresponding to each single variable into a single file, using the `-p` or `—postprocess` option:
+
+python merge.py -f hists/btag2018 -p
 
 ---
 
