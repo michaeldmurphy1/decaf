@@ -274,17 +274,15 @@ def pu_weight(year, trueint):
 # https://lathomas.web.cern.ch/lathomas/METStuff/XYCorrections/
 # correction_labels = ["metphicorr_pfmet_mc", "metphicorr_puppimet_mc", "metphicorr_pfmet_data", "metphicorr_puppimet_data"]
 
-def XY_MET_Correction(year, events, pt, phi):
+def XY_MET_Correction(year, npv, run, pt, phi):
     if 'genWeight' in events.fields:
         isMC = True
     else:
         isData = True
 
-    npv = events.PV.npvsGood
     mask = np.asarray(npv>100)
     npv = np.asarray(npv)
     npv[mask==True] = 100
-    run = events.run
 
     evaluator = correctionlib.CorrectionSet.from_file('data/JetMETCorr/'+year+'_UL/met.json.gz')
 
@@ -828,7 +826,7 @@ corrections = {
     'get_pho_loose_id_sf':      get_pho_loose_id_sf,
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
     'get_pho_trig_weight':      get_pho_trig_weight,
-    'XY_MET_Correction':        XY_MET_Correction,
+    'get_met_xy_correction':    XY_MET_Correction,
     'pu_weight':                pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
     'get_nnlo_nlo_weight':      get_nnlo_nlo_weight,
@@ -842,5 +840,5 @@ corrections = {
 }
 
 
-#save(corrections, 'data/corrections.coffea')
+save(corrections, 'data/corrections.coffea')
 
