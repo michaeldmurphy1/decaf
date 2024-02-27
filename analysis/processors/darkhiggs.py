@@ -375,9 +375,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         #Initialize global quantities (MET ecc.)
         ###
 
+        npv = events.PV.npvsGood
+        run = events.run
         met = events.MET
-        if self._year == '2017': met = events.METFixEE2017#Recommended for 2017
-        met['T']  = TVector2Array.from_polar(met.pt, met.phi)
         calomet = events.CaloMET
         puppimet = events.PuppiMET
 
@@ -514,6 +514,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
         # Calculate recoil and transverse mass
         ###
+
+        met['T']  = TVector2Array.from_polar(met.pt, met.phi)
 
         u = {
             'sr'    : met.T,
