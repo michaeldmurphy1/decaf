@@ -72,17 +72,29 @@ By running this script you will also initialize your grid certificate (Note: `se
 The list of input files for the analyzer can be generated as a JSON file using the `macros/list.py` script. This script will run over the datasets listed in `data/process.py`, find the list of files for each dataset, “pack” them into small groups for condor jobs, and output the list of groups as a JSON file in `metadata/`.
 
 The options for this script are:
+
 `-d` (`--dataset`)
+
 Select a specific dataset to pack. By default, it will run over all datasets in `process.py`.
+
 `-y` (`--year`)
+
 Data year. Options are `2016pre`, `2016post`, `2017`, and `2018`.
+
 `-m` (`--metadata`)
+
 Name of metadata output file. Output will be saved in `metadata/<NAME>.json`
+
 `-p` (`--pack`)
+
 Size of file groups. The smaller the number, the more condor jobs will run. The larger the number, the longer each condor job will take. We tend to pick `32`, but the decision is mostly arbitrary.
+
 `-s` (`--special`)
-Size of file groups for special datasets. For a specific dataset, use a different size with respect to the one established with `--pack`. The syntax is `-s DATASET:NUMBER`.
+
+Size of file groups for special datasets. For a specific dataset, use a different size with respect to the one established with `--pack`. The syntax is `-s <DATASET>:<NUMBER>`.
+
 `-c` (`--custom`)
+
 Boolean to decide to use public central NanoAODs (if `False`) or private custom NanoAODs (if `True`). Default is `False`.
 
 As an example, to generate the JSON file for all 2017 data:
