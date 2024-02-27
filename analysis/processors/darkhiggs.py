@@ -17,42 +17,64 @@ class AnalysisProcessor(processor.ProcessorABC):
 
     lumis = { 
         #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2                                                      
-        '2016': 36.31,
+        '2016postVFP': 36.31,
+        '2016preVFP': 36.31,
         '2017': 41.48,
         '2018': 59.83
     }
 
-    met_filter_flags = {
+    met_filters = {
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
-        '2016': ['goodVertices',
-                 'globalSuperTightHalo2016Filter',
-                 'HBHENoiseFilter',
-                 'HBHENoiseIsoFilter',
-                 'EcalDeadCellTriggerPrimitiveFilter',
-                 'BadPFMuonFilter'
-             ],
+        '2016postVFP': [
+                'goodVertices',
+                'globalSuperTightHalo2016Filter',
+                'HBHENoiseFilter',
+                'HBHENoiseIsoFilter',
+                'EcalDeadCellTriggerPrimitiveFilter',
+                'BadPFMuonFilter',
+                'BadPFMuonDzFilter',
+                'eeBadScFilter'
+                ],
 
-        '2017': ['goodVertices',
-                 'globalSuperTightHalo2016Filter',
-                 'HBHENoiseFilter',
-                 'HBHENoiseIsoFilter',
-                 'EcalDeadCellTriggerPrimitiveFilter',
-                 'BadPFMuonFilter',
-                 'ecalBadCalibFilterV2'
-             ],
+        '2016preVFP': [
+                'goodVertices',
+                'globalSuperTightHalo2016Filter',
+                'HBHENoiseFilter',
+                'HBHENoiseIsoFilter',
+                'EcalDeadCellTriggerPrimitiveFilter',
+                'BadPFMuonFilter',
+                'BadPFMuonDzFilter',
+                'eeBadScFilter'
+                ],
+        
+        '2017': [
+                'goodVertices', 
+                'globalSuperTightHalo2016Filter', 
+                'HBHENoiseFilter', 
+                'HBHENoiseIsoFilter', 
+                'EcalDeadCellTriggerPrimitiveFilter', 
+                'BadPFMuonFilter', 
+                'BadPFMuonDzFilter', 
+                'eeBadScFilter', 
+                'ecalBadCalibFilter'
+                ],
 
-        '2018': ['goodVertices',
-                 'globalSuperTightHalo2016Filter',
-                 'HBHENoiseFilter',
-                 'HBHENoiseIsoFilter',
-                 'EcalDeadCellTriggerPrimitiveFilter',
-                 'BadPFMuonFilter',
-                 'ecalBadCalibFilterV2'
-             ]
+        '2018': [
+                'goodVertices', 
+                'globalSuperTightHalo2016Filter', 
+                'HBHENoiseFilter', 
+                'HBHENoiseIsoFilter', 
+                'EcalDeadCellTriggerPrimitiveFilter', 
+                'BadPFMuonFilter', 
+                'BadPFMuonDzFilter', 
+                'eeBadScFilter', 
+                'ecalBadCalibFilter'
+                ]
     }
 
     golden_jsons = {
-            '2016': 'data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
+            '2016postVFP': 'data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
+            '2016preVFP': 'data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
             '2017': 'data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt',
             '2018': 'data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt',
     }
@@ -80,7 +102,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
 
         self._met_triggers = {
-            '2016': [
+            '2016postVFP': [
+                'PFMETNoMu90_PFMHTNoMu90_IDTight',
+                'PFMETNoMu100_PFMHTNoMu100_IDTight',
+                'PFMETNoMu110_PFMHTNoMu110_IDTight',
+                'PFMETNoMu120_PFMHTNoMu120_IDTight'
+            ],
+            '2016preVFP': [
                 'PFMETNoMu90_PFMHTNoMu90_IDTight',
                 'PFMETNoMu100_PFMHTNoMu100_IDTight',
                 'PFMETNoMu110_PFMHTNoMu110_IDTight',
@@ -97,7 +125,11 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
 
         self._singleelectron_triggers = { #2017 and 2018 from monojet, applying dedicated trigger weights
-            '2016': [
+            '2016postVFP': [
+                'Ele27_WPTight_Gsf',
+                'Ele105_CaloIdVT_GsfTrkIdT'
+            ],
+            '2016preVFP': [
                 'Ele27_WPTight_Gsf',
                 'Ele105_CaloIdVT_GsfTrkIdT'
             ],
