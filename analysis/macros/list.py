@@ -10,7 +10,7 @@ parser.add_option('-d', '--dataset', help='dataset', dest='dataset')
 parser.add_option('-m', '--metadata', help='metadata', dest='metadata')
 parser.add_option('-p', '--pack', help='pack', dest='pack')
 parser.add_option('-s', '--special', help='special', dest='special')
-parser.add_option('-c', '--custom', help='custom', dest='custom')
+parser.add_option('-c', '--custom', action='store_true', dest='custom')
 (options, args) = parser.parse_args()
 
 globalredirect = "root://xrootd-cms.infn.it/"
@@ -85,9 +85,9 @@ for dataset in xsections.keys():
           for folder in custom[options.year]:
                path=folder+'/'+dataset
                try:
-                    urllist += find([path]))
+                    urllist += find([path])
                except:
-                    urllist = find([path]))
+                    urllist = find([path])
                print(urllist)
      else:
           redirect = globalredirect
