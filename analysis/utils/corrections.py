@@ -826,6 +826,10 @@ corrections = {
     'get_pho_loose_id_sf':      get_pho_loose_id_sf,
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
     'get_pho_trig_weight':      get_pho_trig_weight,
+    'get_muon_loose_id_sf':     get_muon_loose_id_sf,
+    'get_muon_tight_id_sf':     get_muon_tight_id_sf.
+    'get_muon_loose_iso_sf':    get_muon_loose_iso_sf,
+    'get_muon_tight_iso_sf':    get_muon_tight_iso_sf,
     'get_met_xy_correction':    XY_MET_Correction,
     'get_pu_weight':            get_pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
