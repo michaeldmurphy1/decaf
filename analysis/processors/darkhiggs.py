@@ -420,41 +420,34 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         npv = events.PV.npvsGood
         run = events.run
-        met = events.MET
         calomet = events.CaloMET
-        puppimet = events.PuppiMET
+        met = events.MET
+        corrected_pt, corrected_phi = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
+        met['pt'] = corrected_pt
+        met['phi'] = corrected_phi
+        
 
         ###
         #Initialize physics objects
         ###
 
         mu = events.Muon
-        rochester = get_mu_rochester_sf
-        _muon_offsets = mu.pt.offsets
-        _charge = mu.charge
-        _pt = mu.pt
-        _eta = mu.eta
-        _phi = mu.phi
         if isData:
-            _k = rochester.kScaleDT(_charge, _pt, _eta, _phi)
+            _k = get_mu_rochester_sf.kScaleDT(mu.charge, mu.pt, mu.eta, mu.phi)
         else:
-            # for default if gen present
-            _gpt = mu.matched_gen.pt
-            # for backup w/o gen
-            _nl = mu.nTrackerLayers
-            _u = awkward.JaggedArray.fromoffsets(_muon_offsets, np.random.rand(*_pt.flatten().shape))
-            _hasgen = (_gpt.fillna(-1) > 0)
-            _kspread = rochester.kSpreadMC(_charge[_hasgen], _pt[_hasgen], _eta[_hasgen], _phi[_hasgen],
-                                           _gpt[_hasgen])
-            _ksmear = rochester.kSmearMC(_charge[~_hasgen], _pt[~_hasgen], _eta[~_hasgen], _phi[~_hasgen],
-                                         _nl[~_hasgen], _u[~_hasgen])
-            _k = _pt.ones_like()
-            _k[_hasgen] = _kspread
-            _k[~_hasgen] = _ksmear
+            hasgen = (mu.matched_gen.pt.fillna(-1) > 0)
+            u = awkward.JaggedArray.fromoffsets(mu.pt.offsets, np.random.rand(*_pt.flatten().shape))
+            kspread = get_mu_rochester_sf.kSpreadMC(mu.charge[hasgen], mu.pt[hasgen], mu.eta[hasgen], mu.phi[hasgen],
+                                           mu.matched_gen.pt[hasgen])
+            ksmear = get_mu_rochester_sf.kSmearMC(mu.charge[~hasgen], mu.pt[~hasgen], mu.eta[~hasgen], mu.phi[~hasgen],
+                                         mu.nTrackerLayers[~hasgen], u[~hasgen])
+            k = mu.pt.ones_like()
+            k[hasgen] = kspread
+            k[~hasgen] = ksmear
         mask = _pt < 200
-        rochester_pt = _pt.ones_like()
-        rochester_pt[~mask] = _pt[~mask]
-        rochester_pt[mask] = (_k * _pt)[mask]
+        rochester_pt = mu.pt.ones_like()
+        rochester_pt[~mask] = mu.pt[~mask]
+        rochester_pt[mask] = (k * mu.pt)[mask]
         mu['pt'] = rochester_pt
         mu['isloose'] = isLooseMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.looseId,self._year)
         mu['istight'] = isTightMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.tightId,self._year)
