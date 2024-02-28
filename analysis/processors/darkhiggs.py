@@ -367,7 +367,10 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         isData = not hasattr(events, "genWeight")
         selection = PackedSelection()
+        weights = Weights(len(events), storeIndividual=True)
         output = self.make_output()
+        if shift_name is None and not isData:
+            output['sumw'] = ak.sum(events.genWeight)
 
         ###
         #Getting corrections, ids from .coffea files
@@ -677,7 +680,39 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
 
             btagSF, btagSFbc_correlatedUp, btagSFbc_correlatedDown, btagSFbc_uncorrelatedUp, btagSFbc_uncorrelatedDown, btagSFlight_correlatedUp, btagSFlight_correlatedDown, btagSFlight_uncorrelatedUp, btagSFlight_uncorrelatedDown   = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
-            
+
+            if 'L1PreFiringWeight' in events.columns: 
+                weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
+            weights.add('genw',events.genWeight)
+            weights.add('nlo_qcd',nlo_qcd)
+            weights.add('nlo_ewk',nlo_ewk)
+            if 'cen' in nnlo_nlo:
+                #weights.add('nnlo_nlo',nnlo_nlo['cen'])
+                weights.add('qcd1',np.ones(events.size), nnlo_nlo['qcd1up']/nnlo_nlo['cen'], nnlo_nlo['qcd1do']/nnlo_nlo['cen'])
+                weights.add('qcd2',np.ones(events.size), nnlo_nlo['qcd2up']/nnlo_nlo['cen'], nnlo_nlo['qcd2do']/nnlo_nlo['cen'])
+                weights.add('qcd3',np.ones(events.size), nnlo_nlo['qcd3up']/nnlo_nlo['cen'], nnlo_nlo['qcd3do']/nnlo_nlo['cen'])
+                weights.add('ew1',np.ones(events.size), nnlo_nlo['ew1up']/nnlo_nlo['cen'], nnlo_nlo['ew1do']/nnlo_nlo['cen'])
+                weights.add('ew2G',np.ones(events.size), nnlo_nlo['ew2Gup']/nnlo_nlo['cen'], nnlo_nlo['ew2Gdo']/nnlo_nlo['cen'])
+                weights.add('ew3G',np.ones(events.size), nnlo_nlo['ew3Gup']/nnlo_nlo['cen'], nnlo_nlo['ew3Gdo']/nnlo_nlo['cen'])
+                weights.add('ew2W',np.ones(events.size), nnlo_nlo['ew2Wup']/nnlo_nlo['cen'], nnlo_nlo['ew2Wdo']/nnlo_nlo['cen'])
+                weights.add('ew3W',np.ones(events.size), nnlo_nlo['ew3Wup']/nnlo_nlo['cen'], nnlo_nlo['ew3Wdo']/nnlo_nlo['cen'])
+                weights.add('ew2Z',np.ones(events.size), nnlo_nlo['ew2Zup']/nnlo_nlo['cen'], nnlo_nlo['ew2Zdo']/nnlo_nlo['cen'])
+                weights.add('ew3Z',np.ones(events.size), nnlo_nlo['ew3Zup']/nnlo_nlo['cen'], nnlo_nlo['ew3Zdo']/nnlo_nlo['cen'])
+                weights.add('mix',np.ones(events.size), nnlo_nlo['mixup']/nnlo_nlo['cen'], nnlo_nlo['mixdo']/nnlo_nlo['cen'])
+                weights.add('muF',np.ones(events.size), nnlo_nlo['muFup']/nnlo_nlo['cen'], nnlo_nlo['muFdo']/nnlo_nlo['cen'])
+                weights.add('muR',np.ones(events.size), nnlo_nlo['muRup']/nnlo_nlo['cen'], nnlo_nlo['muRdo']/nnlo_nlo['cen'])
+            weights.add('pileup',pu)
+            weights.add('trig', trig[region])
+            weights.add('ids', ids[region])
+            weights.add('reco', reco[region])
+            weights.add('isolation', isolation[region])
+            weights.add('btagSF',btagSF)
+            weights.add('btagSFbc_correlated',np.ones(events.size), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
+            weights.add('btagSFbc_uncorrelated',np.ones(events.size), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
+            weights.add('btagSFlight_correlated',np.ones(events.size), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
+            weights.add('btagSFlight_uncorrelated',np.ones(events.size), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
+
+        
         ###
         # Selections
         ###
@@ -743,10 +778,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             'qcdcr': ['recoil_qcdcr','mindphi_qcdcr','minDphi_qcdcr','calo_qcdcr','msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
         }
 
-        isFilled = False
-
-        #for region in selected_regions: 
-        for region, cuts in regions.items():
+        for region in regions:
             if region not in selected_regions: continue
 
             ###
@@ -757,12 +789,12 @@ class AnalysisProcessor(processor.ProcessorABC):
             selection.add('mindphi_'+region, (abs(u[region].delta_phi(j_clean.T)).min()>0.5))
             selection.add('minDphi_'+region, (abs(u[region].delta_phi(fj_clean.T)).min()>1.5))
             selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].mag) < 0.5))
-            #regions[region].update({'recoil_'+region,'mindphi_'+region})
             if 'qcd' not in region:
                 regions[region].insert(0, 'recoil_'+region)
                 regions[region].insert(3, 'mindphi_'+region)
                 regions[region].insert(4, 'minDphi_'+region)
                 regions[region].insert(5, 'calo_'+region)
+                
             variables = {
                 'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
                 'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
@@ -792,201 +824,71 @@ class AnalysisProcessor(processor.ProcessorABC):
                 variables['l1phi']     = leading_mu.phi.sum()
                 variables['l1eta']     = leading_mu.eta.sum()
 
-            def fill(dataset, weight, cut):
-                for histname, h in hout.items():
-                    if not isinstance(h, hist.Hist):
-                        continue
-                    if histname not in variables:
-                        continue
-                    flat_variable = {histname: variables[histname]}
-                    h.fill(dataset=dataset, 
-                           region=region, 
-                           **flat_variable, 
-                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                           weight=weight*cut)
-
-            if isData:
-                if not isFilled:
-                    hout['sumw'].fill(dataset=dataset, sumw=1, weight=1)
-                    isFilled=True
-                cut = selection.all(*regions[region])
-                hout['template'].fill(dataset=dataset,
-                                      region=region,
-                                      systematic='nominal',
-                                      recoil=u[region].mag,
-                                      fjmass=leading_fj.msd_corr.sum(),
-                                      ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                      weight=np.ones(events.size)*cut)
-                hout['ZHbbvsQCD'].fill(dataset=dataset,
-                                      region=region,
-                                      ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                      weight=np.ones(events.size)*cut)
-                fill(dataset, np.ones(events.size), cut)
-            else:
-                weights = processor.Weights(len(events))
-                if 'L1PreFiringWeight' in events.columns: weights.add('prefiring',events.L1PreFiringWeight.Nom)
-                weights.add('genw',events.genWeight)
-                weights.add('nlo_qcd',nlo_qcd)
-                weights.add('nlo_ewk',nlo_ewk)
-                if 'cen' in nnlo_nlo:
-                    #weights.add('nnlo_nlo',nnlo_nlo['cen'])
-                    weights.add('qcd1',np.ones(events.size), nnlo_nlo['qcd1up']/nnlo_nlo['cen'], nnlo_nlo['qcd1do']/nnlo_nlo['cen'])
-                    weights.add('qcd2',np.ones(events.size), nnlo_nlo['qcd2up']/nnlo_nlo['cen'], nnlo_nlo['qcd2do']/nnlo_nlo['cen'])
-                    weights.add('qcd3',np.ones(events.size), nnlo_nlo['qcd3up']/nnlo_nlo['cen'], nnlo_nlo['qcd3do']/nnlo_nlo['cen'])
-                    weights.add('ew1',np.ones(events.size), nnlo_nlo['ew1up']/nnlo_nlo['cen'], nnlo_nlo['ew1do']/nnlo_nlo['cen'])
-                    weights.add('ew2G',np.ones(events.size), nnlo_nlo['ew2Gup']/nnlo_nlo['cen'], nnlo_nlo['ew2Gdo']/nnlo_nlo['cen'])
-                    weights.add('ew3G',np.ones(events.size), nnlo_nlo['ew3Gup']/nnlo_nlo['cen'], nnlo_nlo['ew3Gdo']/nnlo_nlo['cen'])
-                    weights.add('ew2W',np.ones(events.size), nnlo_nlo['ew2Wup']/nnlo_nlo['cen'], nnlo_nlo['ew2Wdo']/nnlo_nlo['cen'])
-                    weights.add('ew3W',np.ones(events.size), nnlo_nlo['ew3Wup']/nnlo_nlo['cen'], nnlo_nlo['ew3Wdo']/nnlo_nlo['cen'])
-                    weights.add('ew2Z',np.ones(events.size), nnlo_nlo['ew2Zup']/nnlo_nlo['cen'], nnlo_nlo['ew2Zdo']/nnlo_nlo['cen'])
-                    weights.add('ew3Z',np.ones(events.size), nnlo_nlo['ew3Zup']/nnlo_nlo['cen'], nnlo_nlo['ew3Zdo']/nnlo_nlo['cen'])
-                    weights.add('mix',np.ones(events.size), nnlo_nlo['mixup']/nnlo_nlo['cen'], nnlo_nlo['mixdo']/nnlo_nlo['cen'])
-                    weights.add('muF',np.ones(events.size), nnlo_nlo['muFup']/nnlo_nlo['cen'], nnlo_nlo['muFdo']/nnlo_nlo['cen'])
-                    weights.add('muR',np.ones(events.size), nnlo_nlo['muRup']/nnlo_nlo['cen'], nnlo_nlo['muRdo']/nnlo_nlo['cen'])
-                weights.add('pileup',pu)
-                weights.add('trig', trig[region])
-                weights.add('ids', ids[region])
-                weights.add('reco', reco[region])
-                weights.add('isolation', isolation[region])
-                weights.add('btagSF',btagSF)
-                weights.add('btagSFbc_correlated',np.ones(events.size), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
-                weights.add('btagSFbc_uncorrelated',np.ones(events.size), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
-                weights.add('btagSFlight_correlated',np.ones(events.size), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
-                weights.add('btagSFlight_uncorrelated',np.ones(events.size), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
-
-                ###
-                # AK15 doubleb-tagging weights
-                ###
-                
-                if('mhs' in dataset):
-                    doublebtag, doublebtagUp,  doublebtagDown= get_doublebtag_weight(leading_fj.sd.pt.sum())
-                    weights.add('doublebtag',doublebtag, doublebtagUp, doublebtagDown)
-
-                if 'WJets' in dataset or 'ZJets' in dataset or 'DY' in dataset:
-                    if not isFilled:
-                        hout['sumw'].fill(dataset='HF--'+dataset, sumw=1, weight=events.genWeight.sum())
-                        hout['sumw'].fill(dataset='LF--'+dataset, sumw=1, weight=events.genWeight.sum())
-                        isFilled=True
-                    whf = ((gen[gen.isb].counts>0)|(gen[gen.isc].counts>0)).astype(np.int)
-                    wlf = (~(whf)).astype(np.int)
-                    cut = selection.all(*regions[region])
-                    systematics = [None,
-                                   'btagSFbc_correlatedUp',
-                                   'btagSFbc_correlatedDown',
-                                   'btagSFbc_uncorrelatedUp',
-                                   'btagSFbc_uncorrelatedDown',
-                                   'btagSFlight_correlatedUp',
-                                   'btagSFlight_correlatedDown',
-                                   'btagSFlight_uncorrelatedUp',
-                                   'btagSFlight_uncorrelatedDown',
-                                   'qcd1Up',
-                                   'qcd1Down',
-                                   'qcd2Up',
-                                   'qcd2Down',
-                                   'qcd3Up',
-                                   'qcd3Down',
-                                   'muFUp',
-                                   'muFDown',
-                                   'muRUp',
-                                   'muRDown',
-                                   'ew1Up',
-                                   'ew1Down',
-                                   'ew2GUp',
-                                   'ew2GDown',
-                                   'ew2WUp',
-                                   'ew2WDown',
-                                   'ew2ZUp',
-                                   'ew2ZDown',
-                                   'ew3GUp',
-                                   'ew3GDown',
-                                   'ew3WUp',
-                                   'ew3WDown',
-                                   'ew3ZUp',
-                                   'ew3ZDown',
-                                   'mixUp',
-                                   'mixDown']
-                    for systematic in systematics:
-                        sname = 'nominal' if systematic is None else systematic
-                        hout['template'].fill(dataset='HF--'+dataset,
-                                              region=region,
-                                              systematic=sname,
-                                              recoil=u[region].mag,
-                                              fjmass=leading_fj.msd_corr.sum(),
-                                              ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                              weight=weights.weight(modifier=systematic)*whf*cut)
-                        hout['template'].fill(dataset='LF--'+dataset,
-                                              region=region,
-                                              systematic=sname,
-                                              recoil=u[region].mag,
-                                              fjmass=leading_fj.msd_corr.sum(),
-                                              ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                              weight=weights.weight(modifier=systematic)*wlf*cut)
-                    ## Cutflow loop
-                    vcut=np.zeros(events.size, dtype=np.int)
-                    hout['cutflow'].fill(dataset='HF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*whf)
-                    hout['cutflow'].fill(dataset='LF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*wlf)
-                    allcuts = set()
-                    for i, icut in enumerate(cuts):
-                        allcuts.add(icut)
-                        jcut = selection.all(*allcuts)
-                        vcut = (i+1)*jcut
-                        hout['cutflow'].fill(dataset='HF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*jcut*whf)
-                        hout['cutflow'].fill(dataset='LF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*jcut*wlf)
-
-                    hout['ZHbbvsQCD'].fill(dataset='HF--'+dataset,
-                                           region=region,
-                                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                           weight=weights.weight()*whf*cut)
-                    hout['ZHbbvsQCD'].fill(dataset='LF--'+dataset,
-                                           region=region,
-                                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                           weight=weights.weight()*wlf*cut)
-                    fill('HF--'+dataset, weights.weight()*whf, cut)
-                    fill('LF--'+dataset, weights.weight()*wlf, cut)
+            def normalize(val, cut):
+                if cut is None:
+                    ar = ak.to_numpy(ak.fill_none(val, np.nan))
+                    return ar
                 else:
-                    if not isFilled:
-                        hout['sumw'].fill(dataset=dataset, sumw=1, weight=events.genWeight.sum())
-                        isFilled=True
-                    cut = selection.all(*regions[region])
-                    systematics = [None, 
-                                   'btagSFbc_correlatedUp', 
-                                   'btagSFbc_correlatedDown', 
-                                   'btagSFbc_uncorrelatedUp', 
-                                   'btagSFbc_uncorrelatedDown',
-                                   'btagSFlight_correlatedUp', 
-                                   'btagSFlight_correlatedDown', 
-                                   'btagSFlight_uncorrelatedUp', 
-                                   'btagSFlight_uncorrelatedDown',
-                               ]
-                    if('mhs' in dataset):
-                        systematics.append('doublebtagUp')
-                        systematics.append('doublebtagDown')
-                    for systematic in systematics:
-                        sname = 'nominal' if systematic is None else systematic
-                        hout['template'].fill(dataset=dataset,
-                                              region=region,
-                                              systematic=sname,
-                                              recoil=u[region].mag,
-                                              fjmass=leading_fj.msd_corr.sum(),
-                                              ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                              weight=weights.weight(modifier=systematic)*cut)
-                    ## Cutflow loop
-                    vcut=np.zeros(events.size, dtype=np.int)
-                    hout['cutflow'].fill(dataset=dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight())
-                    allcuts = set()
-                    for i, icut in enumerate(cuts):
-                        allcuts.add(icut)
-                        jcut = selection.all(*allcuts)
-                        vcut = (i+1)*jcut
-                        hout['cutflow'].fill(dataset=dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*jcut)
+                    ar = ak.to_numpy(ak.fill_none(val[cut], np.nan))
+                    return ar
 
-                    hout['ZHbbvsQCD'].fill(dataset=dataset,
-                                           region=region,
-                                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                           weight=weights.weight()*cut)
-                    fill(dataset, weights.weight(), cut)
+            def fill(weight, cut, systematic):
+                for variable in output:
+                    if variable not in variables:
+                        continue
+                        
+                    normalized_variable = {variable: normalize(variables[variable],cut)}
+                    output[variable].fill(
+                        region=region,
+                        ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD,cut),
+                        **normalized_variable,
+                        weight=weight[cut],
+                    )
+                sname = 'nominal' if systematic is None else systematic
+                output['template'].fill(
+                      region=region,
+                      systematic='nominal',
+                      recoil=normalize(u[region].mag, cut),
+                      fjmass=normalize(leading_fj.msd_corr, cut),
+                      ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                      weight=weight[cut]
+                )
+                hout['ZHbbvsQCD'].fill(
+                      region=region,
+                      ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                      weight=weight[cut]
+                )
 
-        return hout
+            cut = selection.all(*regions[region])
+            if isData:
+                fill(np.ones(events.size), cut, None)
+            else:
+                
+                
+
+                if shift_name is None:
+                    hout['ZHbbvsQCD'].fill(
+                                       region=region,
+                                       ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                                       weight=weights.weight()[cut])
+                    fill(weights.weight(), cut)
+                    systematics = [None] + list(weights.variations)
+                else:
+                    systematics = [shift_name]
+                    
+                for systematic in systematics:
+                    sname = 'nominal' if systematic is None else systematic
+                    hout['template'].fill(
+                                          region=region,
+                                          systematic=sname,
+                                          recoil=normalize(u[region].mag, cut),
+                                          fjmass=normalize(leading_fj.msd_corr, cut),
+                                          ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                                          weight=weights.weight(modifier=systematic)[cut])
+                
+                
+
+        return output
 
     def postprocess(self, accumulator):
         scale = {}
