@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import uproot
 from data.process import *
 from optparse import OptionParser
 import json
@@ -109,6 +110,12 @@ for dataset in xsections.keys():
           if '.root' not in url: 
               urllist.remove(url)
               continue
+          try:
+              infile = uproot.open(redirect+url)
+          except:
+              urllist.remove(url)
+          else:
+              del infile
           urllist[urllist.index(url)]=redirect+url
      print('list lenght:',len(urllist))
      if options.special:
