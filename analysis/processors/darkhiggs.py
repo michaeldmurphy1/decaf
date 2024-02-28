@@ -11,7 +11,7 @@ from coffea.analysis_tools import Weights, PackedSelection
 from coffea.lumi_tools import LumiMask
 from coffea.util import load, save
 from optparse import OptionParser
-from uproot_methods import TVector2Array, TLorentzVectorArray
+from uproot_methods import TVector2Array
 
 class AnalysisProcessor(processor.ProcessorABC):
 
