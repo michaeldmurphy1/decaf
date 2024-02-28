@@ -274,12 +274,10 @@ def get_pu_weight(year, trueint):
 # https://lathomas.web.cern.ch/lathomas/METStuff/XYCorrections/
 # correction_labels = ["metphicorr_pfmet_mc", "metphicorr_puppimet_mc", "metphicorr_pfmet_data", "metphicorr_puppimet_data"]
 
-def XY_MET_Correction(year, npv, run, pt, phi):
-    if 'genWeight' in events.fields:
-        isMC = True
-    else:
-        isData = True
-
+def XY_MET_Correction(year, npv, run, pt, phi, isData):
+    if '2016' in year:
+        year = '2016'
+    
     mask = np.asarray(npv>100)
     npv = np.asarray(npv)
     npv[mask==True] = 100
@@ -290,7 +288,7 @@ def XY_MET_Correction(year, npv, run, pt, phi):
         corrected_pt = evaluator['pt_metphicorr_pfmet_data'].evaluate(pt,phi,npv,run)
         corrected_phi = evaluator['phi_metphicorr_pfmet_data'].evaluate(pt,phi,npv,run)
 
-    if isMC:
+    if not isData:
         corrected_pt = evaluator['pt_metphicorr_pfmet_mc'].evaluate(pt,phi,npv,run)
         corrected_phi = evaluator['phi_metphicorr_pfmet_mc'].evaluate(pt,phi,npv,run)
 
