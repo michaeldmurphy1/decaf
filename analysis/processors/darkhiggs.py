@@ -23,6 +23,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         '2018': 59.83
     }
 
+    lumiMasks = {
+        '2016postVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
+        '2016preVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
+        '2017': LumiMask("data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"),
+        '2018"': LumiMask("data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
+    }
+    
     met_filters = {
         # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
         '2016postVFP': [
@@ -71,14 +78,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'ecalBadCalibFilter'
                 ]
     }
-
-    golden_jsons = {
-            '2016postVFP': 'data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
-            '2016preVFP': 'data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt',
-            '2017': 'data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt',
-            '2018': 'data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt',
-    }
-
             
     def __init__(self, year, xsec, corrections, ids, common):
 
@@ -324,9 +323,18 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Nominal JEC are already applied in data
             return self.process_shift(events, None)
 
-        jec_cache = {}
+        import cachetools
+        jec_cache = cachetools.Cache(np.inf)
+    
         nojer = "NOJER" if self._skipJER else ""
         thekey = f"{self._year}mc{nojer}"
+
+        def add_jec_variables(jets, event_rho):
+            jets["pt_raw"] = (1 - jets.rawFactor)*jets.pt
+            jets["mass_raw"] = (1 - jets.rawFactor)*jets.mass
+            jets["pt_gen"] = ak.values_astype(ak.fill_none(jets.matched_gen.pt, 0), np.float32)
+            jets["event_rho"] = ak.broadcast_arrays(event_rho, jets.pt)[0]
+            return jets
         
         jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
         subjets = jet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubjet, events.fixedGridRhoFastjetAll), jec_cache)
@@ -448,34 +456,34 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu['isloose'] = isLooseMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.looseId,self._year)
         mu['istight'] = isTightMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.tightId,self._year)
         mu['T'] = TVector2Array.from_polar(mu.pt, mu.phi)
-        mu_loose=mu[mu.isloose.astype(np.bool)]
-        mu_tight=mu[mu.istight.astype(np.bool)]
+        mu_loose=mu[mu.isloose]
+        mu_tight=mu[mu.istight]
         mu_ntot = mu.counts
         mu_nloose = mu_loose.counts
         mu_ntight = mu_tight.counts
         leading_mu = mu[mu.pt.argmax()]
-        leading_mu = leading_mu[leading_mu.istight.astype(np.bool)]
+        leading_mu = leading_mu[leading_mu.istight]
 
         e = events.Electron
         e['isclean'] = ~match(e,mu_loose,0.3) 
         e['isloose'] = isLooseElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
         e['istight'] = isTightElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
         e['T'] = TVector2Array.from_polar(e.pt, e.phi)
-        e_clean = e[e.isclean.astype(np.bool)]
-        e_loose = e_clean[e_clean.isloose.astype(np.bool)]
-        e_tight = e_clean[e_clean.istight.astype(np.bool)]
+        e_clean = e[e.isclean]
+        e_loose = e_clean[e_clean.isloose]
+        e_tight = e_clean[e_clean.istight]
         e_ntot = e.counts
         e_nloose = e_loose.counts
         e_ntight = e_tight.counts
         leading_e = e[e.pt.argmax()]
-        leading_e = leading_e[leading_e.isclean.astype(np.bool)]
-        leading_e = leading_e[leading_e.istight.astype(np.bool)]
+        leading_e = leading_e[leading_e.isclean]
+        leading_e = leading_e[leading_e.istight]
 
         tau = events.Tau
         tau['isclean']=~match(tau,mu_loose,0.4)&~match(tau,e_loose,0.4)
         tau['isloose']=isLooseTau(tau.pt,tau.eta,tau.idDecayMode,tau.idDecayModeNewDMs,tau.idDeepTau2017v2p1VSe,tau.idDeepTau2017v2p1VSjet,tau.idDeepTau2017v2p1VSmu,self._year)
-        tau_clean=tau[tau.isclean.astype(np.bool)]
-        tau_loose=tau_clean[tau_clean.isloose.astype(np.bool)]
+        tau_clean=tau[tau.isclean]
+        tau_loose=tau_clean[tau_clean.isloose]
         tau_ntot=tau.counts
         tau_nloose=tau_loose.counts
 
@@ -485,31 +493,22 @@ class AnalysisProcessor(processor.ProcessorABC):
         if self._year=='2016': 
             _id = 'cutBased'
         pho['isloose']=isLoosePhoton(pho.pt,pho.eta,pho[_id],self._year)&(pho.electronVeto) #added electron veto flag
-        pho['istight']=isTightPhoton(pho.pt,pho[_id],self._year)&(pho.isScEtaEB)&(pho.electronVeto) #tight photons are barrel only
         pho['T'] = TVector2Array.from_polar(pho.pt, pho.phi)
-        pho_clean=pho[pho.isclean.astype(np.bool)]
-        pho_loose=pho_clean[pho_clean.isloose.astype(np.bool)]
-        pho_tight=pho_clean[pho_clean.istight.astype(np.bool)]
+        pho_clean=pho[pho.isclean]
+        pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=pho.counts
         pho_nloose=pho_loose.counts
-        pho_ntight=pho_tight.counts
-        leading_pho = pho[pho.pt.argmax()]
-        leading_pho = leading_pho[leading_pho.isclean.astype(np.bool)]
-        leading_pho = leading_pho[leading_pho.istight.astype(np.bool)]
 
-        fj = events.AK15Puppi
+        fj = events.AK15PFPuppiJet
         fj['sd'] = fj.subjets.sum()
         fj['isclean'] =~match(fj.sd,pho_loose,1.5)&~match(fj.sd,mu_loose,1.5)&~match(fj.sd,e_loose,1.5)&~match(fj.sd,tau_loose,1.5)
         fj['isgood'] = isGoodFatJet(fj.sd.pt, fj.sd.eta, fj.jetId)
-        fj['T'] = TVector2Array.from_polar(fj.pt, fj.phi)
-        fj['msd_raw'] = (fj.subjets * (1 - fj.subjets.rawFactor)).sum().mass
         fj['msd_corr'] = get_msd_corr(fj)
-        fj['rho'] = 2 * np.log(fj.msd_corr / fj.sd.pt)
         probQCD=fj.probQCDbb+fj.probQCDcc+fj.probQCDb+fj.probQCDc+fj.probQCDothers
         probZHbb=fj.probZbb+fj.probHbb
         fj['ZHbbvsQCD'] = probZHbb/(probZHbb+probQCD)
-        fj_good = fj[fj.isgood.astype(np.bool)]
-        fj_clean = fj_good[fj_good.isclean.astype(np.bool)]
+        fj_good = fj[fj.isgood]
+        fj_clean = fj_good[fj_good.isclean]
         fj_ntot = fj.counts
         fj_ngood = fj_good.counts
         fj_nclean = fj_clean.counts
@@ -521,17 +520,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         j['isiso'] = ~match(j,fj_clean[fj_clean.pt.argmax()],1.5)
         j['isdcsvL'] = (j.btagDeepB>deepcsvWPs['loose'])
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose'])
-        j['T'] = TVector2Array.from_polar(j.pt, j.phi)
-        j['p4'] = TLorentzVectorArray.from_ptetaphim(j.pt, j.eta, j.phi, j.mass)
-        j['ptRaw'] =j.pt * (1-j.rawFactor)
-        j['massRaw'] = j.mass * (1-j.rawFactor)
-        j['rho'] = j.pt.ones_like()*events.fixedGridRhoFastjetAll.array
-        j_good = j[j.isgood.astype(np.bool)]
-        j_clean = j_good[j_good.isclean.astype(np.bool)]
-        j_iso = j_clean[j_clean.isiso.astype(np.bool)]
-        j_dcsvL = j_iso[j_iso.isdcsvL.astype(np.bool)]
-        j_dflvL = j_iso[j_iso.isdflvL.astype(np.bool)]
-        j_HEM = j[j.isHEM.astype(np.bool)]
+        j_good = j[j.isgood]
+        j_clean = j_good[j_good.isclean]
+        j_iso = j_clean[j_clean.isiso]
+        j_dcsvL = j_iso[j_iso.isdcsvL]
+        j_dflvL = j_iso[j_iso.isdflvL]
+        j_HEM = j[j.isHEM]
         j_ntot=j.counts
         j_ngood=j_good.counts
         j_nclean=j_clean.counts
@@ -540,8 +534,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         j_ndflvL=j_dflvL.counts
         j_nHEM = j_HEM.counts
         leading_j = j[j.pt.argmax()]
-        leading_j = leading_j[leading_j.isgood.astype(np.bool)]
-        leading_j = leading_j[leading_j.isclean.astype(np.bool)]
+        leading_j = leading_j[leading_j.isgood]
+        leading_j = leading_j[leading_j.isclean]
 
         ###
         # Calculate recoil and transverse mass
@@ -683,17 +677,15 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
 
             btagSF, btagSFbc_correlatedUp, btagSFbc_correlatedDown, btagSFbc_uncorrelatedUp, btagSFbc_uncorrelatedDown, btagSFlight_correlatedUp, btagSFlight_correlatedDown, btagSFlight_uncorrelatedUp, btagSFlight_uncorrelatedDown   = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
-            '''
-            print('btagSF',btagSF)
-            print('btagSFbc_correlatedUp',btagSFbc_correlatedUp)
-            print('btagSFbc_uncorrelatedUp',btagSFbc_uncorrelatedUp)
-            print('btagSFlight_correlatedUp',btagSFlight_correlatedUp)
-            print('btagSFlight_uncorrelatedUp',btagSFlight_uncorrelatedUp)
-            '''
-
+            
         ###
         # Selections
         ###
+
+        lumimask = np.ones(events.size, dtype=np.bool)
+        if Data:
+            lumimask = lumiMasks[self._year](events.run, events.luminosityBlock)
+        selection.add('lumimask', lumimask)
 
         met_filters =  np.ones(events.size, dtype=np.bool)
         if isData: met_filters = met_filters & events.Flag['eeBadScFilter']#this filter is recommended for data only
@@ -720,8 +712,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         if self._year=='2018': noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)
 
         leading_fj = fj[fj.sd.pt.argmax()]
-        leading_fj = leading_fj[leading_fj.isgood.astype(np.bool)]
-        leading_fj = leading_fj[leading_fj.isclean.astype(np.bool)]
+        leading_fj = leading_fj[leading_fj.isgood]
+        leading_fj = leading_fj[leading_fj.isclean]
         selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
@@ -876,7 +868,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                         hout['sumw'].fill(dataset='LF--'+dataset, sumw=1, weight=events.genWeight.sum())
                         isFilled=True
                     whf = ((gen[gen.isb].counts>0)|(gen[gen.isc].counts>0)).astype(np.int)
-                    wlf = (~(whf.astype(np.bool))).astype(np.int)
+                    wlf = (~(whf)).astype(np.int)
                     cut = selection.all(*regions[region])
                     systematics = [None,
                                    'btagSFbc_correlatedUp',
