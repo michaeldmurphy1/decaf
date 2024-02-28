@@ -667,144 +667,143 @@ def jet_factory_factory(files):
     return CorrectedJetsFactory(jec_name_map, jec_stack)
 
 jet_factory = {
-    "2016mc": jet_factory_factory(
+    "2016preVFPmc": jet_factory_factory(
         files=[
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_L1FastJet_AK4PFchs.txt
-            "Summer16_07Aug2017_V11_MC_L1FastJet_AK4PFchs.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_L2Relative_AK4PFchs.txt
-            "Summer16_07Aug2017_V11_MC_L2Relative_AK4PFchs.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/RegroupedV2_Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs.txt
-            "RegroupedV2_Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs.junc.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_Uncertainty_AK4PFchs.txt
-            "Summer16_07Aug2017_V11_MC_Uncertainty_AK4PFchs.junc.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_PtResolution_AK4PFchs.txt
-            "Summer16_25nsV1b_MC_PtResolution_AK4PFchs.jr.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_SF_AK4PFchs.txt
-            "Summer16_25nsV1b_MC_SF_AK4PFchs.jersf.txt",
+            "Summer19UL16APV_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL16APV_V7_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer20UL16APV_JRV3_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer20UL16APV_JRV3_MC_SF_AK4PFchs.jersf.txt",
         ]
     ),
-    "2016mcNOJER": jet_factory_factory(
+    "2016preVFPmcNOJER": jet_factory_factory(
         files=[
-            "Summer16_07Aug2017_V11_MC_L1FastJet_AK4PFchs.jec.txt",
-            "Summer16_07Aug2017_V11_MC_L2Relative_AK4PFchs.jec.txt",
-            "Summer16_07Aug2017_V11_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer19UL16APV_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_Uncertainty_AK4PFchs.junc.txt",
+        ]
+    ),
+    "2016postVFPmc": jet_factory_factory(
+        files=[
+            "Summer19UL16_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL16_V7_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer20UL16_JRV3_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer20UL16_JRV3_MC_SF_AK4PFchs.jersf.txt",
+        ]
+    ),
+    "2016postVFPmcNOJER": jet_factory_factory(
+        files=[
+            "Summer19UL16_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_Uncertainty_AK4PFchs.junc.txt",
         ]
     ),
     "2017mc": jet_factory_factory(
         files=[
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_L1FastJet_AK4PFchs.txt
-            "Fall17_17Nov2017_V32_MC_L1FastJet_AK4PFchs.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_L2Relative_AK4PFchs.txt
-            "Fall17_17Nov2017_V32_MC_L2Relative_AK4PFchs.jec.txt",
-            # https://raw.githubusercontent.com/cms-jet/JECDatabase/master/textFiles/Fall17_17Nov2017_V32_MC/RegroupedV2_Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs.txt
-            "RegroupedV2_Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs.junc.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_Uncertainty_AK4PFchs.txt
-            "Fall17_17Nov2017_V32_MC_Uncertainty_AK4PFchs.junc.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Fall17_V3b_MC/Fall17_V3b_MC_PtResolution_AK4PFchs.txt
-            "Fall17_V3b_MC_PtResolution_AK4PFchs.jr.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Fall17_V3b_MC/Fall17_V3b_MC_SF_AK4PFchs.txt
-            "Fall17_V3b_MC_SF_AK4PFchs.jersf.txt",
+            "Summer19UL17_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL17_V5_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer19UL17_JRV3_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer19UL17_JRV3_MC_SF_AK4PFchs.jersf.txt",
         ]
     ),
     "2017mcNOJER": jet_factory_factory(
         files=[
-            "Fall17_17Nov2017_V32_MC_L1FastJet_AK4PFchs.jec.txt",
-            "Fall17_17Nov2017_V32_MC_L2Relative_AK4PFchs.jec.txt",
-            "Fall17_17Nov2017_V32_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer19UL17_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_Uncertainty_AK4PFchs.junc.txt",
         ]
     ),
     "2018mc": jet_factory_factory(
         files=[
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Autumn18_V19_MC/Autumn18_V19_MC_L1FastJet_AK4PFchs.txt
-            "Autumn18_V19_MC_L1FastJet_AK4PFchs.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Autumn18_V19_MC/Autumn18_V19_MC_L2Relative_AK4PFchs.txt
-            "Autumn18_V19_MC_L2Relative_AK4PFchs.jec.txt",
-            # https://raw.githubusercontent.com/cms-jet/JECDatabase/master/textFiles/Autumn18_V19_MC/RegroupedV2_Autumn18_V19_MC_UncertaintySources_AK4PFchs.txt
-            "RegroupedV2_Autumn18_V19_MC_UncertaintySources_AK4PFchs.junc.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Autumn18_V19_MC/Autumn18_V19_MC_Uncertainty_AK4PFchs.txt
-            "Autumn18_V19_MC_Uncertainty_AK4PFchs.junc.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Autumn18_V7b_MC/Autumn18_V7b_MC_PtResolution_AK4PFchs.txt
-            "Autumn18_V7b_MC_PtResolution_AK4PFchs.jr.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Autumn18_V7b_MC/Autumn18_V7b_MC_SF_AK4PFchs.txt
-            "Autumn18_V7b_MC_SF_AK4PFchs.jersf.txt",
+            "Summer19UL18_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL18_V5_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer19UL18_JRV2_MC_SF_AK4PFchs.jersf.txt",
         ]
     ),
     "2018mcNOJER": jet_factory_factory(
         files=[
-            "Autumn18_V19_MC_L1FastJet_AK4PFchs.jec.txt",
-            "Autumn18_V19_MC_L2Relative_AK4PFchs.jec.txt",
-            "Autumn18_V19_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer19UL18_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_Uncertainty_AK4PFchs.junc.txt",
         ]
     ),
 }
+
 fatjet_factory = {
-    "2016mc": jet_factory_factory(
+    "2016preVFPmc": jet_factory_factory(
         files=[
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_L1FastJet_AK8PFPuppi.txt
-            "Summer16_07Aug2017_V11_MC_L1FastJet_AK8PFPuppi.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_L2Relative_AK8PFPuppi.txt
-            "Summer16_07Aug2017_V11_MC_L2Relative_AK8PFPuppi.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_UncertaintySources_AK8PFPuppi.txt
-            "Summer16_07Aug2017_V11_MC_UncertaintySources_AK8PFPuppi.junc.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_Uncertainty_AK8PFPuppi.txt
-            "Summer16_07Aug2017_V11_MC_Uncertainty_AK8PFPuppi.junc.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_PtResolution_AK8PFPuppi.txt
-            "Summer16_25nsV1b_MC_PtResolution_AK8PFPuppi.jr.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_SF_AK8PFPuppi.txt
-            "Summer16_25nsV1b_MC_SF_AK8PFPuppi.jersf.txt",
+            "Summer19UL16APV_V7_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL16APV_V7_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL16APV_V7_MC_UncertaintySources_AK8PFPuppi.junc.txt",
+            "Summer19UL16APV_V7_MC_Uncertainty_AK8PFPuppi.junc.txt",
+            "Summer20UL16APV_JRV3_MC_PtResolution_AK8PFPuppi.jr.txt",
+            "Summer20UL16APV_JRV3_MC_SF_AK8PFPuppi.jersf.txt",
         ]
     ),
-    "2016mcNOJER": jet_factory_factory(
+    "2016preVFPmcNOJER": jet_factory_factory(
         files=[
-            "Summer16_07Aug2017_V11_MC_L1FastJet_AK8PFPuppi.jec.txt",
-            "Summer16_07Aug2017_V11_MC_L2Relative_AK8PFPuppi.jec.txt",
-            "Summer16_07Aug2017_V11_MC_Uncertainty_AK8PFPuppi.junc.txt",
+            "Summer19UL16APV_V7_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL16APV_V7_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL16APV_V7_MC_Uncertainty_AK8PFPuppi.junc.txt",
+        ]
+    ),
+    "2016postVFPmc": jet_factory_factory(
+        files=[
+            "Summer19UL16_V7_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL16_V7_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL16_V7_MC_UncertaintySources_AK8PFPuppi.junc.txt",
+            "Summer19UL16_V7_MC_Uncertainty_AK8PFPuppi.junc.txt",
+            "Summer20UL16_JRV3_MC_PtResolution_AK8PFPuppi.jr.txt",
+            "Summer20UL16_JRV3_MC_SF_AK8PFPuppi.jersf.txt",
+        ]
+    ),
+    "2016postVFPmcNOJER": jet_factory_factory(
+        files=[
+            "Summer19UL16_V7_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL16_V7_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL16_V7_MC_Uncertainty_AK8PFPuppi.junc.txt",
         ]
     ),
     "2017mc": jet_factory_factory(
         files=[
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_L1FastJet_AK8PFPuppi.txt
-            "Fall17_17Nov2017_V32_MC_L1FastJet_AK8PFPuppi.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_L2Relative_AK8PFPuppi.txt
-            "Fall17_17Nov2017_V32_MC_L2Relative_AK8PFPuppi.jec.txt",
-            # https://raw.githubusercontent.com/cms-jet/JECDatabase/master/textFiles/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_UncertaintySources_AK8PFPuppi.txt
-            "Fall17_17Nov2017_V32_MC_UncertaintySources_AK8PFPuppi.junc.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_Uncertainty_AK8PFPuppi.txt
-            "Fall17_17Nov2017_V32_MC_Uncertainty_AK8PFPuppi.junc.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Fall17_V3b_MC/Fall17_V3b_MC_PtResolution_AK8PFPuppi.txt
-            "Fall17_V3b_MC_PtResolution_AK8PFPuppi.jr.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Fall17_V3b_MC/Fall17_V3b_MC_SF_AK8PFPuppi.txt
-            "Fall17_V3b_MC_SF_AK8PFPuppi.jersf.txt",
+            "Summer19UL17_V5_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL17_V5_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL17_V5_MC_UncertaintySources_AK8PFPuppi.junc.txt",
+            "Summer19UL17_V5_MC_Uncertainty_AK8PFPuppi.junc.txt",
+            "Summer19UL17_JRV3_MC_PtResolution_AK8PFPuppi.jr.txt",
+            "Summer19UL17_JRV3_MC_SF_AK8PFPuppi.jersf.txt",
         ]
     ),
     "2017mcNOJER": jet_factory_factory(
         files=[
-            "Fall17_17Nov2017_V32_MC_L1FastJet_AK8PFPuppi.jec.txt",
-            "Fall17_17Nov2017_V32_MC_L2Relative_AK8PFPuppi.jec.txt",
-            "Fall17_17Nov2017_V32_MC_Uncertainty_AK8PFPuppi.junc.txt",
+            "Summer19UL17_V5_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL17_V5_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL17_V5_MC_Uncertainty_AK8PFPuppi.junc.txt",
         ]
     ),
     "2018mc": jet_factory_factory(
         files=[
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Autumn18_V19_MC/Autumn18_V19_MC_L1FastJet_AK8PFPuppi.txt
-            "Autumn18_V19_MC_L1FastJet_AK8PFPuppi.jec.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Autumn18_V19_MC/Autumn18_V19_MC_L2Relative_AK8PFPuppi.txt
-            "Autumn18_V19_MC_L2Relative_AK8PFPuppi.jec.txt",
-            # https://raw.githubusercontent.com/cms-jet/JECDatabase/master/textFiles/Autumn18_V19_MC/Autumn18_V19_MC_UncertaintySources_AK8PFPuppi.txt
-            "Autumn18_V19_MC_UncertaintySources_AK8PFPuppi.junc.txt",
-            # https://github.com/cms-jet/JECDatabase/raw/master/textFiles/Autumn18_V19_MC/Autumn18_V19_MC_Uncertainty_AK8PFPuppi.txt
-            "Autumn18_V19_MC_Uncertainty_AK8PFPuppi.junc.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Autumn18_V7b_MC/Autumn18_V7b_MC_PtResolution_AK8PFPuppi.txt
-            "Autumn18_V7b_MC_PtResolution_AK8PFPuppi.jr.txt",
-            # https://github.com/cms-jet/JRDatabase/raw/master/textFiles/Autumn18_V7b_MC/Autumn18_V7b_MC_SF_AK8PFPuppi.txt
-            "Autumn18_V7b_MC_SF_AK8PFPuppi.jersf.txt",
+            "Summer19UL18_V5_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL18_V5_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL18_V5_MC_UncertaintySources_AK8PFPuppi.junc.txt",
+            "Summer19UL18_V5_MC_Uncertainty_AK8PFPuppi.junc.txt",
+            "Summer19UL18_JRV2_MC_PtResolution_AK8PFPuppi.jr.txt",
+            "Summer19UL18_JRV2_MC_SF_AK8PFPuppi.jersf.txt",
         ]
     ),
     "2018mcNOJER": jet_factory_factory(
         files=[
-            "Autumn18_V19_MC_L1FastJet_AK8PFPuppi.jec.txt",
-            "Autumn18_V19_MC_L2Relative_AK8PFPuppi.jec.txt",
-            "Autumn18_V19_MC_Uncertainty_AK8PFPuppi.junc.txt",
+            "Summer19UL18_V5_MC_L1FastJet_AK8PFPuppi.jec.txt",
+            "Summer19UL18_V5_MC_L2Relative_AK8PFPuppi.jec.txt",
+            "Summer19UL18_V5_MC_Uncertainty_AK8PFPuppi.junc.txt",
         ]
     ),
 }
