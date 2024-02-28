@@ -166,15 +166,15 @@ python3 run_condor.py -p btag2018 -m 2018 -d QCD -c kisti -t -x
 
 The options for this script are the same as for `run.py`, with the addition of:
 
-- `-c` (`--cluster)
+- `-c` (`--cluster`)
 
 Specifies which cluster you are using.  At the moments supports `lpc` or `kisti`.
 
-- `-t` (`--tar)
+- `-t` (`--tar`)
   
 Tars the local python environment and the local CMSSW folder. 
 
-- `-x` (`--copy)
+- `-x` (`--copy`)
 
 Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
 
@@ -196,32 +196,64 @@ TO BE LISTED
 
 All the different datasets produced at the previous step will be reduced. A different file for each variable for each reduced dataset will be produced. For example, the command above will produce the following reduced files:
 
-hists/btag2018/deepcsv--QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepcsv--QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepcsv--QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepcsv--QCD_HT200to300_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepcsv--QCD_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepcsv--QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepcsv--QCD_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepflav--QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepflav--QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepflav--QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepflav--QCD_HT200to300_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepflav--QCD_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepflav--QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
-hists/btag2018/deepflav--QCD_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8.reduced
+```
+hists/btageff2018/deepcsv--QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_120to170_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_15to30_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_170to300_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_2400to3200_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_300to470_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_30to50_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_470to600_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_50to80_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_600to800_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_800to1000_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepcsv--QCD_Pt_80to120_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_120to170_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_15to30_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_170to300_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_2400to3200_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_300to470_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_30to50_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_470to600_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_50to80_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_600to800_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_800to1000_TuneCP5_13TeV_pythia8.reduced
+hists/btageff2018/deepflav--QCD_Pt_80to120_TuneCP5_13TeV_pythia8.reduced
+```
 
-This step can be run in HTCondor by using the `reduce_condor.py` script. A second step of data reduction is needed to merge all the `.reduced` files corresponding to a single variable. This is achieved by using the `merge.py` script:
+This step can be run in HTCondor by using the `reduce_condor.py` script. The `reduce_condor.py` script has the same options of `reduce.py`, with addition of the same `--cluster`, `--tar`, and `--copy` options descibed above when discussing `run_condor.py`.
 
-python merge.py -f hists/btag2018
+A second step of data reduction is needed to merge all the `.reduced` files corresponding to a single variable. This is achieved by using the `merge.py` script:
+
+```
+python3 merge.py -f hists/btageff2018
+```
+
+The options of this script are:
+
+TO BE LISTED
 
 This command will produce the following files:
 
-hists/btag2018/deepcsv.merged  hists/btag2018/deepflav.merged
+```
+hists/btageff2018/deepcsv.merged  hists/btageff2018/deepflav.merged
+```
 
 The same script can be used to merge the the files corresponding to each single variable into a single file, using the `-p` or `—postprocess` option:
 
-python merge.py -f hists/btag2018 -p
+```
+python3 merge.py -f hists/btageff2018 -p
+```
+
+Also this step can be run in HTCondor by using the `merge_condor.py` script. The `merge_condor.py` script has the same options of `merge.py`, with addition of the same `--cluster`, `--tar`, and `--copy` options descibed above when discussing `run_condor.py`.
 
 ---
 
