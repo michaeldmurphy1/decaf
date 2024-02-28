@@ -874,24 +874,23 @@ class AnalysisProcessor(processor.ProcessorABC):
                     continue
                 fill(region, systematic)
                 
-        return output
+        return dataset, output
 
     def postprocess(self, accumulator):
-        scale = {}
-        for d in accumulator['sumw'].identifiers('dataset'):
-            print('Scaling:',d.name)
-            dataset = d.name
-            if '--' in dataset: dataset = dataset.split('--')[1]
-            print('Cross section:',self._xsec[dataset])
-            if self._xsec[dataset]!= -1: scale[d.name] = self._lumi*self._xsec[dataset]
-            else: scale[d.name] = 1
+        dataset, output = accumulator
+        print('Scaling:', dataset)
+        print('Cross section:',self._xsec[dataset])
 
-        for histname, h in accumulator.items():
-            if histname == 'sumw': continue
-            if isinstance(h, hist.Hist):
-                h.scale(scale, axis='dataset')
+        scale = 1
+        if self._xsec[dataset]!= -1: 
+            scale = self._lumi*self._xsec[dataset]
 
-        return accumulator
+        for key in output:
+            if key=='sumw': 
+                continue
+            output[key] *= scale
+            
+        return output
 
 if __name__ == '__main__':
     parser = OptionParser()
