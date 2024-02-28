@@ -778,6 +778,79 @@ class AnalysisProcessor(processor.ProcessorABC):
             'qcdcr': ['recoil_qcdcr','mindphi_qcdcr','minDphi_qcdcr','calo_qcdcr','msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
         }
 
+        def normalize(val, cut):
+            if cut is None:
+                ar = ak.to_numpy(ak.fill_none(val, np.nan))
+                return ar
+            else:
+                ar = ak.to_numpy(ak.fill_none(val[cut], np.nan))
+                return ar
+                
+        def fill(region, systematic):
+            cut = selection.all(*regions[region])
+            sname = 'nominal' if systematic is None else systematic
+            if systematic in weights.variations:
+                weight = weights.weight(modifier=systematic)[cut]
+            else:
+                weight = weights.weight()[cut]
+            output['template'].fill(
+                  region=region,
+                  systematic=sname,
+                  recoil=normalize(u[region].mag, cut),
+                  fjmass=normalize(leading_fj.msd_corr, cut),
+                  ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                  weight=weight
+            )
+            if systematic is None:
+                variables = {
+                    'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
+                    'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
+                    'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].mag,
+                    'met':                    met.pt.flatten(),
+                    'metphi':                 met.phi.flatten(),
+                    'mindphimet':             abs(met.T.delta_phi(j_clean.T)).min(),
+                    'minDphimet':             abs(met.T.delta_phi(fj_clean.T)).min(),
+                    'j1pt':                   leading_j.pt.sum(),
+                    'j1eta':                  leading_j.eta.sum(),
+                    'j1phi':                  leading_j.phi.sum(),
+                    'fj1pt':                  leading_fj.sd.pt.sum(),
+                    'fj1eta':                 leading_fj.sd.eta.sum(),
+                    'fj1phi':                 leading_fj.sd.phi.sum(),
+                    'njets':                  j_nclean,
+                    'ndflvL':                 j_ndflvL,
+                    'nfjclean':               fj_nclean,
+                }
+                if region in mT:
+                    variables['mT']           = mT[region]
+                if 'e' in region:
+                    variables['l1pt']      = leading_e.pt.sum()
+                    variables['l1phi']     = leading_e.phi.sum()
+                    variables['l1eta']     = leading_e.eta.sum()
+                if 'm' in region:
+                    variables['l1pt']      = leading_mu.pt.sum()
+                    variables['l1phi']     = leading_mu.phi.sum()
+                    variables['l1eta']     = leading_mu.eta.sum()
+                for variable in output:
+                    if variable not in variables:
+                        continue
+                    normalized_variable = {variable: normalize(variables[variable],cut)}
+                    output[variable].fill(
+                        region=region,
+                        ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD,cut),
+                        **normalized_variable,
+                        weight=weight,
+                    )
+                output['ZHbbvsQCD'].fill(
+                      region=region,
+                      ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                      weight=weight
+                )
+
+        if shift_name is None:
+            systematics = [None] + list(weights.variations)
+        else:
+            systematics = [shift_name]
+            
         for region in regions:
             if region not in selected_regions: continue
 
@@ -794,100 +867,12 @@ class AnalysisProcessor(processor.ProcessorABC):
                 regions[region].insert(3, 'mindphi_'+region)
                 regions[region].insert(4, 'minDphi_'+region)
                 regions[region].insert(5, 'calo_'+region)
-                
-            variables = {
-                'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
-                'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
-                'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].mag,
-                'met':                    met.pt.flatten(),
-                'metphi':                 met.phi.flatten(),
-                'mindphimet':             abs(met.T.delta_phi(j_clean.T)).min(),
-                'minDphimet':             abs(met.T.delta_phi(fj_clean.T)).min(),
-                'j1pt':                   leading_j.pt.sum(),
-                'j1eta':                  leading_j.eta.sum(),
-                'j1phi':                  leading_j.phi.sum(),
-                'fj1pt':                  leading_fj.sd.pt.sum(),
-                'fj1eta':                 leading_fj.sd.eta.sum(),
-                'fj1phi':                 leading_fj.sd.phi.sum(),
-                'njets':                  j_nclean,
-                'ndflvL':                 j_ndflvL,
-                'nfjclean':               fj_nclean,
-            }
-            if region in mT:
-                variables['mT']           = mT[region]
-            if 'e' in region:
-                variables['l1pt']      = leading_e.pt.sum()
-                variables['l1phi']     = leading_e.phi.sum()
-                variables['l1eta']     = leading_e.eta.sum()
-            if 'm' in region:
-                variables['l1pt']      = leading_mu.pt.sum()
-                variables['l1phi']     = leading_mu.phi.sum()
-                variables['l1eta']     = leading_mu.eta.sum()
 
-            def normalize(val, cut):
-                if cut is None:
-                    ar = ak.to_numpy(ak.fill_none(val, np.nan))
-                    return ar
-                else:
-                    ar = ak.to_numpy(ak.fill_none(val[cut], np.nan))
-                    return ar
-
-            def fill(weight, cut, systematic):
-                for variable in output:
-                    if variable not in variables:
-                        continue
-                        
-                    normalized_variable = {variable: normalize(variables[variable],cut)}
-                    output[variable].fill(
-                        region=region,
-                        ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD,cut),
-                        **normalized_variable,
-                        weight=weight[cut],
-                    )
-                sname = 'nominal' if systematic is None else systematic
-                output['template'].fill(
-                      region=region,
-                      systematic='nominal',
-                      recoil=normalize(u[region].mag, cut),
-                      fjmass=normalize(leading_fj.msd_corr, cut),
-                      ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
-                      weight=weight[cut]
-                )
-                hout['ZHbbvsQCD'].fill(
-                      region=region,
-                      ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
-                      weight=weight[cut]
-                )
-
-            cut = selection.all(*regions[region])
-            if isData:
-                fill(np.ones(events.size), cut, None)
-            else:
+            for systematic in systematics:
+                if isData and systematic is not None:
+                    continue
+                fill(region, systematic)
                 
-                
-
-                if shift_name is None:
-                    hout['ZHbbvsQCD'].fill(
-                                       region=region,
-                                       ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
-                                       weight=weights.weight()[cut])
-                    fill(weights.weight(), cut)
-                    systematics = [None] + list(weights.variations)
-                else:
-                    systematics = [shift_name]
-                    
-                for systematic in systematics:
-                    sname = 'nominal' if systematic is None else systematic
-                    hout['template'].fill(
-                                          region=region,
-                                          systematic=sname,
-                                          recoil=normalize(u[region].mag, cut),
-                                          fjmass=normalize(leading_fj.msd_corr, cut),
-                                          ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
-                                          weight=weights.weight(modifier=systematic)[cut])
-                
-                
-
         return output
 
     def postprocess(self, accumulator):
