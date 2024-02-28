@@ -11,7 +11,7 @@ from coffea.analysis_tools import Weights, PackedSelection
 from coffea.lumi_tools import LumiMask
 from coffea.util import load, save
 from optparse import OptionParser
-from uproot_methods import TVector2Array
+from coffea.nanoevents.methods.vector import PolarTwoVector
 
 class AnalysisProcessor(processor.ProcessorABC):
 
@@ -323,6 +323,10 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Nominal JEC are already applied in data
             return self.process_shift(events, None)
 
+        jet_factory              = self._corrections['jet_factory']
+        fatjet_factory           = self._corrections['fatjet_factory']
+        met_factory              = self._corrections['met_factory']
+
         import cachetools
         jec_cache = cachetools.Cache(np.inf)
     
@@ -395,9 +399,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
         get_msd_corr             = self._corrections['get_msd_corr']
         get_deepflav_weight      = self._corrections['get_btag_weight']['deepflav'][self._year]
-        jet_factory              = self._corrections['jet_factory']
-        fatjet_factory           = self._corrections['fatjet_factory']
-        met_factory              = self._corrections['met_factory']
         
         isLooseElectron = self._ids['isLooseElectron'] 
         isTightElectron = self._ids['isTightElectron'] 
@@ -425,7 +426,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         corrected_pt, corrected_phi = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
         met['pt'] = corrected_pt
         met['phi'] = corrected_phi
-        
+        met['T']  = PolarTwoVector.from_polar(met.pt, met.phi)
 
         ###
         #Initialize physics objects
@@ -451,7 +452,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu['pt'] = rochester_pt
         mu['isloose'] = isLooseMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.looseId,self._year)
         mu['istight'] = isTightMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.tightId,self._year)
-        mu['T'] = TVector2Array.from_polar(mu.pt, mu.phi)
+        mu['T'] = PolarTwoVector.from_polar(mu.pt, mu.phi)
         mu_loose=mu[mu.isloose]
         mu_tight=mu[mu.istight]
         mu_ntot = mu.counts
@@ -464,7 +465,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         e['isclean'] = ~match(e,mu_loose,0.3) 
         e['isloose'] = isLooseElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
         e['istight'] = isTightElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
-        e['T'] = TVector2Array.from_polar(e.pt, e.phi)
+        e['T'] = PolarTwoVector.from_polar(e.pt, e.phi)
         e_clean = e[e.isclean]
         e_loose = e_clean[e_clean.isloose]
         e_tight = e_clean[e_clean.istight]
@@ -489,7 +490,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         if self._year=='2016': 
             _id = 'cutBased'
         pho['isloose']=isLoosePhoton(pho.pt,pho.eta,pho[_id],self._year)&(pho.electronVeto) #added electron veto flag
-        pho['T'] = TVector2Array.from_polar(pho.pt, pho.phi)
+        pho['T'] = PolarTwoVector.from_polar(pho.pt, pho.phi)
         pho_clean=pho[pho.isclean]
         pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=pho.counts
@@ -536,8 +537,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
         # Calculate recoil and transverse mass
         ###
-
-        met['T']  = TVector2Array.from_polar(met.pt, met.phi)
 
         u = {
             'sr'    : met.T,
@@ -874,10 +873,11 @@ class AnalysisProcessor(processor.ProcessorABC):
                     continue
                 fill(region, systematic)
                 
-        return dataset, output
+        return {dataset: output}
 
     def postprocess(self, accumulator):
-        dataset, output = accumulator
+
+        dataset = list(accumulator.keys())[0]
         print('Scaling:', dataset)
         print('Cross section:',self._xsec[dataset])
 
@@ -885,6 +885,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         if self._xsec[dataset]!= -1: 
             scale = self._lumi*self._xsec[dataset]
 
+        output = accumulator[dataset]
         for key in output:
             if key=='sumw': 
                 continue

@@ -21,7 +21,7 @@ class CustomNanoAODSchema(NanoAODSchema):
     mixins = {
         **NanoAODSchema.mixins,
         "AK15PFPuppiJet": "FatJet",
-        "AK15PFPuppiSubjet": "PtEtaPhiMCollection",
+        "AK15PFPuppiSubjet": "Jet",
     }
     all_cross_references = {
         **NanoAODSchema.all_cross_references,
