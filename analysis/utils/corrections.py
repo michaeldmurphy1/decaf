@@ -653,15 +653,9 @@ jec_name_map = {
 
 def jet_factory_factory(files):
     ext = extractor()
-    for directory in ['jec_UL', 'jersf_UL', 'jr_UL', 'junc_UL']:
-        directory='data/'+directory
-        for filename in files:
-            print('Searching for',filename)
-            for f in os.listdir(directory):
-                if filename not in f:
-                    continue
-                print('Found',f,'in',directory)
-                ext.add_weight_sets([f"* * {directory+'/'+f}"])
+    directory='data/jerc'
+    for filename in files:
+        ext.add_weight_sets([f"* * {directory+'/'+filename}"])
     ext.finalize()
     jec_stack = JECStack(ext.make_evaluator())
     return CorrectedJetsFactory(jec_name_map, jec_stack)
@@ -824,7 +818,7 @@ corrections = {
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
     'get_pho_trig_weight':      get_pho_trig_weight,
     'get_muon_loose_id_sf':     get_muon_loose_id_sf,
-    'get_muon_tight_id_sf':     get_muon_tight_id_sf.
+    'get_muon_tight_id_sf':     get_muon_tight_id_sf,
     'get_muon_loose_iso_sf':    get_muon_loose_iso_sf,
     'get_muon_tight_iso_sf':    get_muon_tight_iso_sf,
     'get_met_xy_correction':    XY_MET_Correction,
