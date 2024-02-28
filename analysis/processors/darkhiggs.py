@@ -85,6 +85,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._year = year
         self._lumi = 1000.*float(AnalysisProcessor.lumis[year])
         self._xsec = xsec
+        self._systematics = True
+        self._skipJER = False
 
         self._samples = {
             'sr':('ZJets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET','mhs'),
@@ -317,6 +319,35 @@ class AnalysisProcessor(processor.ProcessorABC):
     }
 
     def process(self, events):
+        isData = not hasattr(events, "genWeight")
+        if isData:
+            # Nominal JEC are already applied in data
+            return self.process_shift(events, None)
+
+        jec_cache = {}
+        nojer = "NOJER" if self._skipJER else ""
+        thekey = f"{self._year}mc{nojer}"
+        
+        jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
+        subjets = jet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubjet, events.fixedGridRhoFastjetAll), jec_cache)
+        met = met_factory.build(events.MET, jets, {})
+
+        shifts = [({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met}, None)]
+        if self._systematics:
+            shifts.extend([
+                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubjet": subjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
+                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubjet": subjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
+                ({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
+                ({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
+            ])
+            if not self._skipJER:
+                shifts.extend([
+                    ({"Jet": jets.JER.up, "AK15PFPuppiSubjet": subjets.JER.up, "MET": met.JER.up}, "JERUp"),
+                    ({"Jet": jets.JER.down, "AK15PFPuppiSubjet": subjets.JER.down, "MET": met.JER.down}, "JERDown"),
+                ])
+        return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
+
+    def process_shift(self, events, shift_name):
 
         dataset = events.metadata['dataset']
 
