@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 import correctionlib
 import os
-#import uproot, uproot_methods
 import awkward as ak
 
 import numpy as np
@@ -278,9 +277,8 @@ def XY_MET_Correction(year, npv, run, pt, phi, isData):
     if '2016' in year:
         year = '2016'
     
-    mask = np.asarray(npv>100)
-    npv = np.asarray(npv)
-    npv[mask==True] = 100
+    npv = ak.where((npv>200),ak.full_like(npv,200),npv)
+    pt  = ak.where((pt>1000.),ak.full_like(pt,1000.),pt)
 
     evaluator = correctionlib.CorrectionSet.from_file('data/JetMETCorr/'+year+'_UL/met.json.gz')
 
