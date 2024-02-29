@@ -417,8 +417,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         isLooseTau      = self._ids['isLooseTau']      
         isLoosePhoton   = self._ids['isLoosePhoton']   
         isTightPhoton   = self._ids['isTightPhoton']   
-        isGoodJet       = self._ids['isGoodJet']       
-        isGoodFatJet    = self._ids['isGoodFatJet']    
+        isGoodAK4       = self._ids['isGoodAK4']       
+        isGoodAK15    = self._ids['isGoodAK15']    
         isHEMJet        = self._ids['isHEMJet']        
         
         deepflavWPs = self._common['btagWPs']['deepflav'][self._year]
@@ -432,9 +432,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         run = events.run
         calomet = events.CaloMET
         met = events.MET
-        corrected_pt, corrected_phi = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
-        met['pt'] = corrected_pt
-        met['phi'] = corrected_phi
+        met['pt'] , met['phi'] = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
 
         ###
         #Initialize physics objects
@@ -463,8 +461,8 @@ class AnalysisProcessor(processor.ProcessorABC):
             hasgen = ~np.isnan(ak.fill_none(events.Muon.matched_gen.pt, np.nan))
             k = ak.where(hasgen, kspread, ksmear)
         mu['pt'] = ak.where((mu.pt<200),k*mu.pt, mu.pt)
-        mu['isloose'] = isLooseMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.looseId,self._year)
-        mu['istight'] = isTightMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.tightId,self._year)
+        mu['isloose'] = isLooseMuon(mu,self._year)
+        mu['istight'] = isTightMuon(mu,self._year)
         mu['T'] = ak.zip(
             {
                 "r": mu.pt,
@@ -482,8 +480,8 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         e = events.Electron
         e['isclean'] = ak.all(e.metric_table(mu_loose) > 0.3, axis=2)
-        e['isloose'] = isLooseElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
-        e['istight'] = isTightElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
+        e['isloose'] = isLooseElectron(e,self._year)
+        e['istight'] = isTightElectron(e,self._year)
         e['T'] = ak.zip(
             {
                 "r": e.pt,
@@ -505,14 +503,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ak.all(tau.metric_table(mu_loose) > 0.4, axis=2) 
             & ak.all(tau.metric_table(e_loose) > 0.4, axis=2)
         )
-        tau['isloose']=isLooseTau(tau.pt,
-                                  tau.eta,
-                                  tau.DecayMode,
-                                  #tau.idDecayModeNewDMs,
-                                  tau.idDeepTau2017v2p1VSe,
-                                  tau.idDeepTau2017v2p1VSjet,
-                                  tau.idDeepTau2017v2p1VSmu,
-                                  self._year)
+        tau['isloose']=isLooseTau(tau, self._year)
         tau_clean=tau[tau.isclean]
         tau_loose=tau_clean[tau_clean.isloose]
         tau_ntot=ak.sum(tau, axis=1)
@@ -524,10 +515,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             & ak.all(pho.metric_table(e_loose) > 0.5, axis=2)
             & ak.all(pho.metric_table(tau_loose) > 0.5, axis=2)
         )
-        _id = 'cutBasedBitmap'
-        if self._year=='2016': 
-            _id = 'cutBased'
-        pho['isloose']=isLoosePhoton(pho.pt,pho.eta,pho[_id],self._year)&(pho.electronVeto) #added electron veto flag
+        pho['isloose']=isLoosePhoton(pho,self._year)
         pho_clean=pho[pho.isclean]
         pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=ak.sum(pho, axis=1)
@@ -536,12 +524,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         fj = events.AK15PFPuppiJet
         fj['sd'] = fj.subjets.sum()
         fj['isclean'] = (
-            ak.all(fj.metric_table(mu_loose) > 1.5, axis=2)
-            & ak.all(fj.metric_table(e_loose) > 1.5, axis=2)
-            & ak.all(fj.metric_table(tau_loose) > 1.5, axis=2)
-            & ak.all(fj.metric_table(pho_loose) > 1.5, axis=2)
+            ak.all(fj.sd.metric_table(mu_loose) > 1.5, axis=2)
+            & ak.all(fj.sd.metric_table(e_loose) > 1.5, axis=2)
+            & ak.all(fj.sd.metric_table(tau_loose) > 1.5, axis=2)
+            & ak.all(fj.sd.metric_table(pho_loose) > 1.5, axis=2)
         )
-        fj['isgood'] = isGoodFatJet(fj.sd.pt, fj.sd.eta, fj.jetId)
+        fj['isgood'] = isGoodAK15(fj)
         fj['msd_corr'] = get_msd_corr(fj)
         fj['T'] = ak.zip(
             {
@@ -562,8 +550,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         leading_fj = ak.firsts(fj_clean)
 
         j = events.Jet
-        j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF)
-        j['isHEM'] = isHEMJet(j.pt, j.eta, j.phi)
+        j['isgood'] = isGoodAK4(j)
+        j['isHEM'] = isHEMJet(j)
         j['isclean'] = (
             ak.all(j.metric_table(mu_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(e_loose) > 0.4, axis=2)
