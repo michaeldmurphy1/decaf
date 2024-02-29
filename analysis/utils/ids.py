@@ -377,7 +377,7 @@ def isGoodAK15(fj):
 ######
 
 
-def isGoodJet(j, year):
+def isGoodAK4(j, year):
     if '2016' in year:
         year='2016'
     
