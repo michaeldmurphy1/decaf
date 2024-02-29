@@ -539,8 +539,8 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="PolarTwoVector",
             behavior=vector.behavior,
         )
-        probQCD=fj.probQCDbb+fj.probQCDcc+fj.probQCDb+fj.probQCDc+fj.probQCDothers
-        probZHbb=fj.probZbb+fj.probHbb
+        probQCD=fj.particleNetAK15_QCDbb+fj.particleNetAK15_QCDcc+fj.particleNetAK15_QCDb+fj.particleNetAK15_QCDc+fj.particleNetAK15_QCDothers
+        probZHbb=fj.particleNetAK15_Zbb+fj.particleNetAK15_Hbb
         fj['ZHbbvsQCD'] = probZHbb/(probZHbb+probQCD)
         fj_good = fj[fj.isgood]
         fj_clean = fj_good[fj_good.isclean]
@@ -598,10 +598,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
 
         mT = {
-            'wecr'  : np.sqrt(2*leading_e.pt.sum()*met.pt*(1-np.cos(met.T.delta_phi(leading_e.T.sum())))),
-            'tecr'  : np.sqrt(2*leading_e.pt.sum()*met.pt*(1-np.cos(met.T.delta_phi(leading_e.T.sum())))),
-            'wmcr'  : np.sqrt(2*leading_mu.pt.sum()*met.pt*(1-np.cos(met.T.delta_phi(leading_mu.T.sum())))),
-            'tmcr'  : np.sqrt(2*leading_mu.pt.sum()*met.pt*(1-np.cos(met.T.delta_phi(leading_mu.T.sum())))) 
+            'wecr'  : np.sqrt(2*leading_e.pt.sum()*met.pt*(1-np.cos(met.delta_phi(leading_e.T.sum())))),
+            'tecr'  : np.sqrt(2*leading_e.pt.sum()*met.pt*(1-np.cos(met.delta_phi(leading_e.T.sum())))),
+            'wmcr'  : np.sqrt(2*leading_mu.pt.sum()*met.pt*(1-np.cos(met.delta_phi(leading_mu.T.sum())))),
+            'tmcr'  : np.sqrt(2*leading_mu.pt.sum()*met.pt*(1-np.cos(met.delta_phi(leading_mu.T.sum())))) 
         }
 
         ###
@@ -652,7 +652,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Calculate PU weight and systematic variations
             ###
 
-            pu = get_pu_weight(events.Pileup.nTrueInt)
+            pu = get_pu_weight(self._year, events.Pileup.nTrueInt)
 
             ###
             # Trigger efficiency weight
@@ -671,15 +671,12 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Calculating electron and muon ID weights
             ###
 
-            mueta = abs(leading_mu.eta.sum())
-            if self._year=='2016':
-                mueta=leading_mu.eta.sum()
             ids ={
                 'sr':  np.ones(events.size),
-                'wmcr': get_mu_tight_id_sf(mueta,leading_mu.pt.sum()),
-                'tmcr': get_mu_tight_id_sf(mueta,leading_mu.pt.sum()),
-                'wecr': get_ele_tight_id_sf(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(),leading_e.pt.sum()),
-                'tecr': get_ele_tight_id_sf(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(),leading_e.pt.sum()),
+                'wmcr': get_mu_tight_id_sf(self._year, abs(leading_mu.eta), leading_mu.pt),
+                'tmcr': get_mu_tight_id_sf(self._year, abs(leading_mu.eta), leading_mu.pt),
+                'wecr': get_ele_tight_id_sf(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
+                'tecr': get_ele_tight_id_sf(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
                 'qcdcr':  np.ones(events.size),
             }
 
@@ -687,20 +684,20 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Reconstruction weights for electrons
             ###
 
-            def ele_reco_sf(pt, eta):#2017 has separate weights for low/high pT (threshold at 20 GeV)
-                return get_ele_reco_sf(eta, pt)*(pt>20).astype(np.int) + get_ele_reco_lowet_sf(eta, pt)*(~(pt>20)).astype(np.int)
-
-            if self._year == '2017':
-                sf = ele_reco_sf
-            else:
-                sf = get_ele_reco_sf
-
             reco = {
                 'sr': np.ones(events.size),
                 'wmcr': np.ones(events.size),
                 'tmcr': np.ones(events.size),
-                'wecr': sf(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(),leading_e.pt.sum()),
-                'tecr': sf(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(),leading_e.pt.sum()),
+                'wecr': np.where(
+                    (pt<20),
+                    get_ele_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum()),
+                    get_above_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum())
+                )
+                'tecr': np.where(
+                    (pt<20),
+                    get_ele_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum()),
+                    get_above_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum())
+                )
                 'qcdcr': np.ones(events.size),
             }
 
@@ -710,8 +707,8 @@ class AnalysisProcessor(processor.ProcessorABC):
 
             isolation = {
                 'sr'  : np.ones(events.size),
-                'wmcr': get_mu_tight_iso_sf(mueta,leading_mu.pt.sum()),
-                'tmcr': get_mu_tight_iso_sf(mueta,leading_mu.pt.sum()),
+                'wmcr': get_mu_tight_iso_sf(self._year, abs(leading_mu.eta),leading_mu.pt),
+                'tmcr': get_mu_tight_iso_sf(self._year, abs(leading_mu.eta),leading_mu.pt),
                 'wecr': np.ones(events.size),
                 'tecr': np.ones(events.size),
                 'qcdcr'  : np.ones(events.size),
@@ -811,12 +808,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('recoil_qcdcr', (u['qcdcr'].mag>250))
         selection.add('mindphi_qcdcr', (abs(u['qcdcr'].delta_phi(j_clean.T)).min()<0.1))
         selection.add('minDphi_qcdcr', (abs(u['qcdcr'].delta_phi(fj_clean.T)).min()>1.5))
-        selection.add('calo_qcdcr', ( (abs(calomet.pt - met.pt) / u['qcdcr'].mag)<0.5))
-            
-        #selection.add('mindphimet',(abs(met.T.delta_phi(j_clean.T)).min())>0.7)
+        selection.add('calo_qcdcr', ( (abs(calomet.pt - met.pt) / u['qcdcr'].mag)<0.5
 
         regions = {
-            #'sr': ['iszeroL','fatjet','noextrab','noHEMmet','met_filters','met_triggers','noHEMj'],
             'sr': ['msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
             'wmcr': ['msd40','isoneM','fatjet','noextrab','noHEMj','met_filters','met_triggers'],
             'tmcr': ['msd40','isoneM','fatjet','extrab','noHEMj','met_filters','met_triggers'],
@@ -855,8 +849,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].mag,
                     'met':                    met.pt.flatten(),
                     'metphi':                 met.phi.flatten(),
-                    'mindphimet':             abs(met.T.delta_phi(j_clean.T)).min(),
-                    'minDphimet':             abs(met.T.delta_phi(fj_clean.T)).min(),
+                    'mindphimet':             abs(met.delta_phi(j_clean.T)).min(),
+                    'minDphimet':             abs(met.delta_phi(fj_clean.T)).min(),
                     'j1pt':                   leading_j.pt.sum(),
                     'j1eta':                  leading_j.eta.sum(),
                     'j1phi':                  leading_j.phi.sum(),
