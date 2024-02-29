@@ -1,6 +1,6 @@
 import numpy as np
 from coffea.util import save
-
+import awkward as ak
 
 ######
 ## Electron
@@ -166,7 +166,7 @@ def isTightMuon(mu, year):
     pt=mu.pt
     eta=mu.eta
     iso=mu.pfRelIso04_all
-    loose_id=mu.tightId
+    tight_id=mu.tightId
     
     mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
@@ -226,8 +226,8 @@ def isLooseTau(tau, year):
     pt = tau.pt
     eta = tau.eta
     ide = tau.idDeepTau2017v2p1VSe
-    idj = tau.idDeepTau2017v2p1VSjet,
-    idm = tau.idDeepTau2017v2p1VSmu,
+    idj = tau.idDeepTau2017v2p1VSjet
+    idm = tau.idDeepTau2017v2p1VSmu
     decayMode = tau.decayMode
     try:
         decayModeDMs=tau.decayModeFindingNewDMs
@@ -422,7 +422,7 @@ ids["isSoftMuon"] = isSoftMuon
 ids["isLooseTau"] = isLooseTau
 ids["isLoosePhoton"] = isLoosePhoton
 ids["isTightPhoton"] = isTightPhoton
-ids["isGoodJet"] = isGoodJet
-ids["isGoodFatJet"] = isGoodFatJet
+ids["isGoodAK4"] = isGoodAK4
+ids["isGoodAK15"] = isGoodAK15
 ids["isHEMJet"] = isHEMJet
 save(ids, "data/ids.coffea")
