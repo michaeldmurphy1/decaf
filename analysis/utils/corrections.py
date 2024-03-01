@@ -729,6 +729,77 @@ jet_factory = {
     ),
 }
 
+subjet_factory = {
+    "2016preVFPmc": jet_factory_factory(
+        files=[
+            "Summer19UL16APV_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL16APV_V7_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer20UL16APV_JRV3_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer20UL16APV_JRV3_MC_SF_AK4PFchs.jersf.txt",
+        ]
+    ),
+    "2016preVFPmcNOJER": jet_factory_factory(
+        files=[
+            "Summer19UL16APV_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16APV_V7_MC_Uncertainty_AK4PFchs.junc.txt",
+        ]
+    ),
+    "2016postVFPmc": jet_factory_factory(
+        files=[
+            "Summer19UL16_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL16_V7_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer20UL16_JRV3_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer20UL16_JRV3_MC_SF_AK4PFchs.jersf.txt",
+        ]
+    ),
+    "2016postVFPmcNOJER": jet_factory_factory(
+        files=[
+            "Summer19UL16_V7_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL16_V7_MC_Uncertainty_AK4PFchs.junc.txt",
+        ]
+    ),
+    "2017mc": jet_factory_factory(
+        files=[
+            "Summer19UL17_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL17_V5_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer19UL17_JRV3_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer19UL17_JRV3_MC_SF_AK4PFchs.jersf.txt",
+        ]
+    ),
+    "2017mcNOJER": jet_factory_factory(
+        files=[
+            "Summer19UL17_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL17_V5_MC_Uncertainty_AK4PFchs.junc.txt",
+        ]
+    ),
+    "2018mc": jet_factory_factory(
+        files=[
+            "Summer19UL18_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.junc.txt",
+            "Summer19UL18_V5_MC_Uncertainty_AK4PFchs.junc.txt",
+            "Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.jr.txt",
+            "Summer19UL18_JRV2_MC_SF_AK4PFchs.jersf.txt",
+        ]
+    ),
+    "2018mcNOJER": jet_factory_factory(
+        files=[
+            "Summer19UL18_V5_MC_L1FastJet_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_L2Relative_AK4PFchs.jec.txt",
+            "Summer19UL18_V5_MC_Uncertainty_AK4PFchs.junc.txt",
+        ]
+    ),
+}
+
 fatjet_factory = {
     "2016preVFPmc": jet_factory_factory(
         files=[
@@ -828,6 +899,7 @@ corrections = {
     'get_btag_weight':          get_btag_weight,
     'get_mu_rochester_sf':      get_mu_rochester_sf,
     'jet_factory':              jet_factory,
+    'subjet_factory':           subjet_factory,
     'fatjet_factory':           fatjet_factory,
     'met_factory':              met_factory
 }
