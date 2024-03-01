@@ -12,7 +12,7 @@ uproot.open.defaults["xrootd_handler"] = uproot.MultithreadedXRootDSource
 import numpy as np
 from coffea import processor
 from coffea.util import load, save
-from libs.mycoffea import CustomNanoAODSchema
+from libs.mycoffea import CustomNanoAODSchema, AK15SubJet, AK15Jet
 
 import warnings
 warnings.filterwarnings("ignore")

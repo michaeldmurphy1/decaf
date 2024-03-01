@@ -1,6 +1,19 @@
 import awkward
 from coffea.nanoevents.methods import base, vector, candidate
 
+behavior = {}
+behavior.update(base.behavior)
+# vector behavior is included in candidate behavior
+behavior.update(candidate.behavior)
+
+
+def _set_repr_name(classname):
+    def namefcn(self):
+        return classname
+
+    # behavior[("__typestr__", classname)] = classname[0].lower() + classname[1:]
+    behavior[classname].__repr__ = namefcn
+
 @awkward.mixin_class(behavior)
 class AK15SubJet(vector.PtEtaPhiMLorentzVector, base.NanoCollection, base.Systematic):
     """NanoAOD AK15 subjet object"""

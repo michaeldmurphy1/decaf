@@ -332,7 +332,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         jet_factory              = self._corrections['jet_factory']
         fatjet_factory           = self._corrections['fatjet_factory']
-        subjet_factory           = self._corrections['fatjet_factory']
+        subjet_factory           = self._corrections['subjet_factory']
         met_factory              = self._corrections['met_factory']
 
         import cachetools
