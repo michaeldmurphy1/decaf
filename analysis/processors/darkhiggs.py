@@ -503,6 +503,8 @@ class AnalysisProcessor(processor.ProcessorABC):
             ak.all(tau.metric_table(mu_loose) > 0.4, axis=2) 
             & ak.all(tau.metric_table(e_loose) > 0.4, axis=2)
         )
+        print('TILL HERE!!!')
+        
         tau['isloose']=isLooseTau(tau, self._year)
         tau_clean=tau[tau.isclean]
         tau_loose=tau_clean[tau_clean.isloose]
@@ -692,12 +694,12 @@ class AnalysisProcessor(processor.ProcessorABC):
                     (pt<20),
                     get_ele_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum()),
                     get_above_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum())
-                )
+                ),
                 'tecr': np.where(
                     (pt<20),
                     get_ele_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum()),
                     get_above_reco_sf_below20(leading_e.eta.sum()+leading_e.deltaEtaSC.sum(), leading_e.pt.sum())
-                )
+                ),
                 'qcdcr': np.ones(events.size),
             }
 
@@ -808,7 +810,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('recoil_qcdcr', (u['qcdcr'].mag>250))
         selection.add('mindphi_qcdcr', (abs(u['qcdcr'].delta_phi(j_clean.T)).min()<0.1))
         selection.add('minDphi_qcdcr', (abs(u['qcdcr'].delta_phi(fj_clean.T)).min()>1.5))
-        selection.add('calo_qcdcr', ( (abs(calomet.pt - met.pt) / u['qcdcr'].mag)<0.5
+        selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].mag)<0.5))
 
         regions = {
             'sr': ['msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
