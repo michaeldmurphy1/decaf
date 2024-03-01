@@ -1,0 +1,80 @@
+import awkward
+from coffea.nanoevents.methods import base, vector, candidate
+
+@awkward.mixin_class(behavior)
+class AK15SubJet(vector.PtEtaPhiMLorentzVector, base.NanoCollection, base.Systematic):
+    """NanoAOD AK15 subjet object"""
+
+    @property
+    def matched_gen(self):
+        return self._events().SubGenJetAK15._apply_global_index(self.genJetIdxG)
+
+_set_repr_name("AK15SubJet")
+
+@awkward.mixin_class(behavior)
+class AK15Jet(vector.PtEtaPhiMLorentzVector, base.NanoCollection, base.Systematic):
+    """NanoAOD large radius jet object"""
+
+    LOOSE = 0
+    "jetId bit position"
+    TIGHT = 1
+    "jetId bit position"
+    TIGHTLEPVETO = 2
+    "jetId bit position"
+
+    @property
+    def isLoose(self):
+        """Returns a boolean array marking loose jets according to jetId index"""
+        return (self.jetId & (1 << self.LOOSE)) != 0
+
+    @property
+    def isTight(self):
+        """Returns a boolean array marking tight jets according to jetId index"""
+        return (self.jetId & (1 << self.TIGHT)) != 0
+
+    @property
+    def isTightLeptonVeto(self):
+        """Returns a boolean array marking tight jets with explicit lepton veto according to jetId index"""
+        return (self.jetId & (1 << self.TIGHTLEPVETO)) != 0
+
+    @property
+    def subjets(self):
+        return self._events().AK15PFPuppiSubJet._apply_global_index(self.subJetIdxG)
+
+    @property
+    def matched_gen(self):
+        return self._events().GenJetAK15._apply_global_index(self.genJetIdxG)
+
+
+_set_repr_name("AK15Jet")
+
+from coffea.nanoevents import NanoAODSchema
+
+class CustomNanoAODSchema(NanoAODSchema):
+    mixins = {
+        **NanoAODSchema.mixins,
+        "AK15PFPuppiJet": "AK15Jet",
+        "AK15PFPuppiSubJet": "AK15SubJet",
+    }
+    all_cross_references = {
+        **NanoAODSchema.all_cross_references,
+        "AK15PFPuppiJet_genJetIdx":  "GenJetAK15",
+        "AK15PFPuppiJet_subJetIdx1": "AK15PFPuppiSubJet",  
+        "AK15PFPuppiJet_subJetIdx2": "AK15PFPuppiSubJet",
+        "AK15PFPuppiSubJet_genJetIdx": "SubGenJetAK15",
+    }
+    nested_items = {
+        **NanoAODSchema.nested_items,
+        "AK15PFPuppiJet_subJetIdxG": ["AK15PFPuppiJet_subJetIdx1G", "AK15PFPuppiJet_subJetIdx2G"]
+    }
+    def __init__(self, base_form):
+        for key in base_form["contents"].copy():
+            if '_Jet' in key:
+                popped = base_form["contents"].pop(key)
+                base_form["contents"][key.replace('_Jet','Jet')] = popped
+            if '_Subjet' in key:
+                popped = base_form["contents"].pop(key)
+                base_form["contents"][key.replace('_Subjet','SubJet')] = popped
+        #print("Base form keys are:",base_form["contents"].keys())
+        super().__init__(base_form)
+
