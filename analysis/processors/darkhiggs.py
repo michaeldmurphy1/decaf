@@ -332,6 +332,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         jet_factory              = self._corrections['jet_factory']
         fatjet_factory           = self._corrections['fatjet_factory']
+        subjet_factory           = self._corrections['fatjet_factory']
         met_factory              = self._corrections['met_factory']
 
         import cachetools
@@ -343,29 +344,27 @@ class AnalysisProcessor(processor.ProcessorABC):
         def add_jec_variables(jets, event_rho):
             jets["pt_raw"] = (1 - jets.rawFactor)*jets.pt
             jets["mass_raw"] = (1 - jets.rawFactor)*jets.mass
-            try:
-                jets["pt_gen"] = ak.values_astype(ak.fill_none(jets.matched_gen.pt, 0), np.float32)
-            except:
-                jets["pt_gen"] = ak.zeros_like(jets.pt)
+            jets["pt_gen"] = ak.values_astype(ak.fill_none(jets.matched_gen.pt, 0), np.float32)
             jets["event_rho"] = ak.broadcast_arrays(event_rho, jets.pt)[0]
             return jets
         
         jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
-        subjets = jet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubjet, events.fixedGridRhoFastjetAll), jec_cache)
+        fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
+        subjets = subjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubJet, events.fixedGridRhoFastjetAll), jec_cache)
         met = met_factory.build(events.MET, jets, {})
 
-        shifts = [({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met}, None)]
+        shifts = [({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met}, None)]
         if self._systematics:
             shifts.extend([
-                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubjet": subjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
-                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubjet": subjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
-                ({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
-                ({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
+                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubJet": subjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
+                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubJet": subjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
+                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
+                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
             ])
             if not self._skipJER:
                 shifts.extend([
-                    ({"Jet": jets.JER.up, "AK15PFPuppiSubjet": subjets.JER.up, "MET": met.JER.up}, "JERUp"),
-                    ({"Jet": jets.JER.down, "AK15PFPuppiSubjet": subjets.JER.down, "MET": met.JER.down}, "JERDown"),
+                    ({"Jet": jets.JER.up, "AK15PFPuppiSubJet": subjets.JER.up, "MET": met.JER.up}, "JERUp"),
+                    ({"Jet": jets.JER.down, "AK15PFPuppiSubJet": subjets.JER.down, "MET": met.JER.down}, "JERDown"),
                 ])
         return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
 
