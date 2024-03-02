@@ -103,7 +103,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             'qcdcr':('ZJets','WJets','TT','ST','WW','WZ','ZZ','QCD','MET'),
         }
         
-        self._ZHbbvsQCDwp = {
+        self._TvsQCDwp = {
             '2016': 0.53,
             '2017': 0.61,
             '2018': 0.65
@@ -194,132 +194,132 @@ class AnalysisProcessor(processor.ProcessorABC):
                 hist.axis.StrCategory([], name='systematic', growth=True),
                 hist.axis.Variable([250,310,370,470,590,840,1020,1250,3000], name='recoil', label=r'$U$ [GeV]'),
                 hist.axis.Variable([40,50,60,70,80,90,100,110,120,130,150,160,180,200,220,240,300], name='fjmass', label=r'AK15 Jet $m_{sd}$'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
-            'ZHbbvsQCD': hist.Hist(
+            'TvsQCD': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Regular(15,0,1, name='ZHbbvsQCD', label='ZHbbvsQCD'),
+                hist.axis.Regular(15,0,1, name='TvsQCD', label='TvsQCD'),
                 storage=hist.storage.Weight(),
             ),
             'mindphirecoil': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(30,0,3.5, name='mindphirecoil', label='Min dPhi(Recoil,AK4s)'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'minDphirecoil': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(30,0,3.5, name='minDphirecoil', label='Min dPhi(Recoil,AK15s)'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'CaloMinusPfOverRecoil': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(35,0,1, name='CaloMinusPfOverRecoil', label='Calo - Pf / Recoil'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'met': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(30,0,600, name='met', label='MET'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'metphi': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(35,-3.5,3.5, name='metphi', label='MET phi'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'mindphimet': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(30,0,3.5, name='mindphimet', label='Min dPhi(MET,AK4s)'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'minDphimet': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(30,0,3.5, name='minDphimet', label='Min dPhi(MET,AK15s)'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'j1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Variable(ptbins, name='j1pt', label='AK4 Leading Jet Pt'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'j1eta': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(35,-3.5,3.5, name='j1eta', label='AK4 Leading Jet Eta'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'j1phi': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(35,-3.5,3.5, name='j1phi', label='AK4 Leading Jet Phi'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'fj1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Variable(ptbins, name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'fj1eta': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(35,-3.5,3.5, name='fj1eta', label='AK15 Leading SoftDrop Jet Eta'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'fj1phi': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(35,-3.5,3.5, name='fj1phi', label='AK15 Leading SoftDrop Jet Phi'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'njets': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='AK4 Number of Jets'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'ndflvL': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='ndflvL', label='AK4 Number of deepFlavor Loose Jets'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'nfjclean': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.IntCategory([0, 1, 2, 3, 4], name='nfjclean', label='AK15 Number of Cleaned Jets'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'mT': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(20,0,600, name='mT', label='Transverse Mass'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'l1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Variable(ptbins, name='l1pt', label='Leading Lepton Pt'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'l1eta': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(48,-2.4,2.4, name='l1eta', label='Leading Lepton Eta'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
             'l1phi': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.Regular(64,-3.2,3.2, name='l1phi', label='Leading Lepton Phi'),
-                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
     }
@@ -541,8 +541,8 @@ class AnalysisProcessor(processor.ProcessorABC):
             behavior=vector.behavior,
         )
         probQCD=fj.particleNetAK15_QCDbb+fj.particleNetAK15_QCDcc+fj.particleNetAK15_QCDb+fj.particleNetAK15_QCDc+fj.particleNetAK15_QCDothers
-        probZHbb=fj.particleNetAK15_Zbb+fj.particleNetAK15_Hbb
-        fj['ZHbbvsQCD'] = probZHbb/(probZHbb+probQCD)
+        probT=fj.particleNetAK15_Tbqq+fj.particleNetAK15_Tbcq
+        fj['TvsQCD'] = probT/(probT+probQCD)
         fj_good = fj[fj.isgood]
         fj_clean = fj_good[fj_good.isclean]
         fj_ntot = ak.sum(fj, axis=1)
@@ -840,7 +840,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                   systematic=sname,
                   recoil=normalize(u[region].mag, cut),
                   fjmass=normalize(leading_fj.msd_corr, cut),
-                  ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                  TvsQCD=normalize(leading_fj.TvsQCD, cut),
                   weight=weight
             )
             if systematic is None:
@@ -878,13 +878,13 @@ class AnalysisProcessor(processor.ProcessorABC):
                     normalized_variable = {variable: normalize(variables[variable],cut)}
                     output[variable].fill(
                         region=region,
-                        ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD,cut),
+                        TvsQCD=normalize(leading_fj.TvsQCD,cut),
                         **normalized_variable,
                         weight=weight,
                     )
-                output['ZHbbvsQCD'].fill(
+                output['TvsQCD'].fill(
                       region=region,
-                      ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                      TvsQCD=normalize(leading_fj.TvsQCD, cut),
                       weight=weight
                 )
 

@@ -1,20 +1,24 @@
 import awkward
-from coffea.nanoevents.methods import base, vector, candidate
+from coffea.nanoevents.methods import base, vector, candidate, nanoaod
+from coffea.nanoevents import NanoAODSchema, BaseSchema
 
-behavior = {}
-behavior.update(base.behavior)
-# vector behavior is included in candidate behavior
-behavior.update(candidate.behavior)
-
+#behavior = {}
+#behavior.update(base.behavior)
+#behavior.update(candidate.behavior)
+#print(candidate.behavior)
+#print(NanoAODSchema.behavior)
+#my_behavior = dict(NanoAODSchema.behavior)
+my_behavior = {}
+my_behavior.update(nanoaod.behavior)
 
 def _set_repr_name(classname):
     def namefcn(self):
         return classname
 
     # behavior[("__typestr__", classname)] = classname[0].lower() + classname[1:]
-    behavior[classname].__repr__ = namefcn
+    my_behavior[classname].__repr__ = namefcn
 
-@awkward.mixin_class(behavior)
+@awkward.mixin_class(my_behavior)
 class AK15SubJet(vector.PtEtaPhiMLorentzVector, base.NanoCollection, base.Systematic):
     """NanoAOD AK15 subjet object"""
 
@@ -24,7 +28,7 @@ class AK15SubJet(vector.PtEtaPhiMLorentzVector, base.NanoCollection, base.System
 
 _set_repr_name("AK15SubJet")
 
-@awkward.mixin_class(behavior)
+@awkward.mixin_class(my_behavior)
 class AK15Jet(vector.PtEtaPhiMLorentzVector, base.NanoCollection, base.Systematic):
     """NanoAOD large radius jet object"""
 
@@ -61,8 +65,6 @@ class AK15Jet(vector.PtEtaPhiMLorentzVector, base.NanoCollection, base.Systemati
 
 _set_repr_name("AK15Jet")
 
-from coffea.nanoevents import NanoAODSchema
-
 class CustomNanoAODSchema(NanoAODSchema):
     mixins = {
         **NanoAODSchema.mixins,
@@ -85,9 +87,16 @@ class CustomNanoAODSchema(NanoAODSchema):
             if '_Jet' in key:
                 popped = base_form["contents"].pop(key)
                 base_form["contents"][key.replace('_Jet','Jet')] = popped
+                #base_form["contents"][key.replace('_Jet','Jet')]['form_key'] = \
+                #                    base_form["contents"][key.replace('_Jet','Jet')]['form_key'].replace('_Jet','Jet')
             if '_Subjet' in key:
                 popped = base_form["contents"].pop(key)
                 base_form["contents"][key.replace('_Subjet','SubJet')] = popped
-        #print("Base form keys are:",base_form["contents"].keys())
+                #base_form["contents"][key.replace('_Subjet','SubJet')]['form_key'] = \
+                #                    base_form["contents"][key.replace('_Subjet','SubJet')]['form_key'].replace('_Subjet','SubJet')
         super().__init__(base_form)
+
+    @property
+    def behavior(self):
+        return my_behavior
 
