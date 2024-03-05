@@ -472,8 +472,16 @@ class BTagCorrector:
         self._wp = wp[workingpoint]
 
         btvjson = {}
-        btvjson['deepflav'] = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"]
-        btvjson['deepcsv'] = correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"]
+        btvjson['deepflav'] = {
+            0: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_incl"],
+            4: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
+            5: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
+        }
+        btvjson['deepcsv'] = {
+            0: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_incl"],
+            4: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
+            5: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
+        }
         self.sf = btvjson[tagger]
 
         files = {
@@ -519,39 +527,39 @@ class BTagCorrector:
         
         eff = self.eff(flavor, pt, abseta)
         
-        sf_nom = self.sf.evaluate('central',self._wp, flavor, abseta, pt)
+        sf_nom = self.sf[flavor].evaluate('central',self._wp, flavor, abseta, pt)
         
         bc_sf_up_correlated = pt.ones_like()
         bc_sf_up_correlated[~bc] = sf_nom[~bc]
-        bc_sf_up_correlated[bc] = self.sf.evaluate('up_correlated', self._wp, flavor, eta, pt)[bc]
+        bc_sf_up_correlated[bc] = self.sf[flavor].evaluate('up_correlated', self._wp, flavor, eta, pt)[bc]
         
         bc_sf_down_correlated = pt.ones_like()
         bc_sf_down_correlated[~bc] = sf_nom[~bc]
-        bc_sf_down_correlated[bc] = self.sf.evaluate('down_correlated', self._wp, flavor, eta, pt)[bc]
+        bc_sf_down_correlated[bc] = self.sf[flavor].evaluate('down_correlated', self._wp, flavor, eta, pt)[bc]
 
         bc_sf_up_uncorrelated = pt.ones_like()
         bc_sf_up_uncorrelated[~bc] = sf_nom[~bc]
-        bc_sf_up_uncorrelated[bc] = self.sf.evaluate('up_uncorrelated', self._wp, flavor, eta, pt)[bc]
+        bc_sf_up_uncorrelated[bc] = self.sf[flavor].evaluate('up_uncorrelated', self._wp, flavor, eta, pt)[bc]
 
         bc_sf_down_uncorrelated = pt.ones_like()
         bc_sf_down_uncorrelated[~bc] = sf_nom[~bc]
-        bc_sf_down_uncorrelated[bc] = self.sf.evaluate('down_uncorrelated', self._wp, flavor, eta, pt)[bc]
+        bc_sf_down_uncorrelated[bc] = self.sf[flavor].evaluate('down_uncorrelated', self._wp, flavor, eta, pt)[bc]
 
         light_sf_up_correlated = pt.ones_like()
         light_sf_up_correlated[~light] = sf_nom[~light]
-        light_sf_up_correlated[light] = self.sf.evaluate('up_correlated', self._wp, flavor, abseta, pt)[light]
+        light_sf_up_correlated[light] = self.sf[flavor].evaluate('up_correlated', self._wp, flavor, abseta, pt)[light]
 
         light_sf_down_correlated = pt.ones_like()
         light_sf_down_correlated[~light] = sf_nom[~light]
-        light_sf_down_correlated[light] = self.sf.evaluate('down_correlated', self._wp, flavor, abseta, pt)[light]
+        light_sf_down_correlated[light] = self.sf[flavor].evaluate('down_correlated', self._wp, flavor, abseta, pt)[light]
 
         light_sf_up_uncorrelated = pt.ones_like()
         light_sf_up_uncorrelated[~light] = sf_nom[~light]
-        light_sf_up_uncorrelated[light] = self.sf.evaluate('up_uncorrelated', self._wp, flavor, abseta, pt)[light]
+        light_sf_up_uncorrelated[light] = self.sf[flavor].evaluate('up_uncorrelated', self._wp, flavor, abseta, pt)[light]
 
         light_sf_down_uncorrelated = pt.ones_like()
         light_sf_down_uncorrelated[~light] = sf_nom[~light]
-        light_sf_down_uncorrelated[light] = self.sf.evaluate('down_uncorrelated', self._wp, flavor, abseta, pt)[light]
+        light_sf_down_uncorrelated[light] = self.sf[flavor].evaluate('down_uncorrelated', self._wp, flavor, abseta, pt)[light]
 
 
 
