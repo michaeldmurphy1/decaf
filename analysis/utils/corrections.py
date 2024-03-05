@@ -16,17 +16,20 @@ import json
 # MET trigger efficiency SFs, 2017/18 from monojet. Depends on recoil.
 ###
 
-met_trig_hists = {
-    '2016postVFP': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
-    '2016preVFP': uproot.open("data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root")['hden_monojet_recoil_clone_passed'],
-    '2017': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2017'],
-    '2018': uproot.open("data/trigger_eff/met_trigger_sf.root")['120pfht_hltmu_1m_2018']
-}
-get_met_trig_weight = {}
-for year in ['2016postVFP', '2016preVFP', '2017','2018']:
-    met_trig_hist=met_trig_hists[year]
-    get_met_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(met_trig_hist.values(), met_trig_hist.axes)
+def get_met_trig_weight(year, met)
+    met_trig_hists = {
+        '2016postVFP': "data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root:hden_monojet_recoil_clone_passed",
+        '2016preVFP': "data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root:hden_monojet_recoil_clone_passed",
+        '2017': "data/trigger_eff/met_trigger_sf.root:120pfht_hltmu_1m_2017",
+        '2018': "data/trigger_eff/met_trigger_sf.root:120pfht_hltmu_1m_2018"
+    }
+    corr = correctionlib.convert.from_uproot_THx(met_trig_hists[year])
+    evaluator = corr.to_evaluator()
 
+    flatmet, counts = ak.flatten(met), ak.num(met)
+    weight = evaluator.evaluate(flatmet)
+
+    return ak.unflatten(weight, counts=counts)
 
 ####
 # Electron ID scale factor
