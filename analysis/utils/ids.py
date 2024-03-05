@@ -343,8 +343,8 @@ def isTightPhoton(pho, year):
 
 def isGoodAK15(fj):
     
-    pt=fj.sd.pt
-    eta=fj.sd.eta
+    pt=fj.pt
+    eta=fj.eta
     jet_id=fj.jetId
     
     mask = (
