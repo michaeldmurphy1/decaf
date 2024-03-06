@@ -63,10 +63,10 @@ def get_ele_tight_id_sf (year, eta, pt):
 
 def get_ele_trig_weight(year, eta, pt):
     ele_trig_hists = {
-        '2016postVFP': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root")['EGamma_SF2D'],
-        '2016preVFP' : uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root")['EGamma_SF2D'],
-        '2017': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
-        '2018': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
+        '2016postVFP': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root:EGamma_SF2D",
+        '2016preVFP' : "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root:EGamma_SF2D",
+        '2017': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root:EGamma_SF2D",#monojet measurement for the combined trigger path
+        '2018': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root:EGamma_SF2D" #approved by egamma group: https://indico.cern.ch/event/924522/
     }
     corr = convert.from_uproot_THx(ele_trig_hists[year])
     evaluator = corr.to_evaluator()
@@ -81,10 +81,10 @@ def get_ele_trig_weight(year, eta, pt):
 
 def get_ele_reco_sf_below20(year, eta, pt):
     ele_reco_files_below20 = {
-        '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root"),
-        '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root"),
-        '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root"),
-        '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root")
+        '2016postVFP': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root:EGamma_SF2D",
+        '2016preVFP': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root:EGamma_SF2D",
+        '2017': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root:EGamma_SF2D",
+        '2018': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root:EGamma_SF2D"
     }
 
     corr = convert.from_uproot_THx(ele_reco_files_below20[year])
@@ -96,10 +96,10 @@ def get_ele_reco_sf_below20(year, eta, pt):
 
 def get_ele_reco_sf_above20(year, eta, pt):
     ele_reco_files_above20 = {
-        '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root"),
-        '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root"),
-        '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root"),
-        '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root")
+        '2016postVFP': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root:EGamma_SF2D",
+        '2016preVFP': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root:EGamma_SF2D",
+        '2017': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root:EGamma_SF2D",
+        '2018': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root:EGamma_SF2D"
     }
     
     corr = convert.from_uproot_THx(ele_reco_files_above20[year])
@@ -160,10 +160,10 @@ def get_pho_loose_id_sf(year, eta, pt):
 
 def get_pho_trig_weight(year, pt):
     pho_trig_files = {
-        '2016postVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-        '2016preVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-        "2017": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-        "2018": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
+        '2016postVFP': "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
+        '2016preVFP': "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
+        "2017": "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
+        "2018": "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed"
     }
 
     corr = convert.from_uproot_THx(pho_trig_files[year])
