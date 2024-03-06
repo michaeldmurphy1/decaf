@@ -71,7 +71,12 @@ def get_ele_trig_weight(year, eta, pt):
     corr = convert.from_uproot_THx(ele_trig_hists[year])
     evaluator = corr.to_evaluator()
 
-    return evaluator.evaluate(eta, pt)
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator.evaluate(flateta, flatpt)
+    
+    return ak.unflatten(weight, counts=counts)
+    
 
 ####
 # Electron Reco scale factor
@@ -90,7 +95,11 @@ def get_ele_reco_sf_below20(year, eta, pt):
     corr = convert.from_uproot_THx(ele_reco_files_below20[year])
     evaluator = corr.to_evaluator()
 
-    return evaluator.evaluate(eta, pt)
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator.evaluate(flateta, flatpt)
+    
+    return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
 
 
@@ -102,10 +111,13 @@ def get_ele_reco_sf_above20(year, eta, pt):
         '2018': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root:EGamma_SF2D"
     }
     
-    corr = convert.from_uproot_THx(ele_reco_files_above20[year])
     evaluator = corr.to_evaluator()
 
-    return evaluator.evaluate(eta, pt)
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    flatpt = ak.flatten(pt)
+    weight = evaluator.evaluate(flateta, flatpt)
+    
+    return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.05, ele_reco_hist.axes)
     
 
@@ -166,10 +178,12 @@ def get_pho_trig_weight(year, pt):
         "2018": "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed"
     }
 
-    corr = convert.from_uproot_THx(pho_trig_files[year])
     evaluator = corr.to_evaluator()
 
-    return evaluator.evaluate(eta, pt)
+    flatpt = ak.flatten(pt), ak.num(pt)
+    weight = evaluator.evaluate(flatpt)
+    
+    return ak.unflatten(weight, counts=counts)
 
 
 
