@@ -61,18 +61,17 @@ def get_ele_tight_id_sf (year, eta, pt):
 # Copy from previous correctionsUL.py file
 ####
 
-ele_trig_hists = {
-    '2016postVFP': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root")['EGamma_SF2D'],
-    '2016preVFP' : uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root")['EGamma_SF2D'],
-    '2017': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
-    '2018': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
-}
-get_ele_trig_weight = {}
-for year in ['2016postVFP', '2016preVFP', '2017','2018']:
-    ele_trig_hist = ele_trig_hists[year]
-    get_ele_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(ele_trig_hist.values(), ele_trig_hist.axes)
+def get_ele_trig_weight(year, eta, pt):
+    ele_trig_hists = {
+        '2016postVFP': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root")['EGamma_SF2D'],
+        '2016preVFP' : uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root")['EGamma_SF2D'],
+        '2017': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root")['EGamma_SF2D'],#monojet measurement for the combined trigger path
+        '2018': uproot.open("data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root")['EGamma_SF2D'] #approved by egamma group: https://indico.cern.ch/event/924522/
+    }
+    corr = convert.from_uproot_THx(ele_trig_hists[year])
+    evaluator = corr.to_evaluator()
 
-
+    return evaluator.evaluate(eta, pt)
 
 ####
 # Electron Reco scale factor
@@ -80,32 +79,34 @@ for year in ['2016postVFP', '2016preVFP', '2017','2018']:
 # Code Copy from previous correctionsUL.py file
 ####
 
-ele_reco_files_below20 = {
-    '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root"),
-    '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root"),
-    '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root"),
-    '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root")
-}
-get_ele_reco_sf_below20 = {}
-get_ele_reco_err_below20 = {}
-for year in ['2016postVFP','2016preVFP','2017','2018']:
-    ele_reco_hist = ele_reco_files_below20[year]["EGamma_SF2D"]
-    get_ele_reco_sf_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values(), ele_reco_hist.axes)
-    get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
+def get_ele_reco_sf_below20(year, eta, pt):
+    ele_reco_files_below20 = {
+        '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root"),
+        '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root"),
+        '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root"),
+        '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root")
+    }
+
+    corr = convert.from_uproot_THx(ele_reco_files_below20[year])
+    evaluator = corr.to_evaluator()
+
+    return evaluator.evaluate(eta, pt)
+    #get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
 
 
-ele_reco_files_above20 = {
-    '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root"),
-    '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root"),
-    '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root"),
-    '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root")
-}
-get_ele_reco_sf_above20 = {}
-get_ele_reco_err_above20 = {}
-for year in ['2016postVFP','2016preVFP','2017','2018']:
-    ele_reco_hist = ele_reco_files_above20[year]["EGamma_SF2D"]
-    get_ele_reco_sf_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.values(), ele_reco_hist.axes)
-    get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.05, ele_reco_hist.axes)
+def get_ele_reco_sf_above20(year, eta, pt):
+    ele_reco_files_above20 = {
+        '2016postVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root"),
+        '2016preVFP': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root"),
+        '2017': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root"),
+        '2018': uproot.open("data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root")
+    }
+    
+    corr = convert.from_uproot_THx(ele_reco_files_above20[year])
+    evaluator = corr.to_evaluator()
+
+    return evaluator.evaluate(eta, pt)
+    #get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.05, ele_reco_hist.axes)
     
 
 
@@ -157,16 +158,18 @@ def get_pho_loose_id_sf(year, eta, pt):
 # Copy from previous decaf version
 ####
 
-pho_trig_files = {
-    '2016postVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    '2016preVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    "2017": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
-    "2018": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
-}
-get_pho_trig_weight = {}
-for year in ['2016postVFP','2016preVFP','2017','2018']:
-    pho_trig_hist = pho_trig_files[year]["hden_photonpt_clone_passed"]
-    get_pho_trig_weight[year] = lookup_tools.dense_lookup.dense_lookup(pho_trig_hist.values(), pho_trig_hist.axes)
+def get_pho_trig_weight(year, pt):
+    pho_trig_files = {
+        '2016postVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+        '2016preVFP': uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+        "2017": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root"),
+        "2018": uproot.open("data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root")
+    }
+
+    corr = convert.from_uproot_THx(pho_trig_files[year])
+    evaluator = corr.to_evaluator()
+
+    return evaluator.evaluate(eta, pt)
 
 
 
