@@ -655,7 +655,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
             # Trigger efficiency weight
             ###
-
+            print('Leading e pT:',leading_e.pt)
             trig = {
                 'sr':   get_met_trig_weight(self._year, met.pt),
                 'wmcr': get_met_trig_weight(self._year, ak.where(~np.isnan(ak.fill_none(u['wmcr'].r, np.nan)), u['wmcr'].r, met.pt)),
