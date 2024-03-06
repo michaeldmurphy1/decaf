@@ -389,7 +389,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         #Getting corrections, ids from .coffea files
         ###
 
-        get_met_trig_weight      = self._corrections['get_met_trig_weight'][self._year]
+        get_met_trig_weight      = self._corrections['get_met_trig_weight']
         get_ele_loose_id_sf      = self._corrections['get_ele_loose_id_sf']
         get_ele_tight_id_sf      = self._corrections['get_ele_tight_id_sf']
         get_ele_trig_weight      = self._corrections['get_ele_trig_weight'][self._year]
@@ -657,15 +657,14 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
             # Trigger efficiency weight
             ###
-            print('MET ak',met.pt)
-            print('MET np',ak.to_numpy(met.pt))
+
             trig = {
-                'sr':   get_met_trig_weight(ak.to_numpy(met.pt)),
-                'wmcr': get_met_trig_weight(ak.to_numpy(u['wmcr'].mag)),
-                'tmcr': get_met_trig_weight(ak.to_numpy(u['tmcr'].mag)),
-                'wecr': get_ele_trig_weight(ak.to_numpy(leading_e.eta+leading_e.deltaEtaSC), ak.to_numpy(leading_e.pt)),
-                'tecr': get_ele_trig_weight(ak.to_numpy(leading_e.eta+leading_e.deltaEtaSC), ak.to_numpy(leading_e.pt)),
-                'qcdcr': get_met_trig_weight(ak.to_numpy(met.pt)),
+                'sr':   get_met_trig_weight(self._year, met.pt),
+                'wmcr': get_met_trig_weight(self._year, ak.where(~np.isnan(ak.fill_none(u['wmcr'].r, np.nan)), u['wmcr'].r, met.pt)),
+                'tmcr': get_met_trig_weight(self._year, ak.where(~np.isnan(ak.fill_none(u['tmcr'].r, np.nan)), u['tmcr'].r, met.pt)),
+                'wecr': get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
+                'tecr': get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
+                'qcdcr': get_met_trig_weight(self._year, met.pt),
             }
 
             ### 
