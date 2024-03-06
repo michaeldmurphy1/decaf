@@ -392,11 +392,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_met_trig_weight      = self._corrections['get_met_trig_weight']
         get_ele_loose_id_sf      = self._corrections['get_ele_loose_id_sf']
         get_ele_tight_id_sf      = self._corrections['get_ele_tight_id_sf']
-        get_ele_trig_weight      = self._corrections['get_ele_trig_weight'][self._year]
-        get_ele_reco_sf_below20  = self._corrections['get_ele_reco_sf_below20'][self._year]
-        get_ele_reco_err_below20 = self._corrections['get_ele_reco_err_below20'][self._year]
-        get_ele_reco_sf_above20  = self._corrections['get_ele_reco_sf_above20'][self._year]
-        get_ele_reco_err_above20 = self._corrections['get_ele_reco_err_above20'][self._year]
+        get_ele_trig_weight      = self._corrections['get_ele_trig_weight']
+        get_ele_reco_sf_below20  = self._corrections['get_ele_reco_sf_below20']
+        get_ele_reco_sf_above20  = self._corrections['get_ele_reco_sf_above20']
         get_muon_loose_id_sf     = self._corrections['get_muon_loose_id_sf']
         get_muon_tight_id_sf     = self._corrections['get_muon_tight_id_sf']
         get_muon_loose_iso_sf    = self._corrections['get_muon_loose_iso_sf']
@@ -690,13 +688,13 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'tmcr': np.ones(len(events), dtype='float'),
                 'wecr': np.where(
                     (pt<20),
-                    get_ele_reco_sf_below20(leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
-                    get_above_reco_sf_below20(leading_e.eta+leading_e.deltaEtaSC, leading_e.pt)
+                    get_ele_reco_sf_below20(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
+                    get_above_reco_sf_below20(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt)
                 ),
                 'tecr': np.where(
                     (pt<20),
-                    get_ele_reco_sf_below20(leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
-                    get_above_reco_sf_below20(leading_e.eta+leading_e.deltaEtaSC, leading_e.pt)
+                    get_ele_reco_sf_below20(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
+                    get_above_reco_sf_below20(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt)
                 ),
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
