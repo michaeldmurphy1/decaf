@@ -671,24 +671,12 @@ class AnalysisProcessor(processor.ProcessorABC):
                                                     )
                                            ),
                 'wecr': get_ele_trig_weight(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                 'tecr': get_ele_trig_weight(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                 'qcdcr': get_met_trig_weight(self._year, met.pt),
             }
@@ -700,44 +688,20 @@ class AnalysisProcessor(processor.ProcessorABC):
             ids ={
                 'sr':  np.ones(len(events), dtype='float'),
                 'wmcr': get_mu_tight_id_sf(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.eta, np.nan)),
-                                                     abs(leading_mu.eta),
-                                                     ak.full_like(leading_mu.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.pt, np.nan)),
-                                                     leading_mu.pt,
-                                                     ak.full_like(leading_mu.pt, -999.)
-                                                    )
-                                           ),
-                'tmcr': get_mu_tight_id_sf(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.eta, np.nan)),
-                                                     abs(leading_mu.eta),
-                                                     ak.full_like(leading_mu.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.pt, np.nan)),
-                                                     leading_mu.pt,
-                                                     ak.full_like(leading_mu.pt, -999.)
-                                                    )
-                                           ),
+                                           ak.fill_none(abs(leading_mu.eta), -999.),
+                                           ak.fill_none(leading_mu.pt, -999.)
+                                          ),
+                'tmcr': get_mu_tight_id_sf(self._year,
+                                           ak.fill_none(abs(leading_mu.eta), -999.),
+                                           ak.fill_none(leading_mu.pt, -999.)
+                                          ),
                 'wecr': get_ele_tight_id_sf(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                 'tecr': get_ele_tight_id_sf(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
@@ -753,47 +717,23 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'wecr': np.where(
                     (pt<20),
                     get_ele_reco_sf_below20(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                     get_above_reco_sf_below20(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                 ),
                 'tecr': np.where(
                     (pt<20),
                     get_ele_reco_sf_below20(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                     get_above_reco_sf_below20(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, np.nan)),
-                                                     leading_e.eta+leading_e.deltaEtaSC,
-                                                     ak.full_like(leading_e.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_e.pt, np.nan)),
-                                                     leading_e.pt,
-                                                     ak.full_like(leading_e.pt, -999.)
-                                                    )
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
+                                            ak.fill_none(leading_e.pt, -999.)
                                            ),
                 ),
                 'qcdcr': np.ones(len(events), dtype='float'),
@@ -806,24 +746,12 @@ class AnalysisProcessor(processor.ProcessorABC):
             isolation = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': get_mu_tight_iso_sf(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.eta, np.nan)),
-                                                     abs(leading_mu.eta),
-                                                     ak.full_like(leading_mu.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.pt, np.nan)),
-                                                     leading_mu.pt,
-                                                     ak.full_like(leading_mu.pt, -999.)
-                                                    )
+                                            ak.fill_none(abs(leading_mu.eta), -999.),
+                                            ak.fill_none(leading_mu.pt, -999.)
                                            ),
                 'tmcr': get_mu_tight_iso_sf(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.eta, np.nan)),
-                                                     abs(leading_mu.eta),
-                                                     ak.full_like(leading_mu.eta, -999.)
-                                                    ),
-                                            ak.where(~np.isnan(ak.fill_none(leading_mu.pt, np.nan)),
-                                                     leading_mu.pt,
-                                                     ak.full_like(leading_mu.pt, -999.)
-                                                    )
+                                            ak.fill_none(abs(leading_mu.eta), -999.),
+                                            ak.fill_none(leading_mu.pt, -999.)
                                            ),
                 'wecr': np.ones(len(events), dtype='float'),
                 'tecr': np.ones(len(events), dtype='float'),
