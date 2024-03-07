@@ -7,7 +7,7 @@ import os
 from optparse import OptionParser
 
 import uproot
-uproot.open.defaults["xrootd_handler"] = uproot.MultithreadedXRootDSource
+#uproot.open.defaults["xrootd_handler"] = uproot.MultithreadedXRootDSource
 
 import numpy as np
 from coffea import processor

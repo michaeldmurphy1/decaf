@@ -27,6 +27,7 @@ def get_met_trig_weight(year, met):
     corr = convert.from_uproot_THx(met_trig_hists[year])
     evaluator = corr.to_evaluator()
 
+    met  = ak.where((met>950.),ak.full_like(met,950.),met)
     return evaluator.evaluate(met)
 
 ####
@@ -70,6 +71,7 @@ def get_ele_trig_weight(year, eta, pt):
     }
     corr = convert.from_uproot_THx(ele_trig_hists[year])
     evaluator = corr.to_evaluator()
+    pt  = ak.where((pt>250.),ak.full_like(pt,250.),pt)
 
     return evaluator.evaluate(eta, pt)
 
@@ -182,8 +184,8 @@ def get_pho_trig_weight(year, pt):
 # /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
 ####
 
-def get_muon_loose_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
+def get_mu_loose_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
     flatpt = ak.flatten(pt)
@@ -194,16 +196,21 @@ def get_muon_loose_id_sf (year, eta, pt):
 
     return ak.unflatten(weight, counts=counts)
 
-def get_muon_tight_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
-
+def get_mu_tight_id_sf (year, eta, pt):
+    print("1")
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
+    print("2")
     flateta, counts = ak.flatten(eta), ak.num(eta)
+    print("3")
     flatpt = ak.flatten(pt)
+    print("4")
     if year == '2018':
+        print("5")
         weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
+        print("6")
     else:
         weight = evaluator["NUM_TightID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
-
+    print("7")
     return ak.unflatten(weight, counts=counts)
 
 
@@ -216,7 +223,7 @@ def get_muon_tight_id_sf (year, eta, pt):
 # /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
 ####
 
-def get_muon_loose_iso_sf (year, eta, pt):
+def get_mu_loose_iso_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -225,7 +232,7 @@ def get_muon_loose_iso_sf (year, eta, pt):
 
     return ak.unflatten(weight, counts=counts)
 
-def get_muon_tight_iso_sf (year, eta, pt):
+def get_mu_tight_iso_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -898,10 +905,10 @@ corrections = {
     'get_pho_loose_id_sf':      get_pho_loose_id_sf,
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
     'get_pho_trig_weight':      get_pho_trig_weight,
-    'get_muon_loose_id_sf':     get_muon_loose_id_sf,
-    'get_muon_tight_id_sf':     get_muon_tight_id_sf,
-    'get_muon_loose_iso_sf':    get_muon_loose_iso_sf,
-    'get_muon_tight_iso_sf':    get_muon_tight_iso_sf,
+    'get_mu_loose_id_sf':       get_mu_loose_id_sf,
+    'get_mu_tight_id_sf':       get_mu_tight_id_sf,
+    'get_mu_loose_iso_sf':      get_mu_loose_iso_sf,
+    'get_mu_tight_iso_sf':      get_mu_tight_iso_sf,
     'get_met_xy_correction':    XY_MET_Correction,
     'get_pu_weight':            get_pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
@@ -912,7 +919,7 @@ corrections = {
     'get_mu_rochester_sf':      get_mu_rochester_sf,
     'jet_factory':              jet_factory,
     'subjet_factory':           subjet_factory,
-    'fatjet_factory':           fatjet_factory,
+    #'fatjet_factory':           fatjet_factory,
     'met_factory':              met_factory
 }
 

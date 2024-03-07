@@ -331,7 +331,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             return self.process_shift(events, None)
 
         jet_factory              = self._corrections['jet_factory']
-        fatjet_factory           = self._corrections['fatjet_factory']
+        #fatjet_factory           = self._corrections['fatjet_factory']
         subjet_factory           = self._corrections['subjet_factory']
         met_factory              = self._corrections['met_factory']
 
@@ -349,7 +349,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             return jets
         
         jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
-        fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
+        #fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
         subjets = subjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubJet, events.fixedGridRhoFastjetAll), jec_cache)
         met = met_factory.build(events.MET, jets, {})
 
@@ -395,10 +395,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_ele_trig_weight      = self._corrections['get_ele_trig_weight']
         get_ele_reco_sf_below20  = self._corrections['get_ele_reco_sf_below20']
         get_ele_reco_sf_above20  = self._corrections['get_ele_reco_sf_above20']
-        get_muon_loose_id_sf     = self._corrections['get_muon_loose_id_sf']
-        get_muon_tight_id_sf     = self._corrections['get_muon_tight_id_sf']
-        get_muon_loose_iso_sf    = self._corrections['get_muon_loose_iso_sf']
-        get_muon_tight_iso_sf    = self._corrections['get_muon_tight_iso_sf']
+        get_mu_loose_id_sf       = self._corrections['get_mu_loose_id_sf']
+        get_mu_tight_id_sf       = self._corrections['get_mu_tight_id_sf']
+        get_mu_loose_iso_sf      = self._corrections['get_mu_loose_iso_sf']
+        get_mu_tight_iso_sf      = self._corrections['get_mu_tight_iso_sf']
         get_mu_rochester_sf      = self._corrections['get_mu_rochester_sf'][self._year]
         get_met_xy_correction    = self._corrections['get_met_xy_correction']
         get_pu_weight            = self._corrections['get_pu_weight']    
@@ -655,32 +655,36 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
             # Trigger efficiency weight
             ###
-            print('Leading e pT:',leading_e.pt)
+            to_print = get_mu_tight_id_sf(self._year, ak.fill_none(abs(leading_mu.eta), 0.), ak.fill_none(leading_mu.pt, 20.))
+            print("Stuff to print is",to_print)
+
+            print("Used to get here no problems")
             trig = {
                 'sr':   get_met_trig_weight(self._year, met.pt),
                 'wmcr': get_met_trig_weight(self._year, 
                                             ak.where(~np.isnan(ak.fill_none(u['wmcr'].r, np.nan)), 
                                                      u['wmcr'].r, 
                                                      met.pt
-                                                    )
-                                           ),
+                                                 )
+                                        ),
                 'tmcr': get_met_trig_weight(self._year, 
                                             ak.where(~np.isnan(ak.fill_none(u['tmcr'].r, np.nan)), 
                                                      u['tmcr'].r, 
                                                      met.pt
-                                                    )
-                                           ),
+                                                 )
+                                        ),
                 'wecr': get_ele_trig_weight(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
-                                           ),
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
+                                            ak.fill_none(leading_e.pt, 40.)
+                                        ),
                 'tecr': get_ele_trig_weight(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
-                                           ),
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
+                                            ak.fill_none(leading_e.pt, 40.)
+                                        ),
                 'qcdcr': get_met_trig_weight(self._year, met.pt),
             }
 
+            print("Does it get here? It does")
             ### 
             # Calculating electron and muon ID weights
             ###
@@ -688,54 +692,43 @@ class AnalysisProcessor(processor.ProcessorABC):
             ids ={
                 'sr':  np.ones(len(events), dtype='float'),
                 'wmcr': get_mu_tight_id_sf(self._year, 
-                                           ak.fill_none(abs(leading_mu.eta), -999.),
-                                           ak.fill_none(leading_mu.pt, -999.)
+                                           ak.fill_none(abs(leading_mu.eta), 0.),
+                                           ak.fill_none(leading_mu.pt, 20.)
                                           ),
                 'tmcr': get_mu_tight_id_sf(self._year,
-                                           ak.fill_none(abs(leading_mu.eta), -999.),
-                                           ak.fill_none(leading_mu.pt, -999.)
+                                           ak.fill_none(abs(leading_mu.eta), 0.),
+                                           ak.fill_none(leading_mu.pt, 20.)
                                           ),
                 'wecr': get_ele_tight_id_sf(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
+                                            ak.fill_none(leading_e.pt, 40.)
                                            ),
                 'tecr': get_ele_tight_id_sf(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
+                                            ak.fill_none(leading_e.pt, 40.)
                                            ),
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
-
+            print("How about here?")
             ###
             # Reconstruction weights for electrons
             ###
-
+            print(get_above_reco_sf_above20(self._year,
+                                           ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
+                                            ak.fill_none(leading_e.pt, 40.)
+                                              )                                        )
             reco = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': np.ones(len(events), dtype='float'),
                 'tmcr': np.ones(len(events), dtype='float'),
-                'wecr': np.where(
-                    (pt<20),
-                    get_ele_reco_sf_below20(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
-                                           ),
-                    get_above_reco_sf_below20(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
-                                           ),
-                ),
-                'tecr': np.where(
-                    (pt<20),
-                    get_ele_reco_sf_below20(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
-                                           ),
-                    get_above_reco_sf_below20(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, -999.),
-                                            ak.fill_none(leading_e.pt, -999.)
-                                           ),
-                ),
+                'wecr': get_above_reco_sf_above20(self._year, 
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
+                                            ak.fill_none(leading_e.pt, 40.)
+                                              ),
+                'tecr': get_above_reco_sf_above20(self._year, 
+                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
+                                            ak.fill_none(leading_e.pt, 40.)
+                                              ),
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
 
@@ -746,17 +739,19 @@ class AnalysisProcessor(processor.ProcessorABC):
             isolation = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': get_mu_tight_iso_sf(self._year, 
-                                            ak.fill_none(abs(leading_mu.eta), -999.),
-                                            ak.fill_none(leading_mu.pt, -999.)
+                                            ak.fill_none(abs(leading_mu.eta), 0.),
+                                            ak.fill_none(leading_mu.pt, 20.)
                                            ),
                 'tmcr': get_mu_tight_iso_sf(self._year, 
-                                            ak.fill_none(abs(leading_mu.eta), -999.),
-                                            ak.fill_none(leading_mu.pt, -999.)
+                                            ak.fill_none(abs(leading_mu.eta), 0.),
+                                            ak.fill_none(leading_mu.pt, 20.)
                                            ),
                 'wecr': np.ones(len(events), dtype='float'),
                 'tecr': np.ones(len(events), dtype='float'),
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
+
+            print("General weights are computed")
 
             ###
             # AK4 b-tagging weights
@@ -771,6 +766,8 @@ class AnalysisProcessor(processor.ProcessorABC):
             btagSFlight_correlatedDown, \
             btagSFlight_uncorrelatedUp, \
             btagSFlight_uncorrelatedDown  = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
+
+            print("Btagging SFs implemented")
 
             if 'L1PreFiringWeight' in events.columns: 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
@@ -802,6 +799,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             weights.add('btagSFbc_uncorrelated',np.ones(len(events), dtype='float'), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
             weights.add('btagSFlight_correlated',np.ones(len(events), dtype='float'), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
             weights.add('btagSFlight_uncorrelated',np.ones(len(events), dtype='float'), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
+            print("Weights are added")
 
         
         ###
@@ -837,6 +835,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         noHEMmet = np.ones(len(events), dtype='bool')
         if self._year=='2018': noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)
 
+        print("Lumi, trigger, filters, and HEM selections done")
         selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
@@ -849,10 +848,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('met120',(met.pt<120))
         selection.add('met100',(met.pt>100))
         selection.add('msd40',(leading_fj.msd_corr>40))
-        selection.add('recoil_qcdcr', (u['qcdcr'].mag>250))
+        selection.add('recoil_qcdcr', (u['qcdcr'].r>250))
         selection.add('mindphi_qcdcr', (abs(u['qcdcr'].delta_phi(j_clean.T)).min()<0.1))
         selection.add('minDphi_qcdcr', (abs(u['qcdcr'].delta_phi(fj_clean.T)).min()>1.5))
-        selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].mag)<0.5))
+        selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].r)<0.5))
+
+        print("All other selections done")
 
         regions = {
             'sr': ['msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
@@ -881,7 +882,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             output['template'].fill(
                   region=region,
                   systematic=sname,
-                  recoil=normalize(u[region].mag, cut),
+                  recoil=normalize(u[region].r, cut),
                   fjmass=normalize(leading_fj.msd_corr, cut),
                   TvsQCD=normalize(leading_fj.TvsQCD, cut),
                   weight=weight
@@ -890,7 +891,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 variables = {
                     'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
                     'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
-                    'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].mag,
+                    'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].r,
                     'met':                    met.pt.flatten(),
                     'metphi':                 met.phi.flatten(),
                     'mindphimet':             abs(met.delta_phi(j_clean.T)).min(),
@@ -932,26 +933,31 @@ class AnalysisProcessor(processor.ProcessorABC):
                 )
 
         if shift_name is None:
+            print("No shift round")
             systematics = [None] + list(weights.variations)
         else:
+            print(shift_name, "round")
             systematics = [shift_name]
             
         for region in regions:
             if region not in selected_regions: continue
 
+            print("Filling histograms for region",region)
             ###
             # Adding recoil and minDPhi requirements
             ###
 
-            selection.add('recoil_'+region, (u[region].mag>250))
-            selection.add('mindphi_'+region, (abs(u[region].delta_phi(j_clean.T)).min()>0.5))
-            selection.add('minDphi_'+region, (abs(u[region].delta_phi(fj_clean.T)).min()>1.5))
-            selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].mag) < 0.5))
             if 'qcd' not in region:
+                selection.add('recoil_'+region, (u[region].r>250))
+                selection.add('mindphi_'+region, (abs(u[region].delta_phi(j_clean.T)).min()>0.5))
+                selection.add('minDphi_'+region, (abs(u[region].delta_phi(fj_clean.T)).min()>1.5))
+                selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].r) < 0.5))
                 regions[region].insert(0, 'recoil_'+region)
                 regions[region].insert(3, 'mindphi_'+region)
                 regions[region].insert(4, 'minDphi_'+region)
                 regions[region].insert(5, 'calo_'+region)
+                if region in mT:
+                    selection.add('mT_'+region, (mT[region]<150))
 
             for systematic in systematics:
                 if isData and systematic is not None:
