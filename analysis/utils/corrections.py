@@ -200,7 +200,7 @@ def get_pho_trig_weight(year, pt):
 def get_mu_loose_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
-    eta = ak.where((eta>2.4), ak.full_like(eta,2.4), eta)
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
 
     pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
@@ -216,7 +216,7 @@ def get_mu_loose_id_sf (year, eta, pt):
 def get_mu_tight_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
     
-    eta = ak.where((eta>2.4), ak.full_like(eta,2.4), eta)
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
 
     pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)

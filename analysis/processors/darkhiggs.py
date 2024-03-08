@@ -397,8 +397,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_ele_reco_sf_above20  = self._corrections['get_ele_reco_sf_above20']
         get_mu_loose_id_sf       = self._corrections['get_mu_loose_id_sf']
         get_mu_tight_id_sf       = self._corrections['get_mu_tight_id_sf']
-        get_mu_loose_iso_sf      = self._corrections['get_mu_loose_iso_sf']
-        get_mu_tight_iso_sf      = self._corrections['get_mu_tight_iso_sf']
+        #get_mu_loose_iso_sf      = self._corrections['get_mu_loose_iso_sf']
+        #get_mu_tight_iso_sf      = self._corrections['get_mu_tight_iso_sf']
         get_mu_rochester_sf      = self._corrections['get_mu_rochester_sf'][self._year]
         get_met_xy_correction    = self._corrections['get_met_xy_correction']
         get_pu_weight            = self._corrections['get_pu_weight']    
@@ -464,22 +464,22 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_mu_loose_id_sf(self._year, abs(mu.eta), mu.pt), 
             ak.ones_like(mu.pt)
         )
-        mu['iso_sf'] = ak.where(
-            mu.isloose, 
-            get_mu_loose_iso_sf(self._year, abs(mu.eta), mu.pt), 
-            ak.ones_like(mu.pt)
-        )
+        #mu['iso_sf'] = ak.where(
+        #    mu.isloose, 
+        #    get_mu_loose_iso_sf(self._year, abs(mu.eta), mu.pt), 
+        #    ak.ones_like(mu.pt)
+        #)
         mu['istight'] = isTightMuon(mu,self._year)
         mu['id_sf'] = ak.where(
             mu.istight, 
             get_mu_tight_id_sf(self._year, abs(mu.eta), mu.pt), 
             mu.id_sf
         )
-        mu['iso_sf'] = ak.where(
-            mu.istight, 
-            get_mu_tight_iso_sf(self._year, abs(mu.eta), mu.pt), 
-            mu.iso_sf
-        )
+        #mu['iso_sf'] = ak.where(
+        #    mu.istight, 
+        #    get_mu_tight_iso_sf(self._year, abs(mu.eta), mu.pt), 
+        #    mu.iso_sf
+        #)
         mu['T'] = ak.zip(
             {
                 "r": mu.pt,
@@ -746,6 +746,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Isolation weights for muons
             ###
 
+            '''
             isolation = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': leading_mu.iso_sf,
@@ -754,6 +755,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'tecr': np.ones(len(events), dtype='float'),
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
+            '''
 
             ###
             # AK4 b-tagging weights
@@ -793,7 +795,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             weights.add('trig', trig[region])
             weights.add('ids', ids[region])
             weights.add('reco', reco[region])
-            weights.add('isolation', isolation[region])
+            #weights.add('isolation', isolation[region])
             weights.add('btagSF',btagSF)
             weights.add('btagSFbc_correlated',np.ones(len(events), dtype='float'), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
             weights.add('btagSFbc_uncorrelated',np.ones(len(events), dtype='float'), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
