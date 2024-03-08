@@ -12,6 +12,8 @@ parser.add_option('-m', '--metadata', help='metadata', dest='metadata')
 parser.add_option('-p', '--pack', help='pack', dest='pack')
 parser.add_option('-s', '--special', help='special', dest='special')
 parser.add_option('-c', '--custom', action='store_true', dest='custom')
+parser.add_option('-k', '--skip', action='store_true', dest='skip')
+parser.add_option('-r', '--remove', action='store_true', dest='remove')
 (options, args) = parser.parse_args()
 
 globalredirect = "root://xrootd-cms.infn.it/"
@@ -75,6 +77,11 @@ for k,v in processes.items():
      else:
           xsections[k] = -1
 
+if options.skip:
+     skip = []
+     for rootfile in open(options.skip, 'r').readlines():
+          skip.append(rootfile.strip())
+       
 datadef = {}
 datasets = []
 for dataset in xsections.keys():
@@ -103,14 +110,21 @@ for dataset in xsections.keys():
                if '.root' not in url: 
                     urllist.remove(url)
                     continue
-               try:
-                    infile = uproot.open(redirect+url)
-               except:
-                    print("File",redirect+url,"is corrupted, removing.")
+               if options.skip and url.split('store')[-1] in skip:
                     urllist.remove(url)
+                    print(url,'found in',options.skip)
                     continue
-               else:
-                    del infile
+               if options.remove:
+                    removed = []
+                    try:
+                        infile = uproot.open(redirect+url)
+                   except:
+                        print("File",redirect+url,"is corrupted, removing.")
+                        urllist.remove(url)
+                        removed.append(url)
+                        continue
+                   else:
+                        del infile
 
      else:
           redirect = globalredirect
@@ -146,3 +160,7 @@ for dataset in xsections.keys():
 folder = "metadata/"+options.metadata+".json"
 with open(folder, "w") as fout:
      json.dump(datadef, fout, indent=4)
+if options.removed
+     list = "data/removed_files.txt"
+     with open(list, "w") as fout:
+          fout.writelines(removed)
