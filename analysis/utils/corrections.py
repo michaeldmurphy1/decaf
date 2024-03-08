@@ -103,7 +103,7 @@ def get_ele_reco_sf_below20(year, eta, pt):
     pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
     flatpt = ak.flatten(pt)
     
-    weight = evaluator.evaluate(eta, pt)
+    weight = evaluator.evaluate(flateta, flatpt)
     return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
 
@@ -124,7 +124,7 @@ def get_ele_reco_sf_above20(year, eta, pt):
     pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
     flatpt = ak.flatten(pt)
     
-    weight = evaluator.evaluate(eta, pt)
+    weight = evaluator.evaluate(flateta, flatpt)
     return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.05, ele_reco_hist.axes)
     
