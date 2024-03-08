@@ -187,12 +187,14 @@ def get_pho_trig_weight(year, pt):
 def get_mu_loose_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
+    eta = ak.where((eta>2.4), ak.full_like(eta,2.4), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
+
     flatpt = ak.flatten(pt)
     if year == '2018':
-        weight = evaluator["NUM_LooseID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
+        weight = evaluator["NUM_LooseID_DEN_TrackerMuons"].evaluate(year+'_UL', flateta, flatpt, "sf")
     else:
-        weight = evaluator["NUM_LooseID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
+        weight = evaluator["NUM_LooseID_DEN_genTracks"].evaluate(year+'_UL', flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 
@@ -202,9 +204,9 @@ def get_mu_tight_id_sf (year, eta, pt):
     flateta, counts = ak.flatten(eta), ak.num(eta)
     flatpt = ak.flatten(pt)
     if year == '2018':
-        weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
+        weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year+'_UL', flateta, flatpt, "sf")
     else:
-        weight = evaluator["NUM_TightID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
+        weight = evaluator["NUM_TightID_DEN_genTracks"].evaluate(year+'_UL', flateta, flatpt, "sf")
     
     return ak.unflatten(weight, counts=counts)
 
@@ -223,7 +225,7 @@ def get_mu_loose_iso_sf (year, eta, pt):
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
     flatpt = ak.flatten(pt)
-    weight = evaluator["NUM_LooseRelIso_DEN_LooseID"].evaluate(year, flateta, flatpt, "sf")
+    weight = evaluator["NUM_LooseRelIso_DEN_LooseID"].evaluate(flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 
@@ -232,7 +234,7 @@ def get_mu_tight_iso_sf (year, eta, pt):
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
     flatpt = ak.flatten(pt)
-    weight = evaluator["NUM_TightRelIso_DEN_TightIDandIPCut"].evaluate(year, flateta, flatpt, "sf")
+    weight = evaluator["NUM_TightRelIso_DEN_TightIDandIPCut"].evaluate(flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 

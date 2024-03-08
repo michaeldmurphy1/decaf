@@ -732,7 +732,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
             # Reconstruction weights for electrons
             ###
-                                                  )
+                                                  
             reco = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': np.ones(len(events), dtype='float'),
