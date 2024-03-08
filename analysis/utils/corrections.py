@@ -27,7 +27,7 @@ def get_met_trig_weight(year, met):
     corr = convert.from_uproot_THx(met_trig_hists[year])
     evaluator = corr.to_evaluator()
 
-    met  = ak.where((met>950.),ak.full_like(met,950.),met)
+    met  = ak.where((met>950.), ak.full_like(met,950.), met)
     return evaluator.evaluate(met)
 
 ####
@@ -41,7 +41,10 @@ def get_ele_loose_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
 
     return ak.unflatten(weight, counts=counts)
@@ -50,9 +53,12 @@ def get_ele_tight_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
-
+    
     return ak.unflatten(weight, counts=counts)
 
 
@@ -91,6 +97,7 @@ def get_ele_reco_sf_below20(year, eta, pt):
 
     corr = convert.from_uproot_THx(ele_reco_files_below20[year])
     evaluator = corr.to_evaluator()
+    pt  = ak.where((pt<10.),ak.full_like(pt,10.),pt)
 
     return evaluator.evaluate(eta, pt)
     #get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
@@ -123,7 +130,10 @@ def get_pho_tight_id_sf(year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+
+    pt  = ak.where((pt<20.),ak.full_like(pt,20.),pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Photon-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
 
     return ak.unflatten(weight, counts=counts)
@@ -133,7 +143,10 @@ def get_pho_loose_id_sf(year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt  = ak.where((pt<20.),ak.full_like(pt,20.),pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Photon-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
 
     return ak.unflatten(weight, counts=counts)
@@ -190,7 +203,9 @@ def get_mu_loose_id_sf (year, eta, pt):
     eta = ak.where((eta>2.4), ak.full_like(eta,2.4), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
 
+    pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
     flatpt = ak.flatten(pt)
+    
     if year == '2018':
         weight = evaluator["NUM_LooseID_DEN_TrackerMuons"].evaluate(year+'_UL', flateta, flatpt, "sf")
     else:
@@ -201,8 +216,12 @@ def get_mu_loose_id_sf (year, eta, pt):
 def get_mu_tight_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
     
+    eta = ak.where((eta>2.4), ak.full_like(eta,2.4), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
+
+    pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
     flatpt = ak.flatten(pt)
+    
     if year == '2018':
         weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year+'_UL', flateta, flatpt, "sf")
     else:
@@ -904,8 +923,8 @@ corrections = {
     'get_pho_trig_weight':      get_pho_trig_weight,
     'get_mu_loose_id_sf':       get_mu_loose_id_sf,
     'get_mu_tight_id_sf':       get_mu_tight_id_sf,
-    'get_mu_loose_iso_sf':      get_mu_loose_iso_sf,
-    'get_mu_tight_iso_sf':      get_mu_tight_iso_sf,
+    #'get_mu_loose_iso_sf':      get_mu_loose_iso_sf,
+    #'get_mu_tight_iso_sf':      get_mu_tight_iso_sf,
     'get_met_xy_correction':    XY_MET_Correction,
     'get_pu_weight':            get_pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
