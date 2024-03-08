@@ -459,7 +459,27 @@ class AnalysisProcessor(processor.ProcessorABC):
             k = ak.where(hasgen, kspread, ksmear)
         mu['pt'] = ak.where((mu.pt<200),k*mu.pt, mu.pt)
         mu['isloose'] = isLooseMuon(mu,self._year)
+        mu['id_sf'] = ak.where(
+            mu.isloose, 
+            get_mu_loose_id_sf(self._year, abs(mu.eta), mu.pt), 
+            ak.ones_like(mu.pt)
+        )
+        mu['iso_sf'] = ak.where(
+            mu.isloose, 
+            get_mu_loose_iso_sf(self._year, abs(mu.eta), mu.pt), 
+            ak.ones_like(mu.pt)
+        )
         mu['istight'] = isTightMuon(mu,self._year)
+        mu['id_sf'] = ak.where(
+            mu.istight, 
+            get_mu_tight_id_sf(self._year, abs(mu.eta), mu.pt), 
+            mu.id_sf
+        )
+        mu['iso_sf'] = ak.where(
+            mu.istight, 
+            get_mu_tight_iso_sf(self._year, abs(mu.eta), mu.pt), 
+            mu.iso_sf
+        )
         mu['T'] = ak.zip(
             {
                 "r": mu.pt,
@@ -477,8 +497,23 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         e = events.Electron
         e['isclean'] = ak.all(e.metric_table(mu_loose) > 0.3, axis=2)
+        e['reco_sf'] = ak.where(
+            (e.pt<20),
+            get_ele_reco_sf_below20(self._year, e.eta+e.deltaEtaSC, e.pt), 
+            get_ele_reco_sf_above20(self._year, e.eta+e.deltaEtaSC, e.pt)
+        )
         e['isloose'] = isLooseElectron(e,self._year)
+        e['id_sf'] = ak.where(
+            e.isloose,
+            get_ele_loose_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
+            ak.ones_like(e.pt)
+        )
         e['istight'] = isTightElectron(e,self._year)
+        e['id_sf'] = ak.where(
+            e.istight,
+            get_ele_tight_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
+            e.id_sf
+        )
         e['T'] = ak.zip(
             {
                 "r": e.pt,
@@ -655,10 +690,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
             # Trigger efficiency weight
             ###
-            to_print = get_mu_tight_id_sf(self._year, ak.fill_none(abs(leading_mu.eta), 0.), ak.fill_none(leading_mu.pt, 20.))
-            print("Stuff to print is",to_print)
-
-            print("Used to get here no problems")
+           
             trig = {
                 'sr':   get_met_trig_weight(self._year, met.pt),
                 'wmcr': get_met_trig_weight(self._year, 
@@ -684,51 +716,29 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'qcdcr': get_met_trig_weight(self._year, met.pt),
             }
 
-            print("Does it get here? It does")
             ### 
             # Calculating electron and muon ID weights
             ###
 
             ids ={
                 'sr':  np.ones(len(events), dtype='float'),
-                'wmcr': get_mu_tight_id_sf(self._year, 
-                                           ak.fill_none(abs(leading_mu.eta), 0.),
-                                           ak.fill_none(leading_mu.pt, 20.)
-                                          ),
-                'tmcr': get_mu_tight_id_sf(self._year,
-                                           ak.fill_none(abs(leading_mu.eta), 0.),
-                                           ak.fill_none(leading_mu.pt, 20.)
-                                          ),
-                'wecr': get_ele_tight_id_sf(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
-                                            ak.fill_none(leading_e.pt, 40.)
-                                           ),
-                'tecr': get_ele_tight_id_sf(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
-                                            ak.fill_none(leading_e.pt, 40.)
-                                           ),
+                'wmcr': leading_mu.id_sf,
+                'tmcr': leading_mu.id_sf,
+                'wecr': leading_e.id_sf,
+                'tecr': leading_e.id_sf,
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
-            print("How about here?")
+           
             ###
             # Reconstruction weights for electrons
             ###
-            print(get_above_reco_sf_above20(self._year,
-                                           ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
-                                            ak.fill_none(leading_e.pt, 40.)
-                                              )                                        )
+                                                  )
             reco = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': np.ones(len(events), dtype='float'),
                 'tmcr': np.ones(len(events), dtype='float'),
-                'wecr': get_above_reco_sf_above20(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
-                                            ak.fill_none(leading_e.pt, 40.)
-                                              ),
-                'tecr': get_above_reco_sf_above20(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
-                                            ak.fill_none(leading_e.pt, 40.)
-                                              ),
+                'wecr': leading_e.reco_sf,
+                'tecr': leading_e.reco_sf,
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
 
@@ -738,20 +748,12 @@ class AnalysisProcessor(processor.ProcessorABC):
 
             isolation = {
                 'sr': np.ones(len(events), dtype='float'),
-                'wmcr': get_mu_tight_iso_sf(self._year, 
-                                            ak.fill_none(abs(leading_mu.eta), 0.),
-                                            ak.fill_none(leading_mu.pt, 20.)
-                                           ),
-                'tmcr': get_mu_tight_iso_sf(self._year, 
-                                            ak.fill_none(abs(leading_mu.eta), 0.),
-                                            ak.fill_none(leading_mu.pt, 20.)
-                                           ),
+                'wmcr': leading_mu.iso_sf,
+                'tmcr': leading_mu.iso_sf,
                 'wecr': np.ones(len(events), dtype='float'),
                 'tecr': np.ones(len(events), dtype='float'),
                 'qcdcr': np.ones(len(events), dtype='float'),
             }
-
-            print("General weights are computed")
 
             ###
             # AK4 b-tagging weights
@@ -766,8 +768,6 @@ class AnalysisProcessor(processor.ProcessorABC):
             btagSFlight_correlatedDown, \
             btagSFlight_uncorrelatedUp, \
             btagSFlight_uncorrelatedDown  = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
-
-            print("Btagging SFs implemented")
 
             if 'L1PreFiringWeight' in events.columns: 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
@@ -799,7 +799,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             weights.add('btagSFbc_uncorrelated',np.ones(len(events), dtype='float'), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
             weights.add('btagSFlight_correlated',np.ones(len(events), dtype='float'), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
             weights.add('btagSFlight_uncorrelated',np.ones(len(events), dtype='float'), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
-            print("Weights are added")
+            
 
         
         ###
@@ -835,7 +835,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         noHEMmet = np.ones(len(events), dtype='bool')
         if self._year=='2018': noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)
 
-        print("Lumi, trigger, filters, and HEM selections done")
         selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
@@ -852,8 +851,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('mindphi_qcdcr', (abs(u['qcdcr'].delta_phi(j_clean.T)).min()<0.1))
         selection.add('minDphi_qcdcr', (abs(u['qcdcr'].delta_phi(fj_clean.T)).min()>1.5))
         selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].r)<0.5))
-
-        print("All other selections done")
 
         regions = {
             'sr': ['msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
@@ -933,16 +930,13 @@ class AnalysisProcessor(processor.ProcessorABC):
                 )
 
         if shift_name is None:
-            print("No shift round")
             systematics = [None] + list(weights.variations)
         else:
-            print(shift_name, "round")
             systematics = [shift_name]
             
         for region in regions:
             if region not in selected_regions: continue
 
-            print("Filling histograms for region",region)
             ###
             # Adding recoil and minDPhi requirements
             ###
