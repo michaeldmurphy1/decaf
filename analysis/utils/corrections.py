@@ -97,9 +97,14 @@ def get_ele_reco_sf_below20(year, eta, pt):
 
     corr = convert.from_uproot_THx(ele_reco_files_below20[year])
     evaluator = corr.to_evaluator()
-    pt  = ak.where((pt<10.),ak.full_like(pt,10.),pt)
-
-    return evaluator.evaluate(eta, pt)
+    
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
+    flatpt = ak.flatten(pt)
+    
+    weight = evaluator.evaluate(eta, pt)
+    return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
 
 
@@ -113,8 +118,14 @@ def get_ele_reco_sf_above20(year, eta, pt):
     
     corr = convert.from_uproot_THx(ele_reco_files_above20[year])
     evaluator = corr.to_evaluator()
-
-    return evaluator.evaluate(eta, pt)
+    
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
+    flatpt = ak.flatten(pt)
+    
+    weight = evaluator.evaluate(eta, pt)
+    return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.05, ele_reco_hist.axes)
     
 
