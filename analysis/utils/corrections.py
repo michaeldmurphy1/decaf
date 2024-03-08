@@ -197,20 +197,15 @@ def get_mu_loose_id_sf (year, eta, pt):
     return ak.unflatten(weight, counts=counts)
 
 def get_mu_tight_id_sf (year, eta, pt):
-    print("1")
     evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
-    print("2")
+    
     flateta, counts = ak.flatten(eta), ak.num(eta)
-    print("3")
     flatpt = ak.flatten(pt)
-    print("4")
     if year == '2018':
-        print("5")
         weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
-        print("6")
     else:
         weight = evaluator["NUM_TightID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
-    print("7")
+    
     return ak.unflatten(weight, counts=counts)
 
 
