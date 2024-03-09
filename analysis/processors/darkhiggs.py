@@ -947,25 +947,21 @@ class AnalysisProcessor(processor.ProcessorABC):
                 if isData and systematic is not None:
                     continue
                 fill(region, systematic)
-                
-        return output
 
-    def postprocess(self, events, accumulator):
-
-        dataset = events.metadata['dataset']
-        print('Scaling:', dataset)
-        print('Cross section:',self._xsec[dataset])
 
         scale = 1
         if self._xsec[dataset]!= -1: 
             scale = self._lumi*self._xsec[dataset]
 
-        for key in accumulator:
+        for key in output:
             if key=='sumw': 
                 continue
-            print('Scaling:',key)
-            accumulator[key] *= scale
-            
+            output[key] *= scale
+                
+        return output
+
+    def postprocess(self, accumulator):
+
         return accumulator
 
 if __name__ == '__main__':
