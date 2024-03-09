@@ -29,8 +29,15 @@ def get_met_trig_weight(year, met):
     corr = convert.from_uproot_THx(met_trig_hists[year])
     evaluator = corr.to_evaluator()
 
+    met  = ak.fill_none(met, 0.)
     met  = ak.where((met>950.), ak.full_like(met,950.), met)
-    return evaluator.evaluate(met)
+
+    weight = ak.where(
+        ~np.isnan(ak.fill_none(met, np.nan)),
+        evaluator.evaluate(met),
+        ak.zeros_like(met)
+    )
+    return weight
 
 ####
 # Electron ID scale factor
@@ -79,9 +86,17 @@ def get_ele_trig_weight(year, eta, pt):
     }
     corr = convert.from_uproot_THx(ele_trig_hists[year])
     evaluator = corr.to_evaluator()
+
+    eta = ak.fill_none(eta, 0.)
+    pt = ak.fill_none(pt, 40.)
     pt  = ak.where((pt>250.),ak.full_like(pt,250.),pt)
 
-    return evaluator.evaluate(eta, pt)
+    weight = ak.where(
+        ~np.isnan(ak.fill_none(pt, np.nan)),
+        evaluator.evaluate(eta, pt),
+        ak.zeros_like(pt)
+    )
+    return weight
 
 ####
 # Electron Reco scale factor
@@ -552,9 +567,9 @@ class BTagCorrector:
 
     def btag_weight(self, pt, eta, flavor, istag):
         abseta = abs(eta)
-        flateta, counts = ak.flatten(abseta), ak.num(abseta)
-        flatpt =  ak.flatten(pt)
-        flatflavor = ak.flatten(flavor)
+        flateta, counts = ak.fill_none(ak.flatten(abseta), 0,), ak.num(abseta)
+        flatpt =  ak.fill_none(ak.flatten(pt), 30.01)
+        flatflavor = ak.fill_none(ak.flatten(flavor), 0)
         
         #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagSFMethods#1b_Event_reweighting_using_scale
         def P(eff):
@@ -572,17 +587,9 @@ class BTagCorrector:
 
         islight = ~(flavor > 0)
 
-        eff = ak.unflatten(
-            self.eff.evaluate(
-                ak.fill_none(flatflavor, 0), 
-                ak.fill_none(flatpt, 30.01), 
-                ak.fill_none(flateta, 0)
-            ), 
-            counts=counts
-        )
         eff = ak.where(
             ~np.isnan(ak.fill_none(pt, np.nan)),
-            eff,
+            ak.unflatten(self.eff.evaluate(flatflavor, flatpt, flateta), counts=counts),
             ak.zeros_like(pt)
         )
         sf_nom = ak.where(
