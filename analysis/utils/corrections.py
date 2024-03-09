@@ -13,6 +13,8 @@ import uproot
 from coffea.util import save, load
 import json
 
+import hist
+
 ###
 # MET trigger efficiency SFs, 2017/18 from monojet. Depends on recoil.
 ###
@@ -464,11 +466,11 @@ for year in ['2016postVFP', '2016preVFP', '2017','2018']:
     for p in ['dy','w','z','a']:
         get_nnlo_nlo_weight[year][p] = {}
         for cv in correlated_variations:
-            hist=nnlo_file[p][histname[p]+correlated_variations[cv]]
-            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values(), hist.axes)
+            histo=nnlo_file[p][histname[p]+correlated_variations[cv]]
+            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(histo.values(), histo.axes)
         for uv in uncorrelated_variations[p]:
-            hist=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
-            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values(), hist.axes)
+            histo=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
+            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(histo.values(), histo.axes)
 
 
 
@@ -542,8 +544,11 @@ class BTagCorrector:
         bpass = btag[{"wp": workingpoint, "btag": "pass"}].view()
         ball = btag[{"wp": workingpoint, "btag": sum}].view()
         ball[ball<=0.]=1.
-        nom = bpass / np.maximum(ball, 1.)
-        self.eff = convert.from_histogram(hist.Hist(*btag.axes[2:], data=nom)).to_evaluator()
+        ratio = bpass / np.maximum(ball, 1.)
+        nom = hist.Hist(*btag.axes[2:], data=ratio)
+        nom.name = "ratios"  
+        nom.label = "out"
+        self.eff = convert.from_histogram(nom).to_evaluator()
 
     def btag_weight(self, pt, eta, flavor, istag):
         abseta = abs(eta)
@@ -567,7 +572,19 @@ class BTagCorrector:
 
         islight = ~(flavor > 0)
 
-        eff = ak.unflatten(self.eff.evaluate(flatflavor, flatpt, flateta), counts=counts) 
+        eff = ak.unflatten(
+            self.eff.evaluate(
+                ak.fill_none(flatflavor, 0), 
+                ak.fill_none(flatpt, 30.01), 
+                ak.fill_none(flateta, 0)
+            ), 
+            counts=counts
+        )
+        eff = ak.where(
+            ~np.isnan(ak.fill_none(pt, np.nan)),
+            eff,
+            ak.zeros_like(pt)
+        )
         sf_nom = ak.where(
             islight,
             ak.unflatten(self.sf['incl'].evaluate('central',self._wp, flatflavor, flateta, flatpt), counts=counts),
