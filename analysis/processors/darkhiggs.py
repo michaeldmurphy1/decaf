@@ -379,7 +379,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 selected_regions.append(region)
 
         isData = not hasattr(events, "genWeight")
-        selection = PackedSelection()
+        selection = PackedSelection(dtype="uint64")
         weights = Weights(len(events), storeIndividual=True)
         output = self.make_output()
         if shift_name is None and not isData:
@@ -760,7 +760,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 j_iso.isdflvL
             )
 
-            if 'L1PreFiringWeight' in events.columns: 
+            if hasattr(events, "L1PreFiringWeight"): 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
             weights.add('genw',events.genWeight)
             weights.add('nlo_qcd',nlo_qcd)
@@ -798,25 +798,25 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
 
         lumimask = np.ones(len(events), dtype='bool')
-        if Data:
+        if isData:
             lumimask = lumiMasks[self._year](events.run, events.luminosityBlock)
         selection.add('lumimask', lumimask)
 
         met_filters =  np.ones(len(events), dtype='bool')
-        if isData: met_filters = met_filters & events.Flag['eeBadScFilter']#this filter is recommended for data only
-        for flag in AnalysisProcessor.met_filter_flags[self._year]:
+        #if isData: met_filters = met_filters & events.Flag['eeBadScFilter']#this filter is recommended for data only
+        for flag in AnalysisProcessor.met_filters[self._year]:
             met_filters = met_filters & events.Flag[flag]
         selection.add('met_filters',met_filters)
 
         triggers = np.zeros(len(events), dtype='bool')
         for path in self._met_triggers[self._year]:
-            if path not in events.HLT.columns: continue
+            if not hasattr(events.HLT, path): continue
             triggers = triggers | events.HLT[path]
         selection.add('met_triggers', triggers)
 
         triggers = np.zeros(len(events), dtype='bool')
         for path in self._singleelectron_triggers[self._year]:
-            if path not in events.HLT.columns: continue
+            if not hasattr(events.HLT, path): continue
             triggers = triggers | events.HLT[path]
         selection.add('singleelectron_triggers', triggers)
 
@@ -829,18 +829,17 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
-        selection.add('leading_e_pt',(e_loose.pt.max()>40))
+        #selection.add('leading_e_pt',(leading_e.pt>40))
         selection.add('noextrab', (j_ndflvL==0))
         selection.add('extrab', (j_ndflvL>0))
         selection.add('fatjet', (fj_nclean>0))
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
-        selection.add('met120',(met.pt<120))
         selection.add('met100',(met.pt>100))
         selection.add('msd40',(leading_fj.msd_corr>40))
         selection.add('recoil_qcdcr', (u['qcdcr'].r>250))
-        selection.add('mindphi_qcdcr', (abs(u['qcdcr'].delta_phi(j_clean.T)).min()<0.1))
-        selection.add('minDphi_qcdcr', (abs(u['qcdcr'].delta_phi(fj_clean.T)).min()>1.5))
+        selection.add('mindphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(j_clean.T)), axis=1, mask_identity=False) < 0.1))
+        selection.add('minDphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
         selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].r)<0.5))
 
         regions = {
@@ -877,13 +876,13 @@ class AnalysisProcessor(processor.ProcessorABC):
             )
             if systematic is None:
                 variables = {
-                    'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
-                    'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
+                    'mindphirecoil':          ak.min(abs(u[region].delta_phi(j_clean.T)), axis=1,mask_identity=False),
+                    'minDphirecoil':          ak.min(abs(u[region].delta_phi(fj_clean.T)), axis=1,mask_identity=False),
                     'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].r,
-                    'met':                    met.pt.flatten(),
-                    'metphi':                 met.phi.flatten(),
-                    'mindphimet':             abs(met.delta_phi(j_clean.T)).min(),
-                    'minDphimet':             abs(met.delta_phi(fj_clean.T)).min(),
+                    'met':                    met.pt,
+                    'metphi':                 met.phi,
+                    'mindphimet':             ak.min(abs(met.delta_phi(j_clean.T)), axis=1,mask_identity=False),
+                    'minDphimet':             ak.min(abs(met.delta_phi(fj_clean.T)), axis=1,mask_identity=False),
                     'j1pt':                   leading_j.pt,
                     'j1eta':                  leading_j.eta,
                     'j1phi':                  leading_j.phi,
@@ -934,8 +933,8 @@ class AnalysisProcessor(processor.ProcessorABC):
 
             if 'qcd' not in region:
                 selection.add('recoil_'+region, (u[region].r>250))
-                selection.add('mindphi_'+region, (abs(u[region].delta_phi(j_clean.T)).min()>0.5))
-                selection.add('minDphi_'+region, (abs(u[region].delta_phi(fj_clean.T)).min()>1.5))
+                selection.add('mindphi_'+region, (ak.min(abs(u[region].delta_phi(j_clean.T)), axis=1, mask_identity=False) > 0.5))
+                selection.add('minDphi_'+region, (ak.min(abs(u[region].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
                 selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].r) < 0.5))
                 regions[region].insert(0, 'recoil_'+region)
                 regions[region].insert(3, 'mindphi_'+region)
@@ -965,6 +964,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         for key in output:
             if key=='sumw': 
                 continue
+            print('Scaling:',key)
             output[key] *= scale
             
         return output

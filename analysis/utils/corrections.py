@@ -574,7 +574,7 @@ class BTagCorrector:
         #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagSFMethods#1b_Event_reweighting_using_scale
         def P(eff):
             weight = ak.where(istag, eff, 1-eff)
-            return weight.prod()
+            return ak.prod(weight, axis=1)
 
         '''
         Correction deepJet_comb has 5 inputs
@@ -631,8 +631,8 @@ class BTagCorrector:
             ak.unflatten(self.sf['incl'].evaluate('central',self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
             ak.where(
                 (flavor==4),
-                ak.unflatten(self.sf['incl'].evaluate('down_uncorrelated',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
-                ak.unflatten(self.sf['incl'].evaluate('down_uncorrelated',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)        
+                ak.unflatten(self.sf['comb'].evaluate('down_uncorrelated',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('down_uncorrelated',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)        
             )
         )
         sf_light_up_correlated = ak.where(
