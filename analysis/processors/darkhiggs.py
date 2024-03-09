@@ -405,7 +405,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_nlo_ewk_weight       = self._corrections['get_nlo_ewk_weight']    
         get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
         get_msd_corr             = self._corrections['get_msd_corr']
-        get_deepflav_weight      = self._corrections['get_btag_weight']['deepflav'][self._year]
+        get_btag_weight      = self._corrections['get_btag_weight']
         
         isLooseElectron = self._ids['isLooseElectron'] 
         isTightElectron = self._ids['isTightElectron'] 
@@ -769,7 +769,12 @@ class AnalysisProcessor(processor.ProcessorABC):
             btagSFlight_correlatedUp, \
             btagSFlight_correlatedDown, \
             btagSFlight_uncorrelatedUp, \
-            btagSFlight_uncorrelatedDown  = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
+            btagSFlight_uncorrelatedDown  = get_btag_weight('deepflav',self._year,'loose').btag_weight(
+                j_iso.pt,
+                j_iso.eta,
+                j_iso.hadronFlavour,
+                j_iso.isdflvL
+            )
 
             if 'L1PreFiringWeight' in events.columns: 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
