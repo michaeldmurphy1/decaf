@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 import uproot
 from data.process import *
 from optparse import OptionParser
@@ -12,7 +13,7 @@ parser.add_option('-m', '--metadata', help='metadata', dest='metadata')
 parser.add_option('-p', '--pack', help='pack', dest='pack')
 parser.add_option('-s', '--special', help='special', dest='special')
 parser.add_option('-c', '--custom', action='store_true', dest='custom')
-parser.add_option('-k', '--skip', action='store_true', dest='skip')
+parser.add_option('-k', '--skip', help='skip', dest='skip')
 parser.add_option('-r', '--remove', action='store_true', dest='remove')
 (options, args) = parser.parse_args()
 
@@ -78,10 +79,17 @@ for k,v in processes.items():
           xsections[k] = -1
 
 if options.skip:
+     try:
+          os.system('ls '+options.skip)
+     except:
+          sys.exit('File',options.skip,'does not exist')
+          
      skip = []
-     for rootfile in open(options.skip, 'r').readlines():
-          skip.append(rootfile.strip())
-       
+     corrupted = open(options.skip, 'r')
+     for rootfile in corrupted.readlines():
+          skip.append(rootfile.strip().split('store')[1])
+
+removed = []
 datadef = {}
 datasets = []
 for dataset in xsections.keys():
@@ -96,7 +104,6 @@ for dataset in xsections.keys():
                     urllist += find([path])
                except:
                     urllist = find([path])
-               print(urllist)
           for url in urllist[:]:
                if options.year not in url:
                     urllist.remove(url)
@@ -115,15 +122,14 @@ for dataset in xsections.keys():
                     print(url,'found in',options.skip)
                     continue
                if options.remove:
-                    removed = []
                     try:
                         infile = uproot.open(redirect+url)
-                   except:
+                    except:
                         print("File",redirect+url,"is corrupted, removing.")
                         urllist.remove(url)
                         removed.append(url)
                         continue
-                   else:
+                    else:
                         del infile
 
      else:
@@ -160,7 +166,8 @@ for dataset in xsections.keys():
 folder = "metadata/"+options.metadata+".json"
 with open(folder, "w") as fout:
      json.dump(datadef, fout, indent=4)
-if options.removed
+
+if options.remove:
      list = "data/removed_files.txt"
      with open(list, "w") as fout:
           fout.writelines(removed)

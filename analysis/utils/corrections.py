@@ -98,9 +98,12 @@ def get_ele_reco_sf_below20(year, eta, pt):
     corr = convert.from_uproot_THx(ele_reco_files_below20[year])
     evaluator = corr.to_evaluator()
     
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
+    eta = ak.where((eta<2.399), ak.full_like(eta,-2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
     
     pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
+    pt = ak.where((pt>19.99), ak.full_like(pt,19.99), pt)
     flatpt = ak.flatten(pt)
     
     weight = evaluator.evaluate(flateta, flatpt)
@@ -119,9 +122,12 @@ def get_ele_reco_sf_above20(year, eta, pt):
     corr = convert.from_uproot_THx(ele_reco_files_above20[year])
     evaluator = corr.to_evaluator()
     
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
+    eta = ak.where((eta<2.399), ak.full_like(eta,-2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
     
-    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
+    pt = ak.where((pt<20.), ak.full_like(pt,20.), pt)
+    pt = ak.where((pt>499.99), ak.full_like(pt,499.99), pt)
     flatpt = ak.flatten(pt)
     
     weight = evaluator.evaluate(flateta, flatpt)
@@ -511,14 +517,12 @@ class BTagCorrector:
 
         btvjson = {}
         btvjson['deepflav'] = {
-            0: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_incl"],
-            4: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
-            5: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
+            'incl': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_incl"],
+            'comb': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
         }
         btvjson['deepcsv'] = {
-            0: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_incl"],
-            4: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
-            5: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
+            'incl': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_incl"],
+            'comb': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
         }
         self.sf = btvjson[tagger]
 
