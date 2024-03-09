@@ -585,8 +585,6 @@ class BTagCorrector:
         Input pt (real):
         '''
 
-        islight = ~(flavor > 0)
-
         eff = ak.where(
             ~np.isnan(ak.fill_none(pt, np.nan)),
             ak.unflatten(self.eff.evaluate(flatflavor, flatpt, flateta), counts=counts),
