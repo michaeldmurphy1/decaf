@@ -693,26 +693,10 @@ class AnalysisProcessor(processor.ProcessorABC):
            
             trig = {
                 'sr':   get_met_trig_weight(self._year, met.pt),
-                'wmcr': get_met_trig_weight(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(u['wmcr'].r, np.nan)), 
-                                                     u['wmcr'].r, 
-                                                     met.pt
-                                                 )
-                                        ),
-                'tmcr': get_met_trig_weight(self._year, 
-                                            ak.where(~np.isnan(ak.fill_none(u['tmcr'].r, np.nan)), 
-                                                     u['tmcr'].r, 
-                                                     met.pt
-                                                 )
-                                        ),
-                'wecr': get_ele_trig_weight(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
-                                            ak.fill_none(leading_e.pt, 40.)
-                                        ),
-                'tecr': get_ele_trig_weight(self._year, 
-                                            ak.fill_none(leading_e.eta+leading_e.deltaEtaSC, 0.),
-                                            ak.fill_none(leading_e.pt, 40.)
-                                        ),
+                'wmcr': get_met_trig_weight(self._year, u['wmcr'].r),
+                'tmcr': get_met_trig_weight(self._year, u['tmcr'].r),
+                'wecr': get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
+                'tecr': get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
                 'qcdcr': get_met_trig_weight(self._year, met.pt),
             }
 
