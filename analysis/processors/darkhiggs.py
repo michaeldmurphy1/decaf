@@ -948,11 +948,11 @@ class AnalysisProcessor(processor.ProcessorABC):
                     continue
                 fill(region, systematic)
                 
-        return {dataset: output}
+        return output
 
-    def postprocess(self, accumulator):
+    def postprocess(self, events, accumulator):
 
-        dataset = list(accumulator.keys())[0]
+        dataset = events.metadata['dataset']
         print('Scaling:', dataset)
         print('Cross section:',self._xsec[dataset])
 
@@ -960,14 +960,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         if self._xsec[dataset]!= -1: 
             scale = self._lumi*self._xsec[dataset]
 
-        output = accumulator[dataset]
-        for key in output:
+        for key in accumulator:
             if key=='sumw': 
                 continue
             print('Scaling:',key)
-            output[key] *= scale
+            accumulator[key] *= scale
             
-        return output
+        return accumulator
 
 if __name__ == '__main__':
     parser = OptionParser()
