@@ -104,7 +104,7 @@ for dataset in xsections.keys():
                     urllist += find([path])
                except:
                     urllist = find([path])
-          for url in urllist[:]:
+          for url in urllist[:].copy():
                if options.year not in url:
                     urllist.remove(url)
                     continue

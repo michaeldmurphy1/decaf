@@ -25,12 +25,13 @@ with open(options.metadata) as fin:
 
 list_datasets = []
 for key in dictionary:
-    for rootfile in dictionary[key]["files"]:
+    for rootfile in dictionary[key]["files"].copy():
         if rootfile.split('store')[-1] in remove:
+            print("File",rootfile,"found in", key)
             dictionary[key]["files"].remove(rootfile)
             if key not in list_datasets: list_datasets.append(key)
             
-print("Found corrupted file in", ','.join(list_datasets))
+#print("Found corrupted file in", ','.join(list_datasets))
 
 with open(options.metadata, "w") as fout:
     json.dump(dictionary, fout, indent=4)
