@@ -27,8 +27,8 @@ list_datasets = []
 for key in dictionary:
     for rootfile in dictionary[key]["files"]:
         if rootfile.split('store')[-1] in remove:
-            if key not in list_datasets: list_datasets.append(key)
             dictionary[key]["files"].remove(rootfile)
+            if key not in list_datasets: list_datasets.append(key)
             
 print("Found corrupted file in", ','.join(list_datasets))
 
