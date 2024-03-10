@@ -986,4 +986,4 @@ if __name__ == '__main__':
                                          ids=ids,
                                          common=common)
 
-    save(processor_instance, 'data/darkhiggs'+options.name+'.processor')
+    save(processor_instance, 'data/hadmonotop'+options.name+'.processor')

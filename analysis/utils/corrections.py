@@ -282,7 +282,7 @@ def get_mu_loose_iso_sf (year, eta, pt):
     pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
     flatpt = ak.flatten(pt)
     
-    weight = evaluator["NUM_LooseRelIso_DEN_LooseID"].evaluate(flateta, flatpt, "sf")
+    weight = evaluator["NUM_LooseRelIso_DEN_LooseID"].evaluate(year+'_UL', flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 
@@ -295,7 +295,7 @@ def get_mu_tight_iso_sf (year, eta, pt):
     pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
     flatpt = ak.flatten(pt)
     
-    weight = evaluator["NUM_TightRelIso_DEN_TightIDandIPCut"].evaluate(flateta, flatpt, "sf")
+    weight = evaluator["NUM_TightRelIso_DEN_TightIDandIPCut"].evaluate(year+'_UL', flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 
