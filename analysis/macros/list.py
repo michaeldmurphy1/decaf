@@ -5,6 +5,7 @@ import uproot
 from data.process import *
 from optparse import OptionParser
 import json
+import gzip
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')
@@ -163,11 +164,12 @@ for dataset in xsections.keys():
                   'xs': xs,
               }
         
-folder = "metadata/"+options.metadata+".json"
-with open(folder, "w") as fout:
+json_output = "metadata/"+options.metadata+".json.gz"
+with gzip.open(json_output, "wt") as fout:
      json.dump(datadef, fout, indent=4)
+     #fp.write("\n")
 
 if options.remove:
-     list = "data/removed_files.txt"
-     with open(list, "w") as fout:
+     lists = "data/removed_files.txt"
+     with open(lists, "w") as fout:
           fout.writelines(removed)

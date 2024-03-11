@@ -12,6 +12,7 @@ from coffea.lumi_tools import LumiMask
 from coffea.util import load, save
 from optparse import OptionParser
 from coffea.nanoevents.methods import vector
+import gzip
 
 def update(events, collections):
     """Return a shallow copy of events array with some collections swapped out"""
@@ -972,7 +973,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
 
-    with open('metadata/'+options.metadata+'.json') as fin:
+    with gzip.open('metadata/'+options.metadata+'.json.gz') as fin:
         samplefiles = json.load(fin)
         xsec = {k: v['xs'] for k,v in samplefiles.items()}
 

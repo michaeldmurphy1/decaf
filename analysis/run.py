@@ -54,6 +54,6 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     
     processor_instance=load('data/'+options.processor+'.processor')
-    with open("metadata/"+options.metadata+".json") as fin:
+    with gzip.open("metadata/"+options.metadata+".json.gz") as fin:
         samplefiles = json.load(fin)
     run(processor_instance, samplefiles)
