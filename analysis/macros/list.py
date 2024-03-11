@@ -65,7 +65,7 @@ def find(_list):
          results=os.popen(command).read()
          files.extend(results.split())
      if not any('.root' in _file for _file in files):
-          files=find(files)
+         files=find(files)
      return files
 
 xsections={}
@@ -99,13 +99,12 @@ for dataset in xsections.keys():
      xs = xsections[dataset]
      if options.custom:
           redirect = eos
+          urllist = []
           for folder in custom[options.year]:
                path=folder+'/'+dataset
-               try:
-                    urllist += find([path])
-               except:
-                    urllist = find([path])
+               urllist += find([path])
           for url in urllist[:].copy():
+               print(url)
                if options.year not in url:
                     urllist.remove(url)
                     continue
