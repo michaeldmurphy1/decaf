@@ -19,20 +19,20 @@ parser.add_option('-r', '--remove', action='store_true', dest='remove')
 
 globalredirect = "root://xrootd-cms.infn.it/"
 campaigns ={}
-campaigns['2016pre'] = '*UL*16*JMENano'
-campaigns['2016post'] = '*UL*16*JMENano'
+campaigns['2016preVFP'] = '*UL*16preVFP*JMENano'
+campaigns['2016postVFP'] = '*UL*16postVFP*JMENano'
 campaigns['2017'] = '*UL*17*JMENano'
 campaigns['2018'] = '*UL*18*JMENano'
 
 eos = "root://dcache-cms-xrootd.desy.de:1094/"
 custom={}
-custom['2016pre'] = ["/store/user/nshadski/customNano",
+custom['2016preVFP'] = ["/store/user/nshadski/customNano",
                  "/store/user/empfeffe/customNano",
                  "/store/user/momolch/customNano",
                  "/store/user/swieland/customNano",
                  "/store/user/mwassmer/customNano"]
 
-custom['2016post'] = ["/store/user/nshadski/customNano",
+custom['2016postVFP'] = ["/store/user/nshadski/customNano",
                  "/store/user/empfeffe/customNano",
                  "/store/user/momolch/customNano",
                  "/store/user/swieland/customNano",

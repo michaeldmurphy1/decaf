@@ -574,9 +574,13 @@ class BTagCorrector:
         self.eff = convert.from_histogram(nom).to_evaluator()
 
     def btag_weight(self, pt, eta, flavor, istag):
+
         abseta = abs(eta)
-        flateta, counts = ak.fill_none(ak.flatten(abseta), 0,), ak.num(abseta)
-        flatpt =  ak.fill_none(ak.flatten(pt), 30.01)
+        flateta, counts = ak.fill_none(ak.flatten(abseta), 0.), ak.num(abseta)
+
+        pt = ak.where((pt>999.99), ak.full_like(pt,999.99), pt)
+        flatpt =  ak.fill_none(ak.flatten(pt), 30.)
+
         flatflavor = ak.fill_none(ak.flatten(flavor), 0)
         
         #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagSFMethods#1b_Event_reweighting_using_scale
