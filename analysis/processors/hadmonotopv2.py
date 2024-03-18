@@ -668,21 +668,29 @@ class AnalysisProcessor(processor.ProcessorABC):
                 nlo_qcd = get_nlo_qcd_weight['w'](genWs.pt.max())
                 nlo_ewk = get_nlo_ewk_weight['w'](genWs.pt.max())
                 for systematic in get_nnlo_nlo_weight['w']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['w'][systematic](genWs.pt.max())*((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100)) + \
-                                           (~((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100))).astype(np.int)
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genWs, axis=1)>0)&(ak.firsts(genWs).pt>=100)),
+                        get_nnlo_nlo_weight['w'][systematic](ak.firsts(genWs).pt),
+                        np.ones(len(events), dtype='float')
+                    )
             elif('DY' in dataset): 
                 nlo_qcd = get_nlo_qcd_weight['dy'](genDYs.pt.max())
                 nlo_ewk = get_nlo_ewk_weight['dy'](genDYs.pt.max())
                 for systematic in get_nnlo_nlo_weight['dy']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['dy'][systematic](genDYs.pt.max())*((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100)) + \
-                                           (~((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100))).astype(np.int)
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genDYs, axis=1)>0)&(ak.firsts(genDYs).pt>=100)),
+                        get_nnlo_nlo_weight['dy'][systematic](ak.firsts(genDYs).pt),
+                        np.ones(len(events), dtype='float')
+                    )
             elif('ZJets' in dataset): 
                 nlo_qcd = get_nlo_qcd_weight['z'](genZs.pt.max())
                 nlo_ewk = get_nlo_ewk_weight['z'](genZs.pt.max())
                 for systematic in get_nnlo_nlo_weight['z']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['z'][systematic](genZs.pt.max())*((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100)) + \
-                                           (~((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100))).astype(np.int)
-
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genZs, axis=1)>0)&(ak.firsts(genZs).pt>=100)),
+                        get_nnlo_nlo_weight['z'][systematic](ak.firsts(genZs).pt),
+                        np.ones(len(events), dtype='float')
+                    )
             ###
             # Calculate PU weight and systematic variations
             ###
