@@ -97,12 +97,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._skipJER = False
 
         self._samples = {
-            'sr':('ZJets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET','TPhiTo2Chi'),
+            'sr':('Z1Jets','Z2Jets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET','TPhiTo2Chi'),
             'wmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET'),
             'tmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET'),
             'wecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','SingleElectron','EGamma'),
             'tecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','SingleElectron','EGamma'),
-            'qcdcr':('ZJets','WJets','TT','ST','WW','WZ','ZZ','QCD','MET'),
+            'qcdcr':('Z1Jets','Z2Jets','WJets','TT','ST','WW','WZ','ZZ','QCD','MET'),
         }
         
         self._TvsQCDwp = {
@@ -683,7 +683,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                         get_nnlo_nlo_weight['dy'][systematic](ak.firsts(genDYs).pt),
                         np.ones(len(events), dtype='float')
                     )
-            elif('ZJets' in dataset): 
+            elif('Z1Jets' in dataset or 'Z2Jets' in dataset): 
                 nlo_qcd = get_nlo_qcd_weight['z'](genZs.pt.max())
                 nlo_ewk = get_nlo_ewk_weight['z'](genZs.pt.max())
                 for systematic in get_nnlo_nlo_weight['z']:
