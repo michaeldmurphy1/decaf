@@ -24,9 +24,10 @@ def update(events, collections):
 class AnalysisProcessor(processor.ProcessorABC):
 
     lumis = { 
-        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2                                                      
-        '2016postVFP': 36.31,
-        '2016preVFP': 36.31,
+        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2    
+        # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmVDatasetsUL2016
+        '2016postVFP': 16.8,
+        '2016preVFP': 19.5,
         '2017': 41.48,
         '2018': 59.83
     }
