@@ -93,26 +93,34 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._year = year
         self._lumi = 1000.*float(AnalysisProcessor.lumis[year])
         self._xsec = xsec
-        self._systematics = True
+        self._systematics = False
         self._skipJER = False
 
         self._samples = {
-            'sr':('Z1Jets','Z2Jets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','MET',
-                    'TPhiTo2Chi_MPhi200_MChi50'),
+            'sr':('Z1Jets','Z2Jets','WJets','G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','MET',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
             'wmcr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','MET',
-                    'TPhiTo2Chi_MPhi200_MChi50'),
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
             'tmcr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','MET',
-                    'TPhiTo2Chi_MPhi200_MChi50'),
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
             'wecr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma',
-                    'TPhiTo2Chi_MPhi200_MChi50'),
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
             'tecr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma',
-                    'TPhiTo2Chi_MPhi200_MChi50'),
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
             'zmcr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','MET',
-                    'TPhiTo2Chi_MPhi200_MChi50'),
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
             'zecr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma',
-                    'TPhiTo2Chi_MPhi200_MChi50'),
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
             'gcr' :('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SinglePhoton','EGamma',
-                    'TPhiTo2Chi_MPhi200_MChi50')
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50')
         }
         
         self._TvsQCDwp = {
@@ -368,7 +376,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             return self.process_shift(events, None)
 
         jet_factory              = self._corrections['jet_factory']
-        #fatjet_factory           = self._corrections['fatjet_factory']
+        fatjet_factory           = self._corrections['fatjet_factory']
         subjet_factory           = self._corrections['subjet_factory']
         met_factory              = self._corrections['met_factory']
 
@@ -386,22 +394,22 @@ class AnalysisProcessor(processor.ProcessorABC):
             return jets
         
         jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
-        #fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
+        fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
         subjets = subjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubJet, events.fixedGridRhoFastjetAll), jec_cache)
         met = met_factory.build(events.MET, jets, {})
 
-        shifts = [({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met}, None)]
+        shifts = [({"Jet": jets, "AK15PFPuppiSubJet": subjets, "AK15PFPuppiJet": fatjets, "MET": met}, None)]
         if self._systematics:
             shifts.extend([
-                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubJet": subjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
-                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubJet": subjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
-                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
-                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
+                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubJet": subjets.JES_jes.up, "AK15PFPuppiSubJet": fatjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
+                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubJet": subjets.JES_jes.down, "AK15PFPuppiSubJet": fatjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
+                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "AK15PFPuppiSubJet": fatjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
+                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "AK15PFPuppiSubJet": fatjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
             ])
             if not self._skipJER:
                 shifts.extend([
-                    ({"Jet": jets.JER.up, "AK15PFPuppiSubJet": subjets.JER.up, "MET": met.JER.up}, "JERUp"),
-                    ({"Jet": jets.JER.down, "AK15PFPuppiSubJet": subjets.JER.down, "MET": met.JER.down}, "JERDown"),
+                    ({"Jet": jets.JER.up, "AK15PFPuppiSubJet": subjets.JER.up, "AK15PFPuppiSubJet": fatjets.JER.up, "MET": met.JER.up}, "JERUp"),
+                    ({"Jet": jets.JER.down, "AK15PFPuppiSubJet": subjets.JER.down, "AK15PFPuppiSubJet": fatjets.JER.down, "MET": met.JER.down}, "JERDown"),
                 ])
         return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
 
@@ -891,15 +899,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('one_ak15', (fj_nclean>0))
         selection.add('leading_fj250', (leading_fj.pt>250))
 
-        selection.add('recoil_sr', (u['sr'].r>350))
-        selection.add('recoil_wmcr', (u['wmcr'].r>350))
-        selection.add('recoil_tmcr', (u['tmcr'].r>350))
-        selection.add('recoil_wecr', (u['wecr'].r>350))
-        selection.add('recoil_tecr', (u['tecr'].r>350))
-        selection.add('recoil_zmcr', (u['zmcr'].r>350))
-        selection.add('recoil_zecr', (u['zecr'].r>350))
-        selection.add('recoil_gcr', (u['gcr'].r>350))
-
         selection.add('dPhi_recoil_j', (ak.min(abs(u['sr'].delta_phi(j_clean.T)), axis=1, mask_identity=False) > 0.5))
         selection.add('dPhi_recoil_fj',(ak.sum(abs(u['sr'].delta_phi(fj_clean.T))>1.5, axis=1, mask_identity=False) > 0))
         selection.add('dPhi_recoil_fj_e', (ak.min(abs(u['wecr'].delta_phi(fj_clean.T))>1.5, axis=1, mask_identity=False) > 0))
@@ -910,12 +909,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('oneb', (j_ndflvL==1))
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
-        #selection.add('mt_tecr', (mT['tecr']<150))
-        #selection.add('mt_tmcr', (mT['tmcr']<150))
-        #selection.add('mt_wmcr', (mT['wmcr']<150))
-        #selection.add('mt_zmcr', (mT['zmcr']<150))
-        #selection.add('mt_zecr', (mT['zecr']<150))
-        #selection.add('mt_wecr', (mT['wecr']<150))
         selection.add('met120',(met.pt<120))
         selection.add('met150',(met.pt>150))
         selection.add('diele60',(diele_mass>60))
@@ -929,7 +922,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'met_triggers',
                     'noHEMj', 'noHEMmet',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_sr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
@@ -941,12 +933,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'met_triggers',
                     'noHEMj',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_wmcr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
                     'dPhi_recoil_fj_m',
-#                    'mt_wmcr',
                     'isoneM',
                     'noextrab',
                     'met150',
@@ -955,12 +945,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'singleelectron_triggers',
                     'noHEMj',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_wecr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
                     'dPhi_recoil_fj_e',
- #                   'mt_wecr',
                     'isoneE',
                     'noextrab',
                     'met150',
@@ -969,12 +957,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'met_triggers',
                     'noHEMj',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_tmcr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
                     'dPhi_recoil_fj_m',
-#                    'mt_tmcr',
                     'isoneM',
                     'one_ak4',
                     'oneb',
@@ -984,12 +970,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'singleelectron_triggers',
                     'noHEMj',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_tecr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
                     'dPhi_recoil_fj_e',
-#                    'mt_tecr',
                     'isoneE',
                     'one_ak4',
                     'oneb',
@@ -999,7 +983,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'met_triggers',
                     'noHEMj',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_zmcr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
@@ -1012,7 +995,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'singleelectron_triggers',
                     'noHEMj',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_zecr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
@@ -1026,7 +1008,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'met_filters', 'single_photon_triggers',
                     'noHEMj',
                     'exclude_wjets_greater_400', 'exclude_wjets_less_400',
-                    'recoil_gcr',
                     'one_ak15',
                     'leading_fj250',
                     'dPhi_recoil_j',
@@ -1108,20 +1089,22 @@ class AnalysisProcessor(processor.ProcessorABC):
             systematics = [None] + list(weights.variations)
         else:
             systematics = [shift_name]
-            
+        print(selected_regions)    
         for region in regions:
+            print('Now region loop: ', region)
             if region not in selected_regions: continue
+            print('process ', region)
 
             ###
             # Adding recoil and minDPhi requirements
             ###
 
             if 'qcd' not in region:
-                #selection.add('recoil_'+region, (u[region].r>250))
+                selection.add('recoil_'+region, (u[region].r>350))
                 #selection.add('mindphi_'+region, (ak.min(abs(u[region].delta_phi(j_clean.T)), axis=1, mask_identity=False) > 0.5))
                 #selection.add('minDphi_'+region, (ak.min(abs(u[region].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
                 #selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].r) < 0.5))
-                #regions[region].insert(0, 'recoil_'+region)
+                regions[region].insert(0, 'recoil_'+region)
                 #regions[region].insert(3, 'mindphi_'+region)
                 #regions[region].insert(4, 'minDphi_'+region)
                 #regions[region].insert(5, 'calo_'+region)
