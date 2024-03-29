@@ -406,7 +406,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_met_xy_correction    = self._corrections['get_met_xy_correction']
         get_pu_weight            = self._corrections['get_pu_weight']    
         get_nlo_ewk_weight       = self._corrections['get_nlo_ewk_weight']    
-        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
+        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight']
         get_msd_corr             = self._corrections['get_msd_corr']
         get_btag_weight      = self._corrections['get_btag_weight']
         
@@ -666,30 +666,30 @@ class AnalysisProcessor(processor.ProcessorABC):
             #nlo_qcd = np.ones(len(events), dtype='float')
             nlo_ewk = np.ones(len(events), dtype='float')
             if('WJets' in dataset): 
-                #nlo_qcd = get_nlo_qcd_weight['w'](genWs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['w'](ak.firsts(genWs).pt)
-                for systematic in get_nnlo_nlo_weight['w']:
+                #nlo_qcd = get_nlo_qcd_weight('w', genWs.pt.max())
+                nlo_ewk = get_nlo_ewk_weight('w', ak.firsts(genWs).pt)
+                for systematic in get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt):
                     nnlo_nlo[systematic] = ak.where(
                         ((ak.num(genWs, axis=1)>0)&(ak.firsts(genWs).pt>=100)),
-                        get_nnlo_nlo_weight['w'][systematic](ak.firsts(genWs).pt),
+                        get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt)[systematic],
                         np.ones(len(events), dtype='float')
                     )
             elif('DY' in dataset): 
                 #nlo_qcd = get_nlo_qcd_weight['dy'](genDYs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['dy'](ak.firsts(genDYs).pt)
-                for systematic in get_nnlo_nlo_weight['dy']:
+                nlo_ewk = get_nlo_ewk_weight('dy', ak.firsts(genDYs).pt)
+                for systematic in get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt):
                     nnlo_nlo[systematic] = ak.where(
                         ((ak.num(genDYs, axis=1)>0)&(ak.firsts(genDYs).pt>=100)),
-                        get_nnlo_nlo_weight['dy'][systematic](ak.firsts(genDYs).pt),
+                        get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt)[systematic],
                         np.ones(len(events), dtype='float')
                     )
             elif('Z1Jets' in dataset or 'Z2Jets' in dataset): 
                 #nlo_qcd = get_nlo_qcd_weight['z'](genZs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['z'](ak.firsts(genZs).pt)
-                for systematic in get_nnlo_nlo_weight['z']:
+                nlo_ewk = get_nlo_ewk_weight('z', ak.firsts(genZs).pt)
+                for systematic in get_nnlo_nlo_weight(self._year, 'z', ak.firsts(genZs).pt):
                     nnlo_nlo[systematic] = ak.where(
                         ((ak.num(genZs, axis=1)>0)&(ak.firsts(genZs).pt>=100)),
-                        get_nnlo_nlo_weight['z'][systematic](ak.firsts(genZs).pt),
+                        get_nnlo_nlo_weight(self._year, 'z', ak.firsts(genZs).pt)[systematic],
                         np.ones(len(events), dtype='float')
                     )
             ###
