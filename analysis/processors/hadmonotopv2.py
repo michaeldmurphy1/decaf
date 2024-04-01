@@ -774,7 +774,6 @@ class AnalysisProcessor(processor.ProcessorABC):
             if hasattr(events, "L1PreFiringWeight"): 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
             weights.add('genw',events.genWeight)
-            weights.add('nlo_qcd',nlo_qcd)
             weights.add('nlo_ewk',nlo_ewk)
             if 'cen' in nnlo_nlo:
                 #weights.add('nnlo_nlo',nnlo_nlo['cen'])

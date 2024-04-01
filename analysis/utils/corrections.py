@@ -371,13 +371,16 @@ def XY_MET_Correction(year, npv, run, pt, phi, isData):
 # Only use nlo ewk sf
 ###
 
-def get_nlo_ewk_weight(process, boson_pt)
+def get_nlo_ewk_weight(process, boson_pt):
     nlo_ewk_hists = {
         'dy': "data/vjets_SFs/merged_kfactors_zjets.root:kfactor_monojet_ewk",
         'w': "data/vjets_SFs/merged_kfactors_wjets.root:kfactor_monojet_ewk",
         'z': "data/vjets_SFs/merged_kfactors_zjets.root:kfactor_monojet_ewk",
         'a': "data/vjets_SFs/merged_kfactors_gjets.root:kfactor_monojet_ewk"
     }
+    boson_pt = ak.fill_none(boson_pt, 0.)
+    boson_pt = ak.where((boson_pt<150.01), ak.full_like(boson_pt,150.01), boson_pt)
+    boson_pt = ak.where((boson_pt>1249.99), ak.full_like(boson_pt,1249.99), boson_pt)
     corr = convert.from_uproot_THx(nlo_ewk_hists[process])
     evaluator = corr.to_evaluator()
     weight = evaluator.evaluate(boson_pt)
@@ -388,7 +391,7 @@ def get_nlo_ewk_weight(process, boson_pt)
 # The schema is process_NNLO_NLO_QCD1QCD2QCD3_EW1EW2EW3_MIX, where 'n' stands for 'nominal', 'u' for 'up', and 'd' for 'down'
 ###
 
-def get_nnlo_nlo_weight(year, process, boson_pt)
+def get_nnlo_nlo_weight(year, process, boson_pt):
     histname={
         'dy': 'eej_NNLO_NLO_',
         'w':  'evj_NNLO_NLO_',
@@ -473,18 +476,22 @@ def get_nnlo_nlo_weight(year, process, boson_pt)
     for year in ['2016postVFP', '2016preVFP', '2017','2018']:
         if '2016' in year:
             nnlo_file = {
-                'dy': "data/Vboson_Pt_Reweighting/2016/TheoryXS_eej_madgraph_2016.root"),
-                'w': "data/Vboson_Pt_Reweighting/2016/TheoryXS_evj_madgraph_2016.root"),
-                'z': "data/Vboson_Pt_Reweighting/2016/TheoryXS_vvj_madgraph_2016.root"),
-                'a': "data/Vboson_Pt_Reweighting/2016/TheoryXS_aj_madgraph_2016.root")
+                'dy': "data/Vboson_Pt_Reweighting/2016/TheoryXS_eej_madgraph_2016.root",
+                'w': "data/Vboson_Pt_Reweighting/2016/TheoryXS_evj_madgraph_2016.root",
+                'z': "data/Vboson_Pt_Reweighting/2016/TheoryXS_vvj_madgraph_2016.root",
+                'a': "data/Vboson_Pt_Reweighting/2016/TheoryXS_aj_madgraph_2016.root"
             }
         else:
             nlo_file = {
-                'dy': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root"),
-                'w': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root"),
-                'z': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root"),
-                'a': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root")
+                'dy': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root",
+                'w': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root",
+                'z': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root",
+                'a': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root"
             }
+
+    boson_pt = ak.fill_none(boson_pt, 0.)
+    boson_pt = ak.where((boson_pt<100.01), ak.full_like(boson_pt,100.01), boson_pt)
+    boson_pt = ak.where((boson_pt>1249.99), ak.full_like(boson_pt,1249.99), boson_pt)
     weight = {}
     for variation in correlated_variations:
         histo=nnlo_file[process]+":"+histname[process]+correlated_variations[variation]
@@ -492,7 +499,7 @@ def get_nnlo_nlo_weight(year, process, boson_pt)
         evaluator = corr.to_evaluator()
         weight[variation] = evaluator.evaluate(boson_pt)
     for variation in uncorrelated_variations[process]:
-        histo=nnlo_file[p]+":"+histname[p]+uncorrelated_variations[p][variation]
+        histo=nnlo_file[process]+":"+histname[process]+uncorrelated_variations[process][variation]
         corr = convert.from_uproot_THx(histo)
         evaluator = corr.to_evaluator()
         weight[variation] = evaluator.evaluate(boson_pt)
