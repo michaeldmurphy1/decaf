@@ -219,7 +219,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'j1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Variable(40,30,1250., name='j1pt', label='AK4 Leading Jet Pt'),
+                hist.axis.Regular(40,30,1250., name='j1pt', label='AK4 Leading Jet Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
@@ -237,7 +237,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'fj1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Variable(30,160.,1250., name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
+                hist.axis.Regular(30,160.,1250., name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
@@ -279,7 +279,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'l1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Variable(40,30,1250, name='l1pt', label='Leading Lepton Pt'),
+                hist.axis.Regular(40,30,1250, name='l1pt', label='Leading Lepton Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
