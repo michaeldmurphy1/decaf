@@ -160,36 +160,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._ids = ids
         self._common = common
 
-        ptbins=[30.0, 
-                60.0, 
-                90.0, 
-                120.0, 
-                150.0, 
-                180.0, 
-                210.0, 
-                250.0, 
-                280.0, 
-                310.0, 
-                340.0, 
-                370.0, 
-                400.0, 
-                430.0, 
-                470.0, 
-                510.0, 
-                550.0, 
-                590.0, 
-                640.0, 
-                690.0, 
-                740.0, 
-                790.0, 
-                840.0, 
-                900.0, 
-                960.0, 
-                1020.0, 
-                1090.0, 
-                1160.0, 
-                1250.0]
-
         self.make_output = lambda: {
             'sumw': 0.,
             'template': hist.Hist(
@@ -249,7 +219,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'j1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Variable(ptbins, name='j1pt', label='AK4 Leading Jet Pt'),
+                hist.axis.Variable(40,30,1250., name='j1pt', label='AK4 Leading Jet Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
@@ -267,7 +237,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'fj1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Variable(ptbins, name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
+                hist.axis.Variable(30,160.,1250., name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
@@ -309,7 +279,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'l1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Variable(ptbins, name='l1pt', label='Leading Lepton Pt'),
+                hist.axis.Variable(40,30,1250, name='l1pt', label='Leading Lepton Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
