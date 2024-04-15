@@ -171,10 +171,11 @@ Optional, the name of the dataset to use as input data. Specifying will run over
 
 With this command you will run the `btag2018` processor over QCD MC datasets as defined by the `2018` metadata file. You will see a printout like:
 
+```
 Processing: QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8____4_
-  Preprocessing 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 32/32 [ 0:01:28 < 0:00:00 | ?   file/s ]
-Merging (local) 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 31/31 [ 0:00:23 < 0:00:00 | ? merges/s ]
-
+  Preprocessing 100% ━━━━━━━━━━━━━━━━━━ 32/32 [ 0:01:28 < 0:00:00 | ?   file/s ]
+  Merging (local) 100% ━━━━━━━━━━━━━━━━ 31/31 [ 0:00:23 < 0:00:00 | ? merges/s ]
+```
 This means an output file with histograms as defined in the btag processor file has been generated. In this case a folder called `btageff2018` inside the `hists` folder has been created. Inside this folder you can see a file called `QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8____4_.futures`, that stores the histograms. 
 
 In practice, you don't want to run the script serially. To take advantage of the parallelism offered by the HTCondor job scheduler, the `run_condor.py` script can be used:
@@ -189,7 +190,7 @@ The options for this script are the same as for `run.py` (`-p`, `-m`, `-d`), wit
 
 - `-c` (`--cluster`)
 
-Specifies which cluster you are using.  At the moment supports `lpc` or `kisti`.
+Specifies which cluster you are using.  At the moment supports `lpc` (default) or `kisti`.
 
 - `-t` (`--tar`)
   
@@ -210,7 +211,7 @@ This will indicate if the jobs are idle, running, or held. Any jobs on hold have
 
 ---
 ### Debugging Condor errors
-The output of any condor-run script will be held in `logs/condor/SCRIPT_NAME`. For example, after calling the above `python3 run_condor.py ... `, there will be three folders within the `logs/condor/run/` directory:  `log/`, `err/`,and  `out/`. Any file that is read by a condor-run script will have its output directed to a `log/`-located file, while stderr is sent to `err/` and environment details are send to `out/`. <- __is this true? I'm not sure what `out/` does__
+The output of any condor-run script will be held in `logs/condor/SCRIPT_NAME`. For example, after calling the above `python3 run_condor.py ... `, there will be three folders within the `logs/condor/run/` directory:  `log/`, `err/`,and  `out/`. Any file that is read by a condor-run script will have its output directed to a `log/`-located file, while stderr is sent to `err/` and environment details are send to `out/`. __<- Comment is this true? I'm not sure what `out/` does__
 
 
 #### Held Job
@@ -243,39 +244,29 @@ python3 reduce.py -f hists/btag2018
 
 The options of this script are:
 
-TO BE LISTED
+- `-f` (`--folder`)
+
+The folder that holds your `.future` files (usually `hists/processorName`).
+
+- `-d` (`--dataset`)
+
+Optional, the name of the dataset to use as input data. Specifying will run over all datasets with the passed string in its name.
+
+- `-e` (`--exclude`)
+
+Optional, string of the names of datasets (separated by commas) that you wish not be run. __Comment: CHECK__
+
+- `-v` (`--variable`)
+
+Optional, a single metadata variable to include in the analysis (disregarding all others). __Comment: CHECK__
+
 
 All the different datasets produced at the previous step will be reduced. A different file for each variable for each reduced dataset will be produced. For example, the command above will produce the following reduced files:
 
 ```
 hists/btageff2018/deepcsv--QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8.reduced
 hists/btageff2018/deepcsv--QCD_Pt_120to170_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_15to30_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_170to300_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_2400to3200_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_300to470_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_30to50_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_470to600_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_50to80_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_600to800_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_800to1000_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepcsv--QCD_Pt_80to120_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_120to170_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_15to30_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_170to300_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_2400to3200_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_300to470_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_30to50_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_470to600_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_50to80_TuneCP5_13TeV_pythia8.reduced
-hists/btageff2018/deepflav--QCD_Pt_600to800_TuneCP5_13TeV_pythia8.reduced
+...
 hists/btageff2018/deepflav--QCD_Pt_800to1000_TuneCP5_13TeV_pythia8.reduced
 hists/btageff2018/deepflav--QCD_Pt_80to120_TuneCP5_13TeV_pythia8.reduced
 ```
@@ -290,7 +281,17 @@ python3 merge.py -f hists/btageff2018
 
 The options of this script are:
 
-TO BE LISTED
+- `-f` (`--folder`)
+
+The folder that holds your `.future` files (usually `hists/processorName`).
+
+- `-v` (`--variable`)
+
+Optional, a single metadata variable to include in the analysis (disregarding all others). __Comment: CHECK__
+
+- `-e` (`--exclude`)
+
+Optional, string of the names of datasets (separated by commas) that you wish not be run. __Comment: CHECK__
 
 This command will produce the following files:
 
@@ -303,6 +304,11 @@ The same script can be used to merge the the files corresponding to each single 
 ```
 python3 merge.py -f hists/btageff2018 -p
 ```
+__Comment:__
+- __`merge_condor.py` does not have the `-p` option. Is this a feature that can be run serially?__
+- __`merge_condor.py` does not have the `-e` option. does that matter?__
+- __`merge.py` doesn't have a `-p` option, it looks like the postprocessing always runs__
+
 
 Also this step can be run in HTCondor by using the `merge_condor.py` script. The `merge_condor.py` script has the same options of `merge.py`, with addition of the same `--cluster`, `--tar`, and `--copy` options descibed above when discussing `run_condor.py`.
 
