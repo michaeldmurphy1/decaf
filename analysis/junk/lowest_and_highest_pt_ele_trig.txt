@@ -1,0 +1,53 @@
+Histogram: h2_scaleFactorsEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 350 GeV
+Located at bin (1, 6)
+
+Histogram: h2_scaleFactorsEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 350 GeV
+Located at bin (1, 6)
+
+Histogram: h2_scaleFactorsEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 350 GeV
+Located at bin (1, 6)
+
+Histogram: h2_uncertaintiesEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 350 GeV
+Located at bin (1, 6)
+
+Histogram: h2_uncertaintiesEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 350 GeV
+Located at bin (1, 6)
+
+Histogram: h2_uncertaintiesEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 350 GeV
+Located at bin (3, 6)
+
+Histogram: h2_uncertaintiesEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (2, 1)
+The highest non-zero pT value is: 350 GeV
+Located at bin (2, 6)
+
+Histogram: h2_uncertaintiesEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 175 GeV
+Located at bin (1, 5)
+
+Histogram: h2_uncertaintiesEGamma
+The lowest non-zero pT value is: 38.5 GeV
+Located at bin (1, 1)
+The highest non-zero pT value is: 175 GeV
+Located at bin (1, 5)
