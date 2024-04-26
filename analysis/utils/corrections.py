@@ -101,15 +101,12 @@ def get_ele_trig_weight(year, eta, pt):
 
 
 def get_mu_trig_weight(year, eta, pt):
-    # Path to the JSON file based on the year
     evaluator = correctionlib.CorrectionSet.from_file(f"/data/MuonTrigSF/{year}/{year}_trigger/Efficiencies_muon_generalTracks_Z_Run{year}_UL_SingleMuonTriggers_schemaV2.json")
 
-    # Flatten eta and record the number of counts for unflattening
     flateta, counts = ak.flatten(eta), ak.num(eta)
     
-    # Adjust pt values to ensure they are within the valid range
-    pt = ak.where(pt < 26, 26, pt)  #
-    pt = ak.where(pt > 200, 200, pt)  # Capping pt at 250
+    pt = ak.where(pt < 26, 26, pt) 
+    pt = ak.where(pt > 200, 200, pt) 
     flatpt = ak.flatten(pt)
     
     trigger_keys = {'2016_preVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
@@ -117,11 +114,8 @@ def get_mu_trig_weight(year, eta, pt):
                     '2017': 'NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight',
                     '2018': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight'}
 
-    # Evaluate the correction
     weight = evaluator[trigger_keys[year]].evaluate("sf", flateta, flatpt)
-    
-    # Unflatten the results to match the original array structure
-    return ak.unflatten(weight, counts=counts)
+        return ak.unflatten(weight, counts=counts)
 
 
 ####
