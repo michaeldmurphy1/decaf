@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "get_mu_trigger_eff.C": "cpp",
-        "muon_trig_eff.C": "cpp",
-        "max_and_min_pt.C": "cpp",
-        "findExtremaPtInAllHistograms.C": "cpp"
-    }
-}
