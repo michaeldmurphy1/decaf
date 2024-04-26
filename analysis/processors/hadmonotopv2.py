@@ -400,7 +400,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         npv = events.PV.npvsGood
         run = events.run
-        #calomet = events.CaloMET
+        calomet = events.CaloMET
         met = events.MET
         met['pt'] , met['phi'] = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
 
