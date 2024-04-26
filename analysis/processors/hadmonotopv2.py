@@ -429,7 +429,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         npv = events.PV.npvsGood
         run = events.run
-        calomet = events.CaloMET
+        #calomet = events.CaloMET
         met = events.MET
         met['pt'] , met['phi'] = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
 
@@ -596,6 +596,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         j['isiso'] = ak.all(j.metric_table(leading_fj) > 1.5, axis=2)
         j['isdcsvL'] = (j.btagDeepB>deepcsvWPs['loose'])
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose'])
+        
         j['T'] = ak.zip(
             {
                 "r": j.pt,

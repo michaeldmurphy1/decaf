@@ -100,30 +100,6 @@ class AnalysisProcessor(processor.ProcessorABC):
             'esr':('TTTo', 'SingleElectron'),
         }
         
-'''
-        self._met_triggers = {
-            '2016postVFP': [
-                'PFMETNoMu90_PFMHTNoMu90_IDTight',
-                'PFMETNoMu100_PFMHTNoMu100_IDTight',
-                'PFMETNoMu110_PFMHTNoMu110_IDTight',
-                'PFMETNoMu120_PFMHTNoMu120_IDTight'
-            ],
-            '2016preVFP': [
-                'PFMETNoMu90_PFMHTNoMu90_IDTight',
-                'PFMETNoMu100_PFMHTNoMu100_IDTight',
-                'PFMETNoMu110_PFMHTNoMu110_IDTight',
-                'PFMETNoMu120_PFMHTNoMu120_IDTight'
-            ],
-            '2017': [
-                'PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60',
-                'PFMETNoMu120_PFMHTNoMu120_IDTight'
-            ],
-            '2018': [
-                'PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60',
-                'PFMETNoMu120_PFMHTNoMu120_IDTight'
-            ]
-        }'''
-        
         self._singleelectron_triggers = { #2017 and 2018 from monojet, applying dedicated trigger weights
             '2016postVFP': [
                 'Ele25_eta2p1_WPTight_Gsf',
@@ -147,35 +123,31 @@ class AnalysisProcessor(processor.ProcessorABC):
             ]
         }
         self.singlemuon_triggers = {
-            '2016preVFP': ['HLT_IsOMu22', 
-                           'HLT_ISOTkMu22', 
-                           'HLT_IsoMu22_eta2p1',
-                           'HLT_IsoTkMu22_eta2p1',
-                           'HLT_IsoMu24',
-                            'HLT_IsoTkMu24',
-                            'HLT_IsoMu27',
-                            'HLT_IsoTkMu27'
-                            ],
+            '2016preVFP': ['IsoMu24', 
+                           'IsoTkMu24',
+                           'Mu50',
+                           'TkMu50'
+                          ],
+        
+            '2016postVFP': ['IsoMu24',
+                            'IsoTkMu24',
+                            'Mu50',
+                            'TkMu50'
+                           ],
+        
+            '2017': ['IsoMu27', 
+                     'Mu50',
+                     'OldMu100',
+                     'TkMu100'
+                    ],
+        
+            '2018': ['IsoMu24',
+                     'Mu50',
+                     'OldMu100',
+                     'TkMu100'
+                    ]
+        }
 
-            '2016postVFP': ['HLT_IsOMu22',
-                           'HLT_ISOTkMu22', 
-                           'HLT_IsoMu22_eta2p1',
-                           'HLT_IsoTkMu22_eta2p1',
-                           'HLT_IsoMu24',
-                           'HLT_IsoTkMu24',
-                           'HLT_IsoMu27',
-                           'HLT_IsoTkMu27'
-                        ],
-
-            '2017': ['HLT_IsoMu24', 
-                     'HLT_IsoMu27'
-                     ],
-
-            '2018': ['HLT_IsoMu24',
-                    'HLT_IsoMu27'
-                        ]
-            
-            }
 
         self._corrections = corrections
         self._ids = ids
@@ -424,12 +396,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_mu_loose_iso_sf      = self._corrections['get_mu_loose_iso_sf']
         get_mu_tight_iso_sf      = self._corrections['get_mu_tight_iso_sf']
         get_mu_trig_weight       = self._corrections['get_mu_trig_weight']
-        #get_mu_rochester_sf      = self._corrections['get_mu_rochester_sf'][self._year]
         get_met_xy_correction    = self._corrections['get_met_xy_correction']
         get_pu_weight            = self._corrections['get_pu_weight']    
         get_nlo_ewk_weight       = self._corrections['get_nlo_ewk_weight']    
         get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
-        #get_msd_corr             = self._corrections['get_msd_corr']
         get_btag_weight      = self._corrections['get_btag_weight']
         
         isLooseElectron = self._ids['isLooseElectron'] 
@@ -462,32 +432,6 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         mu = events.Muon
         
-        '''
-        if isData:
-            k = get_mu_rochester_sf.kScaleDT(mu.charge, mu.pt, mu.eta, mu.phi)
-        else:
-            kspread = get_mu_rochester_sf.kSpreadMC(
-                mu.charge, 
-                mu.pt, 
-                mu.eta, 
-                mu.phi,
-                mu.matched_gen.pt
-            )
-            mc_rand = ak.unflatten(np.random.rand(ak.count(ak.flatten(mu.pt))), ak.num(mu.pt))
-            ksmear = get_mu_rochester_sf.kSmearMC(
-                mu.charge, 
-                mu.pt, 
-                mu.eta, 
-                mu.phi,
-                mu.nTrackerLayers, 
-                mc_rand
-            )
-            hasgen = ~np.isnan(ak.fill_none(events.Muon.matched_gen.pt, np.nan))
-            k = ak.where(hasgen, kspread, ksmear)
-
-        
-        mu['pt'] = ak.where((mu.pt<200),k*mu.pt, mu.pt)
-        '''
         mu['isloose'] = isLooseMuon(mu,self._year)
         mu['id_sf'] = ak.where(
             mu.isloose, 
@@ -648,8 +592,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         j_good = j[j.isgood]
         j_clean = j_good[j_good.isclean]
         #j_iso = j_clean[j_clean.isiso]
-        j_dcsvL = j_iso[j_iso.isdcsvL] 
-        j_dflvL = j_iso[j_iso.isdflvL]
+        #j_dcsvL = j_iso[j_iso.isdcsvL] 
+        #j_dflvL = j_iso[j_iso.isdflvL]
         j_HEM = j[j.isHEM]
         j_ntot=ak.num(j, axis=1)
         j_ngood=ak.num(j_good, axis=1)
@@ -736,7 +680,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ###
            
             trig = {
-                'esr':   get_met_trig_weight(self._year, met.pt),
+                'esr':   get_ele_trig_weight(self._year, met.pt),
                 'msr':   get_met_trig_weight(self._year, met.pt)
             }
 

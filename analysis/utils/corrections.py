@@ -79,7 +79,7 @@ def get_ele_tight_id_sf (year, eta, pt):
 
 def get_ele_trig_weight(year, eta, pt):
     ele_trig_hists = {
-        '2016postVFP': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root:EGamma_SF2D",
+        '2016postVFP': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root:EGamma_SF2D", #should we change the name of the trigger?
         '2016preVFP' : "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root:EGamma_SF2D",
         '2017': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root:EGamma_SF2D",#monojet measurement for the combined trigger path
         '2018': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root:EGamma_SF2D" #approved by egamma group: https://indico.cern.ch/event/924522/
@@ -88,7 +88,7 @@ def get_ele_trig_weight(year, eta, pt):
     evaluator = corr.to_evaluator()
 
     eta = ak.fill_none(eta, 0.)
-    pt = ak.fill_none(pt, 40.)
+    pt = ak.fill_none(pt, 38.5) #double check the value 
     pt  = ak.where((pt>250.),ak.full_like(pt,250.),pt)
 
     weight = ak.where(
@@ -97,6 +97,32 @@ def get_ele_trig_weight(year, eta, pt):
         ak.zeros_like(pt)
     )
     return weight
+
+
+
+def get_mu_trig_weight(year, eta, pt):
+    # Path to the JSON file based on the year
+    evaluator = correctionlib.CorrectionSet.from_file(f"/data/MuonTrigSF/{year}/{year}_trigger/Efficiencies_muon_generalTracks_Z_Run{year}_UL_SingleMuonTriggers_schemaV2.json")
+
+    # Flatten eta and record the number of counts for unflattening
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    # Adjust pt values to ensure they are within the valid range
+    pt = ak.where(pt < 26, 26, pt)  #
+    pt = ak.where(pt > 200, 200, pt)  # Capping pt at 250
+    flatpt = ak.flatten(pt)
+    
+    trigger_keys = {'2016_preVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
+                    '2016_postVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
+                    '2017': 'NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight',
+                    '2018': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight'}
+
+    # Evaluate the correction
+    weight = evaluator[trigger_keys[year]].evaluate("sf", flateta, flatpt)
+    
+    # Unflatten the results to match the original array structure
+    return ak.unflatten(weight, counts=counts)
+
 
 ####
 # Electron Reco scale factor
