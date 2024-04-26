@@ -293,25 +293,29 @@ Optional, a single metadata variable to include in the analysis (disregarding al
 
 Optional, string of the names of datasets (separated by commas) that you wish not be run. __Comment: CHECK__
 
+Also this step can be run in HTCondor by using the `merge_condor.py` script. The `merge_condor.py` script has the same options of `merge.py`, with addition of the same `--cluster`, `--tar`, and `--copy` options descibed above when discussing `run_condor.py`.
+
 This command will produce the following files:
 
 ```
 hists/btageff2018/deepcsv.merged  hists/btageff2018/deepflav.merged
 ```
 
-The same script can be used to merge the the files corresponding to each single variable into a single file, using the `-p` or `—postprocess` option:
+The same script is then used to merge the the files corresponding to each single variable into a single file, using the `-p` or `—postprocess` option:
 
 ```
 python3 merge.py -f hists/btageff2018 -p
 ```
-__Comment:__
-- __`merge_condor.py` does not have the `-p` option. Is this a feature that can be run serially?__
-- __`merge_condor.py` does not have the `-e` option. does that matter?__
-- __`merge.py` doesn't have a `-p` option, it looks like the postprocessing always runs__
 
+This will create a `hists/btageff2018.merged` file that is penultimate to the final result. The last step is to run `macros/scale.py` will extract the histograms from the `.merged` file and scale values by their cross section:
 
-Also this step can be run in HTCondor by using the `merge_condor.py` script. The `merge_condor.py` script has the same options of `merge.py`, with addition of the same `--cluster`, `--tar`, and `--copy` options descibed above when discussing `run_condor.py`.
+```
+python3 macros/scale.py -f hists/hadmonotop2018.merged
+```
+
+The option of this script is `-f` (`--folder`), as seen before, where your `processorName.merged` file is located. The output is stored as `hists/processorName.scaled`
 
 ---
 
 This README is a work in progress
+
