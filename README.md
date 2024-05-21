@@ -315,6 +315,18 @@ python3 macros/scale.py -f hists/hadmonotop2018.merged
 
 The option of this script is `-f` (`--folder`), as seen before, where your `processorName.merged` file is located. The output is stored as `hists/processorName.scaled`
 
+
+## Writing Notebooks
+
+To analyze the output of this reducing, we use Python in a Jupyter Notebook. To do this in real time on a remote connection, we need to run a starting and stopping script.
+
+One needs to make sure to pass a specific port when running `ssh` via the `-L` flag: ```ssh -L portNum:localhost:portNum <USERNAME>@cmslpc-sl7.fnal.gov```, where `portNum` is between 1000 and 10,000. If you need to make two remote connections (due to IP requirements), make sure you use the same `portNum` for both calls.
+
+From here, you can just call `source start_jupyter portNum` which will create an `access_Jupyter.log` file, holding an address you can just copy into a browser to connect you to your respository.
+
+When done, make sure to call `source stop_jupyter portNum` to clean up loose ends.
+
+
 ---
 
 This README is a work in progress
