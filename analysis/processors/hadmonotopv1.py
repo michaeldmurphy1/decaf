@@ -6,6 +6,7 @@ import json
 import copy
 from collections import defaultdict
 from coffea import processor
+import cachetools
 import hist
 from coffea.analysis_tools import Weights, PackedSelection
 from coffea.lumi_tools import LumiMask
@@ -24,10 +25,9 @@ def update(events, collections):
 class AnalysisProcessor(processor.ProcessorABC):
 
     lumis = { 
-        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2    
-        # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmVDatasetsUL2016
-        '2016postVFP': 16.8,
-        '2016preVFP': 19.5,
+        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2                                                      
+        '2016postVFP': 36.31,
+        '2016preVFP': 36.31,
         '2017': 41.48,
         '2018': 59.83
     }
@@ -36,7 +36,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         '2016postVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
         '2016preVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
         '2017': LumiMask("data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"),
-        '2018': LumiMask("data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
+        '2018"': LumiMask("data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
     }
     
     met_filters = {
@@ -93,23 +93,41 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._year = year
         self._lumi = 1000.*float(AnalysisProcessor.lumis[year])
         self._xsec = xsec
-        self._systematics = True
+        self._systematics = False
         self._skipJER = False
 
         self._samples = {
-            'sr':('Z1Jets','Z2Jets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET','TPhiTo2Chi'),
-            'wmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET'),
-            'tmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET'),
-            'wecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','SingleElectron','EGamma'),
-            'tecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','SingleElectron','EGamma'),
-            'qcdcr':('Z1Jets','Z2Jets','WJets','TT','ST','WW','WZ','ZZ','QCD','MET'),
+            'sr':('Z1Jets','Z2Jets','WJets','G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','MET',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
+            'wmcr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','MET',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
+            'tmcr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','MET',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
+            'wecr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
+            'tecr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
+            'zmcr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','MET',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
+            'zecr':('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50'),
+            'gcr' :('WJets','Z1Jets','Z2Jets', 'G1Jet','DY','TT','ST','WW','WZ','ZZ','QCD','SinglePhoton','EGamma',
+                    ),
+                    #'TPhiTo2Chi_MPhi200_MChi50')
         }
         
         self._TvsQCDwp = {
-            '2016preVFP': 0.05,
-            '2016postVFP': 0.05,
-            '2017': 0.05,
-            '2018': 0.05
+            '2016preVFP': 0.53,
+            '2016postVFP': 0.53,
+            '2017': 0.61,
+            '2018': 0.65
         }
 
         self._met_triggers = {
@@ -134,7 +152,18 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'PFMETNoMu120_PFMHTNoMu120_IDTight'
             ]
         }
-
+        self._singlephoton_triggers = {
+            '2016': [
+                'Photon175',
+                'Photon165_HE10'
+            ],
+            '2017': [
+                'Photon200'
+            ],
+            '2018': [
+                'Photon200'
+            ]
+        }
         self._singleelectron_triggers = { #2017 and 2018 from monojet, applying dedicated trigger weights
             '2016postVFP': [
                 'Ele27_WPTight_Gsf',
@@ -155,10 +184,53 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'Photon200'
             ]
         }
-
+        self._singlemuon_triggers = {
+            '2016': [
+                'IsoMu24',
+                'IsoTkMu24',
+            ],
+            '2017':
+                [
+                'IsoMu27',
+            ],
+            '2018':
+                [
+                'IsoMu24',
+            ]
+        }
         self._corrections = corrections
         self._ids = ids
         self._common = common
+
+        ptbins=[30.0, 
+                60.0, 
+                90.0, 
+                120.0, 
+                150.0, 
+                180.0, 
+                210.0, 
+                250.0, 
+                280.0, 
+                310.0, 
+                340.0, 
+                370.0, 
+                400.0, 
+                430.0, 
+                470.0, 
+                510.0, 
+                550.0, 
+                590.0, 
+                640.0, 
+                690.0, 
+                740.0, 
+                790.0, 
+                840.0, 
+                900.0, 
+                960.0, 
+                1020.0, 
+                1090.0, 
+                1160.0, 
+                1250.0]
 
         self.make_output = lambda: {
             'sumw': 0.,
@@ -219,7 +291,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'j1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Regular(40,30,1250., name='j1pt', label='AK4 Leading Jet Pt'),
+                hist.axis.Variable(ptbins, name='j1pt', label='AK4 Leading Jet Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
@@ -237,7 +309,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'fj1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Regular(30,160.,1250., name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
+                hist.axis.Variable(ptbins, name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
@@ -279,7 +351,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'l1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.Regular(40,30,1250, name='l1pt', label='Leading Lepton Pt'),
+                hist.axis.Variable(ptbins, name='l1pt', label='Leading Lepton Pt'),
                 hist.axis.Variable([0, self._TvsQCDwp[self._year], 1], name='TvsQCD', label='TvsQCD', flow=False),
                 storage=hist.storage.Weight(),
             ),
@@ -304,11 +376,11 @@ class AnalysisProcessor(processor.ProcessorABC):
             return self.process_shift(events, None)
 
         jet_factory              = self._corrections['jet_factory']
-        #fatjet_factory           = self._corrections['fatjet_factory']
+        fatjet_factory           = self._corrections['fatjet_factory']
         subjet_factory           = self._corrections['subjet_factory']
         met_factory              = self._corrections['met_factory']
 
-        import cachetools
+        
         jec_cache = cachetools.Cache(np.inf)
     
         nojer = "NOJER" if self._skipJER else ""
@@ -322,22 +394,22 @@ class AnalysisProcessor(processor.ProcessorABC):
             return jets
         
         jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
-        #fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
+        fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
         subjets = subjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubJet, events.fixedGridRhoFastjetAll), jec_cache)
         met = met_factory.build(events.MET, jets, {})
 
-        shifts = [({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met}, None)]
+        shifts = [({"Jet": jets, "AK15PFPuppiSubJet": subjets, "AK15PFPuppiJet": fatjets, "MET": met}, None)]
         if self._systematics:
             shifts.extend([
-                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubJet": subjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
-                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubJet": subjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
-                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
-                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
+                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubJet": subjets.JES_jes.up, "AK15PFPuppiSubJet": fatjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
+                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubJet": subjets.JES_jes.down, "AK15PFPuppiSubJet": fatjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
+                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "AK15PFPuppiSubJet": fatjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
+                ({"Jet": jets, "AK15PFPuppiSubJet": subjets, "AK15PFPuppiSubJet": fatjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
             ])
             if not self._skipJER:
                 shifts.extend([
-                    ({"Jet": jets.JER.up, "AK15PFPuppiSubJet": subjets.JER.up, "MET": met.JER.up}, "JERUp"),
-                    ({"Jet": jets.JER.down, "AK15PFPuppiSubJet": subjets.JER.down, "MET": met.JER.down}, "JERDown"),
+                    ({"Jet": jets.JER.up, "AK15PFPuppiSubJet": subjets.JER.up, "AK15PFPuppiSubJet": fatjets.JER.up, "MET": met.JER.up}, "JERUp"),
+                    ({"Jet": jets.JER.down, "AK15PFPuppiSubJet": subjets.JER.down, "AK15PFPuppiSubJet": fatjets.JER.down, "MET": met.JER.down}, "JERDown"),
                 ])
         return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
 
@@ -376,9 +448,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_met_xy_correction    = self._corrections['get_met_xy_correction']
         get_pu_weight            = self._corrections['get_pu_weight']    
         get_nlo_ewk_weight       = self._corrections['get_nlo_ewk_weight']    
-        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight']
+        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
         get_msd_corr             = self._corrections['get_msd_corr']
         get_btag_weight      = self._corrections['get_btag_weight']
+        get_ttbar_weight     = self._corrections['get_ttbar_weight']
         
         isLooseElectron = self._ids['isLooseElectron'] 
         isTightElectron = self._ids['isTightElectron'] 
@@ -466,7 +539,14 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu_ntot = ak.num(mu, axis=1)
         mu_nloose = ak.num(mu_loose, axis=1)
         mu_ntight = ak.num(mu_tight, axis=1)
+        # define leading mu
         leading_mu = ak.firsts(mu_tight)
+        # define second mu for Z->mumu
+        second_mu = ak.pad_none(mu_tight, target=2)[:,1]
+        #dimu = ak.cartesian({"mu1": leading_mu, "mu2": second_mu}, nested=True)
+        dimu = leading_mu + second_mu
+        #dimu_mass = (dimu.mu1 + dimu.mu2).mass
+        dimu_mass = dimu.mass
 
         e = events.Electron
         e['isclean'] = ak.all(e.metric_table(mu_loose) > 0.3, axis=2)
@@ -501,31 +581,37 @@ class AnalysisProcessor(processor.ProcessorABC):
         e_ntot = ak.num(e, axis=1)
         e_nloose = ak.num(e_loose, axis=1)
         e_ntight = ak.num(e_tight, axis=1)
+        # define leading e
         leading_e = ak.firsts(e_tight)
-
-        tau = events.Tau
-        tau['isclean']=(
-            ak.all(tau.metric_table(mu_loose) > 0.4, axis=2) 
-            & ak.all(tau.metric_table(e_loose) > 0.4, axis=2)
-        )
-        
-        tau['isloose']=isLooseTau(tau, self._year)
-        tau_clean=tau[tau.isclean]
-        tau_loose=tau_clean[tau_clean.isloose]
-        tau_ntot=ak.num(tau, axis=1)
-        tau_nloose=ak.num(tau_loose, axis=1)
+        # define second e for Z->ee
+        second_e = ak.pad_none(e_tight, target=2)[:,1]
+        #diele = ak.cartesian({"e1": leading_e, "e2": second_e}, nested=True)
+        diele = leading_e + second_e
+        #diele_mass = (diele.e1 + diele.e2).mass
+        diele_mass = diele.mass
 
         pho = events.Photon
         pho['isclean']=(
             ak.all(pho.metric_table(mu_loose) > 0.5, axis=2)
             & ak.all(pho.metric_table(e_loose) > 0.5, axis=2)
-            & ak.all(pho.metric_table(tau_loose) > 0.5, axis=2)
+        )
+        pho['T'] = ak.zip(
+            {
+                "r": pho.pt,
+                "phi": pho.phi,
+            },
+            with_name="PolarTwoVector",
+            behavior=vector.behavior,
         )
         pho['isloose']=isLoosePhoton(pho,self._year)
+        pho['istight']=isTightPhoton(pho,self._year)
         pho_clean=pho[pho.isclean]
         pho_loose=pho_clean[pho_clean.isloose]
+        pho_tight=pho_clean[pho_clean.istight]
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
+        pho_ntight=ak.num(pho_tight, axis=1)
+        leading_pho = ak.firsts(pho_tight)
 
         fj = events.AK15PFPuppiJet
         fj['pt'] = fj.subjets.sum().pt
@@ -533,7 +619,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         fj['isclean'] = (
             ak.all(fj.metric_table(mu_loose) > 1.5, axis=2)
             & ak.all(fj.metric_table(e_loose) > 1.5, axis=2)
-            & ak.all(fj.metric_table(tau_loose) > 1.5, axis=2)
             & ak.all(fj.metric_table(pho_loose) > 1.5, axis=2)
         )
         fj['isgood'] = isGoodAK15(fj)
@@ -561,13 +646,11 @@ class AnalysisProcessor(processor.ProcessorABC):
         j['isclean'] = (
             ak.all(j.metric_table(mu_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(e_loose) > 0.4, axis=2)
-            & ak.all(j.metric_table(tau_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(pho_loose) > 0.4, axis=2)
         )
         j['isiso'] = ak.all(j.metric_table(leading_fj) > 1.5, axis=2)
         j['isdcsvL'] = (j.btagDeepB>deepcsvWPs['loose'])
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose'])
-        
         j['T'] = ak.zip(
             {
                 "r": j.pt,
@@ -601,14 +684,20 @@ class AnalysisProcessor(processor.ProcessorABC):
             'tecr'  : met+leading_e.T,
             'wmcr'  : met+leading_mu.T,
             'tmcr'  : met+leading_mu.T,
-            'qcdcr' : met,
+            'zecr'  : met+leading_e.T+second_e.T,
+            'zmcr'  : met+leading_mu.T+second_mu.T,
+            'gcr'   : met+leading_pho.T,
         }
 
         mT = {
+            'sr'    : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
             'wecr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
             'tecr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
             'wmcr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T)))),
-            'tmcr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T)))) 
+            'tmcr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T)))),
+            'zecr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
+            'zmcr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T)))),
+            'gcr'   : np.sqrt(2*leading_pho.pt*met.pt*(1-np.cos(met.delta_phi(leading_pho.T)))),
         }
 
         ###
@@ -623,110 +712,93 @@ class AnalysisProcessor(processor.ProcessorABC):
             gen['isTop'] = (abs(gen.pdgId)==6)&gen.hasFlags(['fromHardProcess', 'isLastCopy'])
             genTops = gen[gen.isTop]
             nlo = np.ones(len(events), dtype='float')
-            if('TTJets' in dataset): 
+            if('TTTo' in dataset): 
                 nlo = np.sqrt(get_ttbar_weight(genTops[:,0].pt) * get_ttbar_weight(genTops[:,1].pt))
                 
             gen['isW'] = (abs(gen.pdgId)==24)&gen.hasFlags(['fromHardProcess', 'isLastCopy'])
             gen['isZ'] = (abs(gen.pdgId)==23)&gen.hasFlags(['fromHardProcess', 'isLastCopy'])
+            gen['isA'] = (abs(gen.pdgId)==22) & gen.hasFlags(['isPrompt', 'fromHardProcess', 'isLastCopy']) & (gen.status == 1)
             
             genWs = gen[gen.isW] 
             genZs = gen[gen.isZ]
             genDYs = gen[gen.isZ&(gen.mass>30)]
+            genAs = gen[gen.isA & (gen.pt > 100)]
             
-            nnlo_nlo = {}
-            #nlo_qcd = np.ones(len(events), dtype='float')
             nlo_ewk = np.ones(len(events), dtype='float')
             if('WJets' in dataset): 
-                #nlo_qcd = get_nlo_qcd_weight('w', genWs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight('w', ak.firsts(genWs).pt)
-                for systematic in get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt):
-                    nnlo_nlo[systematic] = ak.where(
-                        ((ak.num(genWs, axis=1)>0)&(ak.firsts(genWs).pt>=100)),
-                        get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt)[systematic],
-                        np.ones(len(events), dtype='float')
-                    )
+                #nlo_ewk = get_nlo_ewk_weight['w'](genWs.pt.max())
+                nlo_ewk = get_nlo_ewk_weight['w'](ak.max(genWs.pt, axis=1))
             elif('DY' in dataset): 
-                #nlo_qcd = get_nlo_qcd_weight['dy'](genDYs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight('dy', ak.firsts(genDYs).pt)
-                for systematic in get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt):
-                    nnlo_nlo[systematic] = ak.where(
-                        ((ak.num(genDYs, axis=1)>0)&(ak.firsts(genDYs).pt>=100)),
-                        get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt)[systematic],
-                        np.ones(len(events), dtype='float')
-                    )
+                nlo_ewk = get_nlo_ewk_weight['dy'](ak.max(genDYs.pt, axis=1))
             elif('Z1Jets' in dataset or 'Z2Jets' in dataset): 
-                #nlo_qcd = get_nlo_qcd_weight['z'](genZs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight('z', ak.firsts(genZs).pt)
-                for systematic in get_nnlo_nlo_weight(self._year, 'z', ak.firsts(genZs).pt):
-                    nnlo_nlo[systematic] = ak.where(
-                        ((ak.num(genZs, axis=1)>0)&(ak.firsts(genZs).pt>=100)),
-                        get_nnlo_nlo_weight(self._year, 'z', ak.firsts(genZs).pt)[systematic],
-                        np.ones(len(events), dtype='float')
-                    )
+                nlo_ewk = get_nlo_ewk_weight['z'](ak.max(genZs.pt, axis=1))
+            elif('G1Jet' in dataset):
+                nlo_ewk = get_nlo_ewk_weight['a'](ak.max(genAs.pt, axis=1))
+
             ###
             # Calculate PU weight and systematic variations
             ###
-
             pu = get_pu_weight(self._year, events.Pileup.nTrueInt)
 
             ###
             # Trigger efficiency weight
             ###
-           
             trig = {
                 'sr':   get_met_trig_weight(self._year, met.pt),
                 'wmcr': get_met_trig_weight(self._year, u['wmcr'].r),
                 'tmcr': get_met_trig_weight(self._year, u['tmcr'].r),
                 'wecr': get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
                 'tecr': get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
-                'qcdcr': get_met_trig_weight(self._year, met.pt),
+                'zmcr': get_met_trig_weight(self._year, met.pt),
+                'zecr': get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
+                'gcr': np.ones(len(events), dtype='float'),
             }
 
             ### 
             # Calculating electron and muon ID weights
             ###
-
             ids ={
                 'sr':  np.ones(len(events), dtype='float'),
                 'wmcr': leading_mu.id_sf,
                 'tmcr': leading_mu.id_sf,
                 'wecr': leading_e.id_sf,
                 'tecr': leading_e.id_sf,
-                'qcdcr': np.ones(len(events), dtype='float'),
+                'zmcr': np.ones(len(events), dtype='float'),
+                'zecr': np.ones(len(events), dtype='float'),
+                'gcr':  np.ones(len(events), dtype='float'),
             }
            
             ###
             # Reconstruction weights for electrons
-            ###
-                                                  
+            ###                                       
             reco = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': np.ones(len(events), dtype='float'),
                 'tmcr': np.ones(len(events), dtype='float'),
                 'wecr': leading_e.reco_sf,
                 'tecr': leading_e.reco_sf,
-                'qcdcr': np.ones(len(events), dtype='float'),
+                'zmcr': np.ones(len(events), dtype='float'),
+                'zecr': leading_e.reco_sf,
+                'gcr':  np.ones(len(events), dtype='float'),
             }
 
             ###
             # Isolation weights for muons
             ###
-
-            '''
             isolation = {
                 'sr': np.ones(len(events), dtype='float'),
                 'wmcr': leading_mu.iso_sf,
                 'tmcr': leading_mu.iso_sf,
                 'wecr': np.ones(len(events), dtype='float'),
                 'tecr': np.ones(len(events), dtype='float'),
-                'qcdcr': np.ones(len(events), dtype='float'),
+                'zmcr': leading_mu.iso_sf,
+                'zecr': np.ones(len(events), dtype='float'),
+                'gcr':  np.ones(len(events), dtype='float'),
             }
-            '''
 
             ###
             # AK4 b-tagging weights
             ###
-
             btagSF, \
             btagSFbc_correlatedUp, \
             btagSFbc_correlatedDown, \
@@ -746,34 +818,17 @@ class AnalysisProcessor(processor.ProcessorABC):
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
             weights.add('genw',events.genWeight)
             weights.add('nlo_ewk',nlo_ewk)
-            if 'cen' in nnlo_nlo:
-                #weights.add('nnlo_nlo',nnlo_nlo['cen'])
-                weights.add('qcd1',np.ones(len(events), dtype='float'), nnlo_nlo['qcd1up']/nnlo_nlo['cen'], nnlo_nlo['qcd1do']/nnlo_nlo['cen'])
-                weights.add('qcd2',np.ones(len(events), dtype='float'), nnlo_nlo['qcd2up']/nnlo_nlo['cen'], nnlo_nlo['qcd2do']/nnlo_nlo['cen'])
-                weights.add('qcd3',np.ones(len(events), dtype='float'), nnlo_nlo['qcd3up']/nnlo_nlo['cen'], nnlo_nlo['qcd3do']/nnlo_nlo['cen'])
-                weights.add('ew1',np.ones(len(events), dtype='float'), nnlo_nlo['ew1up']/nnlo_nlo['cen'], nnlo_nlo['ew1do']/nnlo_nlo['cen'])
-                weights.add('ew2G',np.ones(len(events), dtype='float'), nnlo_nlo['ew2Gup']/nnlo_nlo['cen'], nnlo_nlo['ew2Gdo']/nnlo_nlo['cen'])
-                weights.add('ew3G',np.ones(len(events), dtype='float'), nnlo_nlo['ew3Gup']/nnlo_nlo['cen'], nnlo_nlo['ew3Gdo']/nnlo_nlo['cen'])
-                weights.add('ew2W',np.ones(len(events), dtype='float'), nnlo_nlo['ew2Wup']/nnlo_nlo['cen'], nnlo_nlo['ew2Wdo']/nnlo_nlo['cen'])
-                weights.add('ew3W',np.ones(len(events), dtype='float'), nnlo_nlo['ew3Wup']/nnlo_nlo['cen'], nnlo_nlo['ew3Wdo']/nnlo_nlo['cen'])
-                weights.add('ew2Z',np.ones(len(events), dtype='float'), nnlo_nlo['ew2Zup']/nnlo_nlo['cen'], nnlo_nlo['ew2Zdo']/nnlo_nlo['cen'])
-                weights.add('ew3Z',np.ones(len(events), dtype='float'), nnlo_nlo['ew3Zup']/nnlo_nlo['cen'], nnlo_nlo['ew3Zdo']/nnlo_nlo['cen'])
-                weights.add('mix',np.ones(len(events), dtype='float'), nnlo_nlo['mixup']/nnlo_nlo['cen'], nnlo_nlo['mixdo']/nnlo_nlo['cen'])
-                weights.add('muF',np.ones(len(events), dtype='float'), nnlo_nlo['muFup']/nnlo_nlo['cen'], nnlo_nlo['muFdo']/nnlo_nlo['cen'])
-                weights.add('muR',np.ones(len(events), dtype='float'), nnlo_nlo['muRup']/nnlo_nlo['cen'], nnlo_nlo['muRdo']/nnlo_nlo['cen'])
             weights.add('pileup',pu)
             weights.add('trig', trig[region])
             weights.add('ids', ids[region])
             weights.add('reco', reco[region])
-            #weights.add('isolation', isolation[region])
+            weights.add('isolation', isolation[region])
             weights.add('btagSF',btagSF)
             weights.add('btagSFbc_correlated',np.ones(len(events), dtype='float'), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
             weights.add('btagSFbc_uncorrelated',np.ones(len(events), dtype='float'), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
             weights.add('btagSFlight_correlated',np.ones(len(events), dtype='float'), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
             weights.add('btagSFlight_uncorrelated',np.ones(len(events), dtype='float'), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
             
-
-        
         ###
         # Selections
         ###
@@ -801,35 +856,165 @@ class AnalysisProcessor(processor.ProcessorABC):
             triggers = triggers | events.HLT[path]
         selection.add('singleelectron_triggers', triggers)
 
+        triggers = np.zeros(len(events), dtype='bool')
+        for path in self._singlephoton_triggers[self._year]:
+            if not hasattr(events.HLT, path): continue
+            triggers = triggers | events.HLT[path]
+        selection.add('single_photon_triggers', ak.to_numpy(triggers))
+
+        triggers = np.zeros(len(events), dtype='bool')
+        for path in self._singlemuon_triggers[self._year]:
+            if path not in events.HLT.fields:
+                continue
+            triggers = triggers | events.HLT[path]
+        selection.add('single_muon_triggers', ak.to_numpy(triggers))
+
         noHEMj = np.ones(len(events), dtype='bool')
-        if self._year=='2018': noHEMj = (j_nHEM==0)
+        if self._year=='2018':
+            noHEMj = (j_nHEM==0)
 
         noHEMmet = np.ones(len(events), dtype='bool')
-        if self._year=='2018': noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)
+        if self._year=='2018':
+            noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)
 
-        selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
-        selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(tau_nloose==0)&(pho_nloose==0))
-        selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
-        #selection.add('leading_e_pt',(leading_e.pt>40))
+        if ('WJetsToLNu' in dataset) & ('Pt' in dataset):
+            remove_overlap = (gen[gen.hasFlags(['fromHardProcess', 'isFirstCopy', 'isPrompt']) & ((abs(gen.pdgId) == 24))].pt >120) ## W
+            selection.add("exclude_wjets_greater_400", ak.to_numpy(ak.all(remove_overlap, axis=1)))
+        else:
+            selection.add("exclude_wjets_greater_400", np.full(len(events), True))
+
+        if ('WJetsToLNu' in dataset) & (not ('Pt' in dataset)):
+            remove_overlap = (gen[gen.hasFlags(['fromHardProcess', 'isFirstCopy', 'isPrompt']) & ((abs(gen.pdgId) == 24))].pt <= 120) ## w
+            selection.add("exclude_wjets_less_400", ak.to_numpy(ak.all(remove_overlap, axis=1)))
+        else:
+            selection.add("exclude_wjets_less_400", np.full(len(events), True))
+
+        selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(pho_nloose==0))
+        selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(pho_nloose==0))
+        selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(pho_nloose==0))
+        selection.add('isoneG', (e_nloose==0)&(mu_nloose==0)&(pho_nloose==1),(pho_ntight==1))
+        selection.add('istwoM', (e_nloose==0)&(mu_ntight==2)&(mu_nloose==2)&(pho_nloose==0))
+        selection.add('istwoE', (e_ntight==2)&(e_nloose==2)&(mu_nloose==0)&(pho_nloose==0))
+        selection.add('one_ak4', (j_nclean>0))
+        selection.add('one_ak15', (fj_nclean>0))
+        selection.add('leading_fj250', (leading_fj.pt>250))
+
+        selection.add('dPhi_recoil_j', (ak.min(abs(u['sr'].delta_phi(j_clean.T)), axis=1, mask_identity=False) > 0.5))
+        selection.add('dPhi_recoil_fj',(ak.sum(abs(u['sr'].delta_phi(fj_clean.T))>1.5, axis=1, mask_identity=False) > 0))
+        selection.add('dPhi_recoil_fj_e', (ak.min(abs(u['wecr'].delta_phi(fj_clean.T))>1.5, axis=1, mask_identity=False) > 0))
+        selection.add('dPhi_recoil_fj_m', (ak.min(abs(u['wmcr'].delta_phi(fj_clean.T))>1.5, axis=1, mask_identity=False) > 0))
+        selection.add('dPhi_recoil_fj_g', (ak.min(abs(u['gcr'].delta_phi(fj_clean.T))>1.5, axis=1, mask_identity=False) > 0))
         selection.add('noextrab', (j_ndflvL==0))
         selection.add('extrab', (j_ndflvL>0))
-        selection.add('fatjet', (fj_nclean>0))
+        selection.add('oneb', (j_ndflvL==1))
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
-        selection.add('met100',(met.pt>100))
-        selection.add('msd40',(leading_fj.msd_corr>40))
-        selection.add('recoil_qcdcr', (u['qcdcr'].r>250))
-        selection.add('mindphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(j_clean.T)), axis=1, mask_identity=False) < 0.1))
-        selection.add('minDphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
-        selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].r)<0.5))
+        selection.add('met120',(met.pt<120))
+        selection.add('met150',(met.pt>150))
+        selection.add('diele60',(diele_mass>60))
+        selection.add('diele120',(diele_mass<120))
+        selection.add('dimu60',(dimu_mass>60))
+        selection.add('dimu120',(dimu_mass<120))
+        selection.add('leading_ele40',(leading_e.pt>40))
 
         regions = {
-            'sr': ['msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
-            'wmcr': ['msd40','isoneM','fatjet','noextrab','noHEMj','met_filters','met_triggers'],
-            'tmcr': ['msd40','isoneM','fatjet','extrab','noHEMj','met_filters','met_triggers'],
-            'wecr': ['msd40','isoneE','fatjet','noextrab','noHEMj','met_filters','singleelectron_triggers','met100'],
-            'tecr': ['msd40','isoneE','fatjet','extrab','noHEMj','met_filters','singleelectron_triggers','met100'],
-            'qcdcr': ['recoil_qcdcr','mindphi_qcdcr','minDphi_qcdcr','calo_qcdcr','msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
+            'sr': [
+                    'met_filters', 'met_triggers',
+                    'noHEMj', 'noHEMmet',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj',
+                    'iszeroL',
+                    'noextrab',
+            ],
+            'wmcr': [
+                    'met_filters', 'met_triggers',
+                    'noHEMj',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj_m',
+                    'isoneM',
+                    'noextrab',
+                    'met150',
+            ],
+            'wecr': [
+                    'met_filters', 'singleelectron_triggers',
+                    'noHEMj',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj_e',
+                    'isoneE',
+                    'noextrab',
+                    'met150',
+            ],
+            'tmcr': [
+                    'met_filters', 'met_triggers',
+                    'noHEMj',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj_m',
+                    'isoneM',
+                    'one_ak4',
+                    'oneb',
+                    'met150',
+            ],
+            'tecr': [
+                    'met_filters', 'singleelectron_triggers',
+                    'noHEMj',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj_e',
+                    'isoneE',
+                    'one_ak4',
+                    'oneb',
+                    'met150',
+            ],
+            'zmcr': [
+                    'met_filters', 'met_triggers',
+                    'noHEMj',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj_m',
+                    'istwoM',
+                    'met120',
+                    'dimu60', 'dimu120',
+            ],
+            'zecr': [
+                    'met_filters', 'singleelectron_triggers',
+                    'noHEMj',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj_e',
+                    'istwoE',
+                    'met120',
+                    'diele60', 'diele120',
+                    'leading_ele40',
+            ],
+            'gcr': [
+                    'met_filters', 'single_photon_triggers',
+                    'noHEMj',
+                    'exclude_wjets_greater_400', 'exclude_wjets_less_400',
+                    'one_ak15',
+                    'leading_fj250',
+                    'dPhi_recoil_j',
+                    'dPhi_recoil_fj_g',
+                    'isoneG',
+                    'noextrab',
+            ],
         }
 
         def normalize(val, cut):
@@ -904,23 +1089,25 @@ class AnalysisProcessor(processor.ProcessorABC):
             systematics = [None] + list(weights.variations)
         else:
             systematics = [shift_name]
-            
+        print(selected_regions)    
         for region in regions:
+            print('Now region loop: ', region)
             if region not in selected_regions: continue
+            print('process ', region)
 
             ###
             # Adding recoil and minDPhi requirements
             ###
 
             if 'qcd' not in region:
-                selection.add('recoil_'+region, (u[region].r>250))
-                selection.add('mindphi_'+region, (ak.min(abs(u[region].delta_phi(j_clean.T)), axis=1, mask_identity=False) > 0.5))
-                selection.add('minDphi_'+region, (ak.min(abs(u[region].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
-                selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].r) < 0.5))
+                selection.add('recoil_'+region, (u[region].r>350))
+                #selection.add('mindphi_'+region, (ak.min(abs(u[region].delta_phi(j_clean.T)), axis=1, mask_identity=False) > 0.5))
+                #selection.add('minDphi_'+region, (ak.min(abs(u[region].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
+                #selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].r) < 0.5))
                 regions[region].insert(0, 'recoil_'+region)
-                regions[region].insert(3, 'mindphi_'+region)
-                regions[region].insert(4, 'minDphi_'+region)
-                regions[region].insert(5, 'calo_'+region)
+                #regions[region].insert(3, 'mindphi_'+region)
+                #regions[region].insert(4, 'minDphi_'+region)
+                #regions[region].insert(5, 'calo_'+region)
                 if region in mT:
                     selection.add('mT_'+region, (mT[region]<150))
 
