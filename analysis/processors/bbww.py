@@ -690,12 +690,11 @@ class AnalysisProcessor(processor.ProcessorABC):
             btagSFlight_correlatedUp, \
             btagSFlight_correlatedDown, \
             btagSFlight_uncorrelatedUp, \
-            btagSFlight_uncorrelatedDown  = get_btag_weight('deepflav',self._year,'loose').btag_weight(
-                j_iso.pt,
-                j_iso.eta,
-                j_iso.hadronFlavour,
-                j_iso.isdflvL
-            )
+            #btagSFlight_uncorrelatedDown  = get_btag_weight('deepflav',self._year,'loose').btag_weight(
+                #j_iso.pt,
+                #j_iso.eta,
+                #j_iso.hadronFlavour,
+                #j_iso.isdflvL)
 
             if hasattr(events, "L1PreFiringWeight"): 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
@@ -779,7 +778,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         #selection.add('extrab', (j_ndflvL>0))
         #selection.add('minDphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
         #selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].r)<0.5))
-
+        
         regions = {
             'esr': ['isoneE', 'noHEMj', 'met_filters', 'noHEMmet'],
             'msr': ['isoneM','noHEMj', 'met_filters', 'noHEMmet']
