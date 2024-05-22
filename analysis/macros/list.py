@@ -4,8 +4,8 @@ import sys
 import uproot
 from data.process import *
 from optparse import OptionParser
-import subprocess
-import json 
+import json
+import gzip
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')
@@ -20,61 +20,155 @@ parser.add_option('-r', '--remove', action='store_true', dest='remove')
 
 globalredirect = "root://xrootd-cms.infn.it/"
 campaigns ={}
-campaigns['2016'] = 'UL2016'
-campaigns['2017'] = 'UL2017'
-campaigns['2018'] = 'UL2018'
+campaigns['2016preVFP'] = '*UL*16preVFP*JMENano'
+campaigns['2016postVFP'] = '*UL*16postVFP*JMENano'
+campaigns['2017'] = '*UL*17*JMENano'
+campaigns['2018'] = '*UL*18*JMENano'
 
-campaigns_TTTo = {}
-campaigns_TTTo['2016'] = 'UL16' #different naming convention for TTTo
-campaigns_TTTo['2017'] = 'UL17'
-campaigns_TTTo['2018'] = 'UL18'
+eos = "root://dcache-cms-xrootd.desy.de:1094/"
+custom={}
+custom['2016preVFP'] = ["/store/user/nshadski/customNano",
+                 "/store/user/empfeffe/customNano",
+                 "/store/user/momolch/customNano",
+                 "/store/user/swieland/customNano",
+                 "/store/user/mwassmer/customNano"]
 
+custom['2016postVFP'] = ["/store/user/nshadski/customNano",
+                 "/store/user/empfeffe/customNano",
+                 "/store/user/momolch/customNano",
+                 "/store/user/swieland/customNano",
+                 "/store/user/mwassmer/customNano"]
 
-slist = ['SingleMuon', 'TTTo']
+custom['2017'] = ["/store/user/swieland/customNano",
+                 "/store/user/momolch/customNano",
+                 "/store/user/mwassmer/customNano"]
 
-if options.year == '2016' or options.year == '2017':
-    slist += ['SingleElectron']
-if options.year == '2018':
-    slist += ['EGamma']
+custom['2018'] = ["/store/user/mwassmer/customNano",
+                 "/store/user/swieland/customNano"]
 
-for sample in slist:
-    # Initialize an empty dictionary to hold dataset information for the current sample
-    sample_data_structure = {}
+def split(arr, size):
+     arrs = []
+     while len(arr) > size:
+         pice = arr[:size]
+         arrs.append(pice)
+         arr   = arr[size:]
+     arrs.append(arr)
+     return arrs
 
-    if sample == 'TTTo':
-        dataset_query = "dasgoclient --query=\"dataset=/*{0}*/*{1}*JMENano*/*\" ".format(sample, campaigns_TTTo[options.year])
+def find(_list):
+     if not _list:
+          return []
+     files=[]
+     print('Looking into',_list)
+     for path in _list:
+         command='xrdfs '+eos+' ls '+path
+         results=os.popen(command).read()
+         files.extend(results.split())
+     if not any('.root' in _file for _file in files):
+         files=find(files)
+     return files
 
-    # Construct the query to get datasets
-    else:
-        dataset_query = "dasgoclient --query=\"dataset=/{0}/*{1}*JMENano*/*\" ".format(sample, campaigns[options.year])
-    
-    print('Querying datasets:', dataset_query)
-    
-    # Execute the query and decode the output
-    datasets = subprocess.check_output(dataset_query, shell=True).decode('utf-8').strip().split('\n')
-    
-    # Loop over each dataset to get the list of files
-    for dataset in datasets:
-        # Make sure dataset is not empty
-        if not dataset: continue
+xsections={}
+for k,v in processes.items():
+     if v[1]=='MC':
+          if not isinstance(k, str):
+               if options.year!=str(k[1]): continue
+               xsections[k[0]] = v[2]
+          else: 
+               xsections[k] = v[2]
+     else:
+          xsections[k] = -1
+
+if options.skip:
+     try:
+          os.system('ls '+options.skip)
+     except:
+          sys.exit('File',options.skip,'does not exist')
+          
+     skip = []
+     corrupted = open(options.skip, 'r')
+     for rootfile in corrupted.readlines():
+          skip.append(rootfile.strip().split('store')[1])
+
+removed = []
+datadef = {}
+datasets = []
+for dataset in xsections.keys():
+     if options.dataset:
+          if not any(_dataset in dataset for _dataset in options.dataset.split(',')): continue
+     xs = xsections[dataset]
+     if options.custom:
+          redirect = eos
+          urllist = []
+          for folder in custom[options.year]:
+               path=folder+'/'+dataset
+               urllist += find([path])
+          for url in urllist[:].copy():
+               print(url)
+               if options.year not in url:
+                    urllist.remove(url)
+                    continue
+               if 'Data' in url and 'KITv2' in url:
+                    urllist.remove(url)
+                    continue
+               if 'failed' in url: 
+                    urllist.remove(url)
+                    continue
+               if '.root' not in url: 
+                    urllist.remove(url)
+                    continue
+               if options.skip and url.split('store')[-1] in skip:
+                    urllist.remove(url)
+                    print(url,'found in',options.skip)
+                    continue
+               if options.remove:
+                    try:
+                        infile = uproot.open(redirect+url)
+                    except:
+                        print("File",redirect+url,"is corrupted, removing.")
+                        urllist.remove(url)
+                        removed.append(url)
+                        continue
+                    else:
+                        del infile
+
+     else:
+          redirect = globalredirect
+          print("Searching for",dataset,"in centrally produced NanoAOD")
+          query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
+          dataset=os.popen(query).read().split("\n")[0]
+          print('Dataset is:', dataset)
+          query="dasgoclient --query=\"file dataset="+dataset+"\""
+          urllist = os.popen(query).read().split("\n")
+     for url in urllist[:]:
+          urllist[urllist.index(url)]=redirect+url
+     print('list lenght:',len(urllist))
+     if options.special:
+          for special in options.special.split(','):
+              sdataset, spack = special.split(':')
+              if sdataset in dataset:
+                  print('Packing',spack,'files for dataset',dataset)
+                  urllists = split(urllist, int(spack))
+              else:
+                  print('Packing',int(options.pack),'files for dataset',dataset)
+                  urllists = split(urllist, int(options.pack))
+     else:
+          print('Packing',int(options.pack),'files for dataset',dataset)
+          urllists = split(urllist, int(options.pack))
+     print(len(urllists))
+     if urllist:
+          for i in range(0,len(urllists)) :
+              datadef[dataset+"____"+str(i)+"_"] = {
+                  'files': urllists[i],
+                  'xs': xs,
+              }
         
-        # Construct the query to get files for the dataset
-        file_query = "dasgoclient --query=\"file dataset={0}\"".format(dataset)
-        print('Querying files in dataset:', file_query)
-        
-        # Execute the query and decode the output
-        files = subprocess.check_output(file_query, shell=True).decode('utf-8').strip().split('\n')
-        files = [globalredirect + file for file in files if file]  # Prepend redirect and filter out empty lines
-        
-        # Add the dataset and its files to the data structure
-        sample_data_structure[dataset] = {
-            "files": files
-        }
-    metadata_dir = os.path.expanduser('~/CMSSW_11_3_4/src/decaf/analysis/metadata')
-    # Write the sample's data structure to a JSON file
-    sample_json_filename = os.path.join(metadata_dir, '{0}.json'.format(sample))
-    with open(sample_json_filename, 'w') as outfile:
-        json.dump(sample_data_structure, outfile, indent=4)
+json_output = "metadata/"+options.metadata+".json.gz"
+with gzip.open(json_output, "wt") as fout:
+     json.dump(datadef, fout, indent=4)
+     #fp.write("\n")
 
-    print("Metadata for {0} written to {1}".format(sample, sample_json_filename))
-
+if options.remove:
+     lists = "data/removed_files.txt"
+     with open(lists, "w") as fout:
+          fout.writelines(removed)

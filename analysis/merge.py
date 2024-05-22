@@ -60,8 +60,9 @@ if __name__ == '__main__':
     parser.add_option('-p', '--postprocess', action='store_true', dest='postprocess')
     (options, args) = parser.parse_args()
 
-    patch_mp_connection_bpo_17560()    
+    patch_mp_connection_bpo_17560()
     if options.postprocess:
          postprocess(options.folder)
     else:
          merge(options.folder,options.variable,options.exclude)
+    
