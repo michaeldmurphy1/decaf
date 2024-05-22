@@ -122,7 +122,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'Ele32_WPTight_Gsf'
             ]
         }
-        self.singlemuon_triggers = {
+        self._singlemuon_triggers = {
             '2016preVFP': ['IsoMu24', 
                            'IsoTkMu24',
                            'Mu50',
@@ -327,8 +327,6 @@ class AnalysisProcessor(processor.ProcessorABC):
             return self.process_shift(events, None)
 
         jet_factory              = self._corrections['jet_factory']
-        #fatjet_factory           = self._corrections['fatjet_factory']
-        #subjet_factory           = self._corrections['subjet_factory']
         met_factory              = self._corrections['met_factory']
 
         import cachetools
@@ -345,8 +343,6 @@ class AnalysisProcessor(processor.ProcessorABC):
             return jets
         
         jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
-        #fatjets = fatjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiJet, events.fixedGridRhoFastjetAll), jec_cache)
-        #subjets = subjet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubJet, events.fixedGridRhoFastjetAll), jec_cache)
         met = met_factory.build(events.MET, jets, {})
 
         shifts = [({"Jet": jets,"MET": met}, None)]
@@ -411,7 +407,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         #isTightPhoton   = self._ids['isTightPhoton']   
         isGoodAK4       = self._ids['isGoodAK4']       
         #isGoodAK15    = self._ids['isGoodAK15']    
-        isHEMJet        = self._ids['isHEMJet']        
+        isHEMJet        = self._ids['isHEMJet']  
+              
         
         deepflavWPs = self._common['btagWPs']['deepflav'][self._year]
         deepcsvWPs = self._common['btagWPs']['deepcsv'][self._year]
@@ -420,7 +417,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         #Initialize global quantities (MET ecc.)
         ###
 
-        npv = events.PV.npvsGood
+        npv = events.PV.npvsGood 
         run = events.run
         #calomet = events.CaloMET
         met = events.MET
@@ -533,39 +530,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
-        
-        '''
-        fj = events.AK15PFPuppiJet
-        fj['pt'] = fj.subjets.sum().pt
-        fj['msd_corr'] = get_msd_corr(fj)
-        fj['isclean'] = (
-            ak.all(fj.metric_table(mu_loose) > 1.5, axis=2)
-            & ak.all(fj.metric_table(e_loose) > 1.5, axis=2)
-            & ak.all(fj.metric_table(tau_loose) > 1.5, axis=2)
-            & ak.all(fj.metric_table(pho_loose) > 1.5, axis=2)
-        )
-        fj['isgood'] = isGoodAK15(fj)
-        fj['T'] = ak.zip(
-            {
-                "r": fj.pt,
-                "phi": fj.phi,
-            },
-            with_name="PolarTwoVector",
-            behavior=vector.behavior,
-        )
-        probQCD=fj.particleNetAK15_QCDbb+fj.particleNetAK15_QCDcc+fj.particleNetAK15_QCDb+fj.particleNetAK15_QCDc+fj.particleNetAK15_QCDothers
-        probT=fj.particleNetAK15_Tbqq+fj.particleNetAK15_Tbcq
-        fj['TvsQCD'] = probT/(probT+probQCD)
-        fj_good = fj[fj.isgood]
-        fj_clean = fj_good[fj_good.isclean]
-        fj_ntot = ak.num(fj, axis=1)
-        fj_ngood = ak.num(fj_good, axis=1)
-        fj_nclean = ak.num(fj_clean, axis=1)
-        leading_fj = ak.firsts(fj_clean)
-        
-        '''
-        
-        
 
         j = events.Jet
         j['isgood'] = isGoodAK4(j, self._year)
@@ -591,6 +555,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         )
         j_good = j[j.isgood]
         j_clean = j_good[j_good.isclean]
+        j_dflvM = j_clean[j_clean.isdflvM]
         #j_iso = j_clean[j_clean.isiso]
         #j_dcsvL = j_iso[j_iso.isdcsvL] 
         #j_dflvL = j_iso[j_iso.isdflvL]
@@ -598,9 +563,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         j_ntot=ak.num(j, axis=1)
         j_ngood=ak.num(j_good, axis=1)
         j_nclean=ak.num(j_clean, axis=1)
+        j_ndflvM=ak.num(j_dflvM, axis=1)
         #j_niso=ak.num(j_iso, axis=1)
-        j_ndcsvL=ak.num(j_dcsvL, axis=1)
-        j_ndflvL=ak.num(j_dflvL, axis=1)
+        #j_ndcsvL=ak.num(j_dcsvL, axis=1)
+        #j_ndflvL=ak.num(j_dflvL, axis=1)
         j_nHEM = ak.num(j_HEM, axis=1)
         leading_j = ak.firsts(j_clean)
 
@@ -681,7 +647,7 @@ class AnalysisProcessor(processor.ProcessorABC):
            
             trig = {
                 'esr':   get_ele_trig_weight(self._year, met.pt),
-                'msr':   get_met_trig_weight(self._year, met.pt)
+                'msr':   get_mu_trig_weight(self._year, met.pt)
             }
 
             ### 
@@ -781,48 +747,44 @@ class AnalysisProcessor(processor.ProcessorABC):
             met_filters = met_filters & events.Flag[flag]
         selection.add('met_filters',met_filters)
 
-        triggers = np.zeros(len(events), dtype='bool')
-        for path in self._met_triggers[self._year]:
-            if not hasattr(events.HLT, path): continue
-            triggers = triggers | events.HLT[path]
-        selection.add('met_triggers', triggers)
 
         triggers = np.zeros(len(events), dtype='bool')
         for path in self._singleelectron_triggers[self._year]:
             if not hasattr(events.HLT, path): continue
             triggers = triggers | events.HLT[path]
         selection.add('singleelectron_triggers', triggers)
+        
+        triggers = np.zeros(len(events), dtype='bool')
+        for path in self._singlemuon_triggers[self._year]:
+            if not hasattr(events.HLT, path): continue
+            triggers = triggers | events.HLT[path]
+        selection.add('singlemuon_triggers', triggers)
+        
 
         noHEMj = np.ones(len(events), dtype='bool')
         if self._year=='2018': noHEMj = (j_nHEM==0)
-
         noHEMmet = np.ones(len(events), dtype='bool')
-        if self._year=='2018': noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)
+        if self._year=='2018': noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)    
+        
 
-        selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
-        selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(tau_nloose==0)&(pho_nloose==0))
-        selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
-        #selection.add('leading_e_pt',(leading_e.pt>40))
-        selection.add('noextrab', (j_ndflvL==0))
-        selection.add('extrab', (j_ndflvL>0))
-        selection.add('fatjet', (fj_nclean>0))
+        selection.add('isoneE', (e_ntight==1) & (mu_nloose==0) & (pho_nloose==0) & (tau_nloose==0) & (j_ngood>2) & (j_ndflvM>0))
+        selection.add('isoneM', (mu_ntight==1) & (e_nloose==0) & (pho_nloose==0) & (tau_nloose==0) & (j_ngood>2) & (j_ndflvM>0))
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
         selection.add('met100',(met.pt>100))
-        selection.add('msd40',(leading_fj.msd_corr>40))
-        selection.add('recoil_qcdcr', (u['qcdcr'].r>250))
-        selection.add('mindphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(j_clean.T)), axis=1, mask_identity=False) < 0.1))
-        selection.add('minDphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
-        selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].r)<0.5))
+        #selection.add('recoil_qcdcr', (u['qcdcr'].r>250))
+        #selection.add('mindphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(j_clean.T)), axis=1, mask_identity=False) < 0.1))
+        #selection.add('msd40',(leading_fj.msd_corr>40))
+        #selection.add('noextrab', (j_ndflvL==0))
+        #selection.add('extrab', (j_ndflvL>0))
+        #selection.add('minDphi_qcdcr', (ak.min(abs(u['qcdcr'].delta_phi(fj_clean.T)), axis=1, mask_identity=False) > 1.5))
+        #selection.add('calo_qcdcr', ((abs(calomet.pt - met.pt) / u['qcdcr'].r)<0.5))
 
         regions = {
-            'sr': ['msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
-            'wmcr': ['msd40','isoneM','fatjet','noextrab','noHEMj','met_filters','met_triggers'],
-            'tmcr': ['msd40','isoneM','fatjet','extrab','noHEMj','met_filters','met_triggers'],
-            'wecr': ['msd40','isoneE','fatjet','noextrab','noHEMj','met_filters','singleelectron_triggers','met100'],
-            'tecr': ['msd40','isoneE','fatjet','extrab','noHEMj','met_filters','singleelectron_triggers','met100'],
-            'qcdcr': ['recoil_qcdcr','mindphi_qcdcr','minDphi_qcdcr','calo_qcdcr','msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
+            'esr': ['isoneE', 'noHEMj', 'met_filters', 'noHEMmet'],
+            'msr': ['isoneM','noHEMj', 'met_filters', 'noHEMmet']
         }
+        
 
         def normalize(val, cut):
             if cut is None:
@@ -859,9 +821,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'j1pt':                   leading_j.pt,
                     'j1eta':                  leading_j.eta,
                     'j1phi':                  leading_j.phi,
-                    'fj1pt':                  leading_fj.pt,
-                    'fj1eta':                 leading_fj.eta,
-                    'fj1phi':                 leading_fj.phi,
                     'njets':                  j_nclean,
                     'ndflvL':                 j_ndflvL,
                     'nfjclean':               fj_nclean,
