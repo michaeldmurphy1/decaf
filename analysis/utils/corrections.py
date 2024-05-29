@@ -101,6 +101,8 @@ def get_ele_trig_weight(year, eta, pt):
 
 
 def get_mu_trig_weight(year, eta, pt):
+    #https://indico.cern.ch/event/1080036/contributions/4542924/attachments/2318322/3947065/210928_ULTriggerSF_kHwang.pdf
+    #Using weights for IsoMuX
     evaluator = correctionlib.CorrectionSet.from_file(f"/data/MuonTrigSF/{year}/{year}_trigger/Efficiencies_muon_generalTracks_Z_Run{year}_UL_SingleMuonTriggers_schemaV2.json")
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -115,7 +117,7 @@ def get_mu_trig_weight(year, eta, pt):
                     '2018': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight'}
 
     weight = evaluator[trigger_keys[year]].evaluate("sf", flateta, flatpt)
-        return ak.unflatten(weight, counts=counts)
+    return ak.unflatten(weight, counts=counts)
 
 
 ####
@@ -1038,6 +1040,7 @@ corrections = {
     'get_mu_tight_id_sf':       get_mu_tight_id_sf,
     'get_mu_loose_iso_sf':      get_mu_loose_iso_sf,
     'get_mu_tight_iso_sf':      get_mu_tight_iso_sf,
+    'get_mu_trig_weight':       get_mu_trig_weight,
     'get_met_xy_correction':    XY_MET_Correction,
     'get_pu_weight':            get_pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
