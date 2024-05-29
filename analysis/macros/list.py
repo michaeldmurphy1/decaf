@@ -137,10 +137,17 @@ for dataset in xsections.keys():
           urllist = []
           for campaign in campaigns[options.year]:
               query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaign+"*/NANOAOD*\""
-              datasets=os.popen(query).read().split("\n")
-              if not datasets[0]: continue
-              for dataset in datasets:
-                  query="dasgoclient --query=\"file dataset="+dataset+"\""
+              pds=os.popen(query).read()
+              if 'ERROR' in pds:
+                   print('Error in query for',dataset,campaign)
+                   continue
+              if not pds: 
+                   print('Empty query for',dataset,campaign)
+                   continue
+              print('Correct query:',query)
+              print('Primary datasets are:',pds.split("\n"))
+              for pd in pds.split("\n"):
+                  query="dasgoclient --query=\"file dataset="+pd+"\""
                   urllist += os.popen(query).read().split("\n")
      for url in urllist[:]:
           urllist[urllist.index(url)]=redirect+url
