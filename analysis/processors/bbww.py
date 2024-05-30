@@ -535,12 +535,10 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Trigger efficiency weight
             ###
            
-            print("Trigger SFs")
-            #print(get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt))
-            print(get_mu_trig_weight(self._year, leading_mu.eta, leading_mu.pt))
             trig = {
                 'esr':   get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
-                'msr':   get_mu_trig_weight(self._year, leading_mu.eta, leading_mu.pt)
+                #'msr':   get_mu_trig_weight(self._year, leading_mu.eta, leading_mu.pt)
+                'msr': np.ones(len(events), dtype='float'),
             }
 
             ### 
@@ -569,11 +567,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'esr': np.ones(len(events), dtype='float'),
                 'msr': leading_mu.iso_sf
             }
-            print("Some SFs:")
-            print(leading_e.id_sf)
-            print(leading_mu.id_sf)
-            print(leading_mu.iso_sf)
-            print(leading_e.reco_sf)
             
 
             ###
@@ -592,9 +585,9 @@ class AnalysisProcessor(processor.ProcessorABC):
                 j_clean.pt,
                 j_clean.eta,
                 j_clean.hadronFlavour,
-                j_iso.isdflvM
+                j_clean.isdflvM
             )
-            print('btag weight:',btagSF)
+
             if hasattr(events, "L1PreFiringWeight"): 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
             weights.add('genw',events.genWeight)
