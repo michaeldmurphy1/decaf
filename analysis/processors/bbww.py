@@ -35,7 +35,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         '2016postVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
         '2016preVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
         '2017': LumiMask("data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"),
-        '2018"': LumiMask("data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
+        '2018': LumiMask("data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
     }
     
     met_filters = {
@@ -96,8 +96,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._skipJER = False
 
         self._samples = {
-            'msr':('TTTo', 'SingleMuon'),
-            'esr':('TTTo', 'SingleElectron'),
+            'msr':('QCD', 'TT', 'SingleMuon'),
+            'esr':('QCD', 'TT', 'SingleElectron', 'EGamma'),
         }
         
         self._singleelectron_triggers = { #2017 and 2018 from monojet, applying dedicated trigger weights
@@ -121,19 +121,20 @@ class AnalysisProcessor(processor.ProcessorABC):
             ]
         }
         self._singlemuon_triggers = {
-            '2016preVFP': ['IsoMu24', 
-                           'IsoTkMu24'
-                          ],
-        
-            '2016postVFP': ['IsoMu24',
-                            'IsoTkMu24'
-                           ],
-        
-            '2017': ['IsoMu27'
-                    ],
-        
-            '2018': ['IsoMu24'
-                    ]
+            '2016preVFP': [
+                'IsoMu24', 
+                'IsoTkMu24'
+            ],
+            '2016postVFP': [
+                'IsoMu24',
+                'IsoTkMu24'
+            ],
+            '2017': [
+                'IsoMu27'
+            ],
+            '2018': [
+                'IsoMu24'
+            ]
         }
 
 
@@ -304,8 +305,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_met_xy_correction    = self._corrections['get_met_xy_correction']
         get_pu_weight            = self._corrections['get_pu_weight']    
         get_nlo_ewk_weight       = self._corrections['get_nlo_ewk_weight']    
-        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
+        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight']
         get_btag_weight          = self._corrections['get_btag_weight']
+        get_ttbar_weight         = self._corrections['get_ttbar_weight']
         
         isLooseElectron = self._ids['isLooseElectron'] 
         isTightElectron = self._ids['isTightElectron'] 
@@ -373,7 +375,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu_ntight = ak.num(mu_tight, axis=1)
         leading_mu = ak.firsts(mu_tight)
         
-        
 
         e = events.Electron
         e['isclean'] = ak.all(e.metric_table(mu_loose) > 0.3, axis=2)
@@ -410,7 +411,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         e_ntight = ak.num(e_tight, axis=1)
         leading_e = ak.firsts(e_tight)
         
-        
 
         tau = events.Tau
         tau['isclean']=(
@@ -424,7 +424,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         tau_ntot=ak.num(tau, axis=1)
         tau_nloose=ak.num(tau_loose, axis=1)
         
-        
 
         pho = events.Photon
         pho['isclean']=(
@@ -437,7 +436,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
-
         j = events.Jet
         j['isgood'] = isGoodAK4(j, self._year)
         j['isHEM'] = isHEMJet(j)
@@ -448,6 +446,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             & ak.all(j.metric_table(pho_loose) > 0.4, axis=2)
         )
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose']) # deep flavour 
+        j['isdflvM'] = (j.btagDeepFlavB>deepflavWPs['medium'])
         j['isdflvT'] = (j.btagDeepFlavB>deepflavWPs['tight'])
         j['T'] = ak.zip( 
             {
@@ -484,6 +483,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
         #Calculating weights
         ###
+
         if not isData:
             
             gen = events.GenPart
@@ -491,7 +491,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             gen['isTop'] = (abs(gen.pdgId)==6)&gen.hasFlags(['fromHardProcess', 'isLastCopy'])
             genTops = gen[gen.isTop]
             nlo = np.ones(len(events), dtype='float')
-            if('TTTo' in dataset): 
+            if('TT' in dataset): 
                 nlo = np.sqrt(get_ttbar_weight(genTops[:,0].pt) * get_ttbar_weight(genTops[:,1].pt))
                 
             gen['isW'] = (abs(gen.pdgId)==24)&gen.hasFlags(['fromHardProcess', 'isLastCopy'])
@@ -533,6 +533,9 @@ class AnalysisProcessor(processor.ProcessorABC):
             # Trigger efficiency weight
             ###
            
+            print("Trigger SFs")
+            #print(get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt))
+            print(get_mu_trig_weight(self._year, leading_mu.eta, leading_mu.pt))
             trig = {
                 'esr':   get_ele_trig_weight(self._year, leading_e.eta+leading_e.deltaEtaSC, leading_e.pt),
                 'msr':   get_mu_trig_weight(self._year, leading_mu.eta, leading_mu.pt)
@@ -564,7 +567,12 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'esr': np.ones(len(events), dtype='float'),
                 'msr': leading_mu.iso_sf
             }
-        
+            print("Some SFs:")
+            print(leading_e.id_sf)
+            print(leading_mu.id_sf)
+            print(leading_mu.iso_sf)
+            print(leading_e.reco_sf)
+            
 
             ###
             # AK4 b-tagging weights
@@ -582,8 +590,9 @@ class AnalysisProcessor(processor.ProcessorABC):
                 j_clean.pt,
                 j_clean.eta,
                 j_clean.hadronFlavour,
-                j_iso.isdflvM)
-
+                j_iso.isdflvM
+            )
+            print('btag weight:',btagSF)
             if hasattr(events, "L1PreFiringWeight"): 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
             weights.add('genw',events.genWeight)
@@ -622,7 +631,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         lumimask = np.ones(len(events), dtype='bool')
         if isData:
-            lumimask = lumiMasks[self._year](events.run, events.luminosityBlock)
+            lumimask = AnalysisProcessor.lumiMasks[self._year](events.run, events.luminosityBlock)
         selection.add('lumimask', lumimask)
 
         met_filters =  np.ones(len(events), dtype='bool')
@@ -687,9 +696,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'j1phi':                  leading_j.phi,
                     'njets':                  j_nclean,
                     'ndflvM':                 j_ndflvL,
+                    'mT':                     mT[region]
                 }
-                if region in mT:
-                    variables['mT']           = mT[region]
                 if 'e' in region:
                     variables['l1pt']      = leading_e.pt
                     variables['l1phi']     = leading_e.phi
@@ -698,7 +706,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                     variables['l1pt']      = leading_mu.pt
                     variables['l1phi']     = leading_mu.phi
                     variables['l1eta']     = leading_mu.eta
-                }
+                
                 for variable in output:
                     if variable not in variables:
                         continue

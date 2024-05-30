@@ -103,21 +103,21 @@ def get_ele_trig_weight(year, eta, pt):
 def get_mu_trig_weight(year, eta, pt):
     #https://indico.cern.ch/event/1080036/contributions/4542924/attachments/2318322/3947065/210928_ULTriggerSF_kHwang.pdf
     #Using weights for IsoMuX
-    evaluator = correctionlib.CorrectionSet.from_file(f"/data/MuonTrigSF/{year}/{year}_trigger/Efficiencies_muon_generalTracks_Z_Run{year}_UL_SingleMuonTriggers_schemaV2.json")
-
-    flateta, counts = ak.flatten(eta), ak.num(eta)
+    #Scale factors from (and similar for other years): https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master/Run2/UL/2018/2018_trigger?ref_type=heads
     
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonTrigEff/'+year+'/Efficiencies_muon_generalTracks_Z_Run'+year+'_UL_SingleMuonTriggers_schemaV2.json')
+
     pt = ak.where(pt < 26, 26, pt) 
     pt = ak.where(pt > 200, 200, pt) 
-    flatpt = ak.flatten(pt)
     
-    trigger_keys = {'2016_preVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
-                    '2016_postVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
+    trigger_keys = {'2016preVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
+                    '2016postVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
                     '2017': 'NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight',
                     '2018': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight'}
 
-    weight = evaluator[trigger_keys[year]].evaluate("sf", flateta, flatpt)
-    return ak.unflatten(weight, counts=counts)
+    weight = evaluator[trigger_keys[year]].evaluate(eta, pt, "nominal")
+    #return ak.unflatten(weight, counts=counts)
+    return weight
 
 
 ####
